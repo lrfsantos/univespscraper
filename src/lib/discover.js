@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 
 // Descobre cursos ativos e estrutura de semanas usando um navegador real
 // (as páginas do AVA carregam a lista de cursos via JavaScript).

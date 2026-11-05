@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 
 // Extração de capítulos/páginas recomendados dos livros da Biblioteca Virtual
 // (Minha Biblioteca / bvirtual). Suporta dois formatos de leitor:

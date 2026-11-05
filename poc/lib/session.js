@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 
 // Sessão segura para a PoC (Teste A).
 // Atende às ressalvas aprovadas:

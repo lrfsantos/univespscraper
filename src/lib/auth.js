@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 
 // Autenticação na UNIVESP (AVA) sem persistir credenciais.
 // O login acontece via Playwright; a sessão (cookies) é mantida em memória
