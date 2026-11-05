@@ -45,7 +45,7 @@ function log(ev, data) {
     await win.waitForSelector('body', { timeout: 30000 });
 
     // Login automático
-    log('LOGIN', { username: USERNAME });
+    log('LOGIN', { credentialsProvided: true });
     await win.goto('https://ava.univesp.br/custom/univesp_saml.php?wantsurl=' + encodeURIComponent('https://ava.univesp.br/') + '&login_hint=' + encodeURIComponent(USERNAME), { waitUntil: 'domcontentloaded', timeout: 60000 });
     await win.waitForSelector('form[name="f"]', { timeout: 30000 });
     await win.fill('input#password', PASSWORD);
