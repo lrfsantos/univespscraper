@@ -1,0 +1,940 @@
+{
+  "ts": "2026-11-05T16:21:20.249Z",
+  "book": {
+    "url": "https://ava.univesp.br/mod/lti/launch.php?id=263477&triggerview=0",
+    "format": "pageid",
+    "status": "integral",
+    "chars": 104066,
+    "source": "pageid",
+    "readerUrl": null,
+    "readerLoaded": true,
+    "steps": [
+      "pagina-limite-capitulo"
+    ],
+    "attempts": [
+      "navegacao-paginas"
+    ],
+    "validation": {
+      "hasText": true,
+      "noNonsense": true,
+      "startOk": true,
+      "midOk": true,
+      "endOk": true,
+      "chapterOk": true,
+      "pageRangeNote": "23..45",
+      "repetitions": [],
+      "warnings": [],
+      "length": 104066
+    },
+    "pages": 24,
+    "reachedChapterEnd": true,
+    "maxPagesHit": false,
+    "tocPages": {
+      "1": 23,
+      "2": 46,
+      "3": 65
+    },
+    "error": null,
+    "elapsedMs": 80179
+  },
+  "trace": [
+    {
+      "step": 0,
+      "kind": "frame",
+      "page": 23,
+      "frameId": "107046743",
+      "chars": 1923,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "390dab1d28b9e2ae828bff048158719a26379f55c3e3eb8af59a4b3149fd904b",
+      "head": "O EMPREENDEDORI1SMO E A MENTALIDADE EMPR"
+    },
+    {
+      "step": 0,
+      "kind": "frame",
+      "page": 23,
+      "frameId": "107046744",
+      "chars": 4307,
+      "paras": 10,
+      "isDup": false,
+      "sha256": "05111c177e096223d5956b6411f2ba48ed295994ba7bd96f1ff7ca88ec37f194",
+      "head": "4\n\nParte I ♦\n\nA perspectiva do empreende"
+    },
+    {
+      "step": 0,
+      "kind": "step",
+      "page": 23,
+      "framesSeen": 2,
+      "addedThisStep": 2,
+      "collectedCount": 2,
+      "rawCharsTotal": 6230,
+      "uniqueCharsTotal": 6230
+    },
+    {
+      "step": 1,
+      "kind": "frame",
+      "page": 24,
+      "frameId": "107046744",
+      "chars": 4307,
+      "paras": 10,
+      "isDup": true,
+      "sha256": "05111c177e096223d5956b6411f2ba48ed295994ba7bd96f1ff7ca88ec37f194",
+      "head": "4\n\nParte I ♦\n\nA perspectiva do empreende"
+    },
+    {
+      "step": 1,
+      "kind": "frame",
+      "page": 24,
+      "frameId": "107046745",
+      "chars": 4237,
+      "paras": 7,
+      "isDup": false,
+      "sha256": "9a1b7e9747a196fd0b42eadd55623b0a777130deb5c895f5402b101cca86f8a2",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 1,
+      "kind": "step",
+      "page": 24,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 3,
+      "rawCharsTotal": 14774,
+      "uniqueCharsTotal": 10467
+    },
+    {
+      "step": 2,
+      "kind": "frame",
+      "page": 25,
+      "frameId": "107046745",
+      "chars": 4237,
+      "paras": 7,
+      "isDup": true,
+      "sha256": "9a1b7e9747a196fd0b42eadd55623b0a777130deb5c895f5402b101cca86f8a2",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 2,
+      "kind": "frame",
+      "page": 25,
+      "frameId": "107046746",
+      "chars": 4052,
+      "paras": 16,
+      "isDup": false,
+      "sha256": "f753b245d9c09fbdf6398a4048bfe834e67fc663dc480f6bb7331c1e617d49df",
+      "head": "6 Parte I ♦ A perspectiva do empreendedo"
+    },
+    {
+      "step": 2,
+      "kind": "step",
+      "page": 25,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 4,
+      "rawCharsTotal": 23063,
+      "uniqueCharsTotal": 14519
+    },
+    {
+      "step": 3,
+      "kind": "frame",
+      "page": 26,
+      "frameId": "107046746",
+      "chars": 4052,
+      "paras": 16,
+      "isDup": true,
+      "sha256": "f753b245d9c09fbdf6398a4048bfe834e67fc663dc480f6bb7331c1e617d49df",
+      "head": "6 Parte I ♦ A perspectiva do empreendedo"
+    },
+    {
+      "step": 3,
+      "kind": "frame",
+      "page": 26,
+      "frameId": "107046747",
+      "chars": 4844,
+      "paras": 13,
+      "isDup": false,
+      "sha256": "1fade65c93811935b339692787cdca6a966405e2047cd47476bc7ace9b34be75",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 3,
+      "kind": "step",
+      "page": 26,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 5,
+      "rawCharsTotal": 31959,
+      "uniqueCharsTotal": 19363
+    },
+    {
+      "step": 4,
+      "kind": "frame",
+      "page": 27,
+      "frameId": "107046747",
+      "chars": 4844,
+      "paras": 13,
+      "isDup": true,
+      "sha256": "1fade65c93811935b339692787cdca6a966405e2047cd47476bc7ace9b34be75",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 4,
+      "kind": "frame",
+      "page": 27,
+      "frameId": "107046748",
+      "chars": 4486,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "69855188bd910f01a5d106f4b61ef9355d2390391299215e0f5090355d90afce",
+      "head": "8\n\nParte I ♦\n\nA perspectiva do empreende"
+    },
+    {
+      "step": 4,
+      "kind": "step",
+      "page": 27,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 6,
+      "rawCharsTotal": 41289,
+      "uniqueCharsTotal": 23849
+    },
+    {
+      "step": 5,
+      "kind": "frame",
+      "page": 28,
+      "frameId": "107046748",
+      "chars": 4486,
+      "paras": 12,
+      "isDup": true,
+      "sha256": "69855188bd910f01a5d106f4b61ef9355d2390391299215e0f5090355d90afce",
+      "head": "8\n\nParte I ♦\n\nA perspectiva do empreende"
+    },
+    {
+      "step": 5,
+      "kind": "frame",
+      "page": 28,
+      "frameId": "107046749",
+      "chars": 4156,
+      "paras": 15,
+      "isDup": false,
+      "sha256": "efe82984f215ea9a7a6310d9cbfa5221181ad3a9692071148d982bdbb9a9c59b",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 5,
+      "kind": "step",
+      "page": 28,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 7,
+      "rawCharsTotal": 49931,
+      "uniqueCharsTotal": 28005
+    },
+    {
+      "step": 6,
+      "kind": "frame",
+      "page": 29,
+      "frameId": "107046749",
+      "chars": 4156,
+      "paras": 15,
+      "isDup": true,
+      "sha256": "efe82984f215ea9a7a6310d9cbfa5221181ad3a9692071148d982bdbb9a9c59b",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 6,
+      "kind": "frame",
+      "page": 29,
+      "frameId": "107046750",
+      "chars": 5008,
+      "paras": 9,
+      "isDup": false,
+      "sha256": "b6478fba4e4c1329db2b25352dd2997564d637cc77b6d4cbdbb0be00baae162b",
+      "head": "10\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 6,
+      "kind": "step",
+      "page": 29,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 8,
+      "rawCharsTotal": 59095,
+      "uniqueCharsTotal": 33013
+    },
+    {
+      "step": 7,
+      "kind": "frame",
+      "page": 30,
+      "frameId": "107046750",
+      "chars": 5008,
+      "paras": 9,
+      "isDup": true,
+      "sha256": "b6478fba4e4c1329db2b25352dd2997564d637cc77b6d4cbdbb0be00baae162b",
+      "head": "10\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 7,
+      "kind": "frame",
+      "page": 30,
+      "frameId": "107046751",
+      "chars": 4935,
+      "paras": 11,
+      "isDup": false,
+      "sha256": "25a9f5949df1c7dcdd7ca3644f6323e25ea1bc821b53f72a80562b8194484678",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 7,
+      "kind": "step",
+      "page": 30,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 9,
+      "rawCharsTotal": 69038,
+      "uniqueCharsTotal": 37948
+    },
+    {
+      "step": 8,
+      "kind": "frame",
+      "page": 31,
+      "frameId": "107046751",
+      "chars": 4935,
+      "paras": 11,
+      "isDup": true,
+      "sha256": "25a9f5949df1c7dcdd7ca3644f6323e25ea1bc821b53f72a80562b8194484678",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 8,
+      "kind": "frame",
+      "page": 31,
+      "frameId": "107046752",
+      "chars": 5557,
+      "paras": 17,
+      "isDup": false,
+      "sha256": "c27a96a38423bd8c8a32afd7f414cc935a6f98b080fe849cdcd4851d31acbce0",
+      "head": "12 Parte I ♦ A perspectiva do empreended"
+    },
+    {
+      "step": 8,
+      "kind": "step",
+      "page": 31,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 10,
+      "rawCharsTotal": 79530,
+      "uniqueCharsTotal": 43505
+    },
+    {
+      "step": 9,
+      "kind": "frame",
+      "page": 32,
+      "frameId": "107046752",
+      "chars": 5557,
+      "paras": 17,
+      "isDup": true,
+      "sha256": "c27a96a38423bd8c8a32afd7f414cc935a6f98b080fe849cdcd4851d31acbce0",
+      "head": "12 Parte I ♦ A perspectiva do empreended"
+    },
+    {
+      "step": 9,
+      "kind": "frame",
+      "page": 32,
+      "frameId": "107046753",
+      "chars": 5179,
+      "paras": 19,
+      "isDup": false,
+      "sha256": "5cc0738a45533889ffa917bb28a537c6562c3d9c39f611ad5a6e1ac9809e6487",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 9,
+      "kind": "step",
+      "page": 32,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 11,
+      "rawCharsTotal": 90266,
+      "uniqueCharsTotal": 48684
+    },
+    {
+      "step": 10,
+      "kind": "frame",
+      "page": 33,
+      "frameId": "107046753",
+      "chars": 5179,
+      "paras": 19,
+      "isDup": true,
+      "sha256": "5cc0738a45533889ffa917bb28a537c6562c3d9c39f611ad5a6e1ac9809e6487",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 10,
+      "kind": "frame",
+      "page": 33,
+      "frameId": "107046754",
+      "chars": 3436,
+      "paras": 83,
+      "isDup": false,
+      "sha256": "a5323d61df63f97773e2f1854dfd72a742f6efb561421be928b3c5064f941cc1",
+      "head": "14\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 10,
+      "kind": "step",
+      "page": 33,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 12,
+      "rawCharsTotal": 98881,
+      "uniqueCharsTotal": 52120
+    },
+    {
+      "step": 11,
+      "kind": "frame",
+      "page": 34,
+      "frameId": "107046754",
+      "chars": 3436,
+      "paras": 83,
+      "isDup": true,
+      "sha256": "a5323d61df63f97773e2f1854dfd72a742f6efb561421be928b3c5064f941cc1",
+      "head": "14\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 11,
+      "kind": "frame",
+      "page": 34,
+      "frameId": "107046755",
+      "chars": 4543,
+      "paras": 46,
+      "isDup": false,
+      "sha256": "89ba09928eaf1ce3569468a698cc6ba1aa88c4ad5640f87b829c87a53b2453f0",
+      "head": "Opção metacognitiva\n\nEu me pergunto se"
+    },
+    {
+      "step": 11,
+      "kind": "step",
+      "page": 34,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 13,
+      "rawCharsTotal": 106860,
+      "uniqueCharsTotal": 56663
+    },
+    {
+      "step": 12,
+      "kind": "frame",
+      "page": 35,
+      "frameId": "107046755",
+      "chars": 4543,
+      "paras": 46,
+      "isDup": true,
+      "sha256": "89ba09928eaf1ce3569468a698cc6ba1aa88c4ad5640f87b829c87a53b2453f0",
+      "head": "Opção metacognitiva\n\nEu me pergunto se"
+    },
+    {
+      "step": 12,
+      "kind": "frame",
+      "page": 35,
+      "frameId": "107046756",
+      "chars": 4930,
+      "paras": 17,
+      "isDup": false,
+      "sha256": "64d5b1174841f5057a21e95b4a6a6a07643b1a254adc9a7ed595b1e4b44aaf11",
+      "head": "16\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 12,
+      "kind": "step",
+      "page": 35,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 14,
+      "rawCharsTotal": 116333,
+      "uniqueCharsTotal": 61593
+    },
+    {
+      "step": 13,
+      "kind": "frame",
+      "page": 36,
+      "frameId": "107046756",
+      "chars": 4930,
+      "paras": 17,
+      "isDup": true,
+      "sha256": "64d5b1174841f5057a21e95b4a6a6a07643b1a254adc9a7ed595b1e4b44aaf11",
+      "head": "16\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 13,
+      "kind": "frame",
+      "page": 36,
+      "frameId": "107046757",
+      "chars": 4321,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "20daecb04a84266602431db577d6c9cb6330696cb553c6d8c3991e2aae6bd7de",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 13,
+      "kind": "step",
+      "page": 36,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 15,
+      "rawCharsTotal": 125584,
+      "uniqueCharsTotal": 65914
+    },
+    {
+      "step": 14,
+      "kind": "frame",
+      "page": 37,
+      "frameId": "107046757",
+      "chars": 4321,
+      "paras": 12,
+      "isDup": true,
+      "sha256": "20daecb04a84266602431db577d6c9cb6330696cb553c6d8c3991e2aae6bd7de",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 14,
+      "kind": "frame",
+      "page": 37,
+      "frameId": "107046758",
+      "chars": 4359,
+      "paras": 16,
+      "isDup": false,
+      "sha256": "da2afa29dd3de19aa53f3e463841d0001b6b5b3993fec025ae945035097bf71b",
+      "head": "18\n\nParte I\n\n♦ A perspectiva do empreend"
+    },
+    {
+      "step": 14,
+      "kind": "step",
+      "page": 37,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 16,
+      "rawCharsTotal": 134264,
+      "uniqueCharsTotal": 70273
+    },
+    {
+      "step": 15,
+      "kind": "frame",
+      "page": 38,
+      "frameId": "107046758",
+      "chars": 4359,
+      "paras": 16,
+      "isDup": true,
+      "sha256": "da2afa29dd3de19aa53f3e463841d0001b6b5b3993fec025ae945035097bf71b",
+      "head": "18\n\nParte I\n\n♦ A perspectiva do empreend"
+    },
+    {
+      "step": 15,
+      "kind": "frame",
+      "page": 38,
+      "frameId": "107046759",
+      "chars": 4357,
+      "paras": 13,
+      "isDup": false,
+      "sha256": "1d16587e4ff75ba7ae57be6c0b53b0408f8c0499425a35165eaf0f81cfd692c9",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 15,
+      "kind": "step",
+      "page": 38,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 17,
+      "rawCharsTotal": 142980,
+      "uniqueCharsTotal": 74630
+    },
+    {
+      "step": 16,
+      "kind": "frame",
+      "page": 39,
+      "frameId": "107046759",
+      "chars": 4357,
+      "paras": 13,
+      "isDup": true,
+      "sha256": "1d16587e4ff75ba7ae57be6c0b53b0408f8c0499425a35165eaf0f81cfd692c9",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 16,
+      "kind": "frame",
+      "page": 39,
+      "frameId": "107046760",
+      "chars": 4918,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "d626e0576c34c950e5bebeed08db6a2b662aa6326ac00d8f2e29bc68eb83ae82",
+      "head": "20\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 16,
+      "kind": "step",
+      "page": 39,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 18,
+      "rawCharsTotal": 152255,
+      "uniqueCharsTotal": 79548
+    },
+    {
+      "step": 17,
+      "kind": "frame",
+      "page": 40,
+      "frameId": "107046760",
+      "chars": 4918,
+      "paras": 12,
+      "isDup": true,
+      "sha256": "d626e0576c34c950e5bebeed08db6a2b662aa6326ac00d8f2e29bc68eb83ae82",
+      "head": "20\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 17,
+      "kind": "frame",
+      "page": 40,
+      "frameId": "107046761",
+      "chars": 4982,
+      "paras": 13,
+      "isDup": false,
+      "sha256": "ccd14d7a1c77150a9a8213932c0f443d49c27502c3cc1b77092f9e607b5009ef",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 17,
+      "kind": "step",
+      "page": 40,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 19,
+      "rawCharsTotal": 162155,
+      "uniqueCharsTotal": 84530
+    },
+    {
+      "step": 18,
+      "kind": "frame",
+      "page": 41,
+      "frameId": "107046761",
+      "chars": 4982,
+      "paras": 13,
+      "isDup": true,
+      "sha256": "ccd14d7a1c77150a9a8213932c0f443d49c27502c3cc1b77092f9e607b5009ef",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 18,
+      "kind": "frame",
+      "page": 41,
+      "frameId": "107046762",
+      "chars": 4415,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "b19639754c719487f0f2568f51d2bdbbaa78f00f3bf337d22168dafb386b3124",
+      "head": "22\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 18,
+      "kind": "step",
+      "page": 41,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 20,
+      "rawCharsTotal": 171552,
+      "uniqueCharsTotal": 88945
+    },
+    {
+      "step": 19,
+      "kind": "frame",
+      "page": 42,
+      "frameId": "107046762",
+      "chars": 4415,
+      "paras": 12,
+      "isDup": true,
+      "sha256": "b19639754c719487f0f2568f51d2bdbbaa78f00f3bf337d22168dafb386b3124",
+      "head": "22\n\nParte I ♦\n\nA perspectiva do empreend"
+    },
+    {
+      "step": 19,
+      "kind": "frame",
+      "page": 42,
+      "frameId": "107046763",
+      "chars": 4117,
+      "paras": 20,
+      "isDup": false,
+      "sha256": "bff07c2261de6191a20d5a407d65dab5e9b2e81f13ad71d3842aa42ae372a616",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 19,
+      "kind": "step",
+      "page": 42,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 21,
+      "rawCharsTotal": 180084,
+      "uniqueCharsTotal": 93062
+    },
+    {
+      "step": 20,
+      "kind": "frame",
+      "page": 43,
+      "frameId": "107046763",
+      "chars": 4117,
+      "paras": 20,
+      "isDup": true,
+      "sha256": "bff07c2261de6191a20d5a407d65dab5e9b2e81f13ad71d3842aa42ae372a616",
+      "head": "Capítulo 1 ♦ O empreendedorismo e a men"
+    },
+    {
+      "step": 20,
+      "kind": "frame",
+      "page": 43,
+      "frameId": "107046764",
+      "chars": 5480,
+      "paras": 29,
+      "isDup": false,
+      "sha256": "ecb47325b86ef632ab655218de2c2cd85fa049280272c4c6890b65ffe500ac1e",
+      "head": "24 Parte I ♦ A perspectiva do empreended"
+    },
+    {
+      "step": 20,
+      "kind": "step",
+      "page": 43,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 22,
+      "rawCharsTotal": 189681,
+      "uniqueCharsTotal": 98542
+    },
+    {
+      "step": 21,
+      "kind": "frame",
+      "page": 44,
+      "frameId": "107046764",
+      "chars": 5480,
+      "paras": 29,
+      "isDup": true,
+      "sha256": "ecb47325b86ef632ab655218de2c2cd85fa049280272c4c6890b65ffe500ac1e",
+      "head": "24 Parte I ♦ A perspectiva do empreended"
+    },
+    {
+      "step": 21,
+      "kind": "frame",
+      "page": 44,
+      "frameId": "107046765",
+      "chars": 3058,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "8ee556b6fc5b51123406fdb3f7fbd2730efb7c3b24d3c8908742f25e2a7de671",
+      "head": "“Venture Capitalists and Serial Entrepre"
+    },
+    {
+      "step": 21,
+      "kind": "step",
+      "page": 44,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 23,
+      "rawCharsTotal": 198219,
+      "uniqueCharsTotal": 101600
+    },
+    {
+      "step": 22,
+      "kind": "frame",
+      "page": 45,
+      "frameId": "107046765",
+      "chars": 3058,
+      "paras": 12,
+      "isDup": true,
+      "sha256": "8ee556b6fc5b51123406fdb3f7fbd2730efb7c3b24d3c8908742f25e2a7de671",
+      "head": "“Venture Capitalists and Serial Entrepre"
+    },
+    {
+      "step": 22,
+      "kind": "frame",
+      "page": 45,
+      "frameId": "107046766",
+      "chars": 1893,
+      "paras": 12,
+      "isDup": false,
+      "sha256": "b4ff719936872c0b4d23f4a8f4dd27754cd18b1ce65f081d24b3cb63524c47a6",
+      "head": "INTRAEMPREE2NDEDORISMO OU EMPREENDEDORIS"
+    },
+    {
+      "step": 22,
+      "kind": "step",
+      "page": 45,
+      "framesSeen": 2,
+      "addedThisStep": 1,
+      "collectedCount": 24,
+      "rawCharsTotal": 203170,
+      "uniqueCharsTotal": 103493
+    },
+    {
+      "kind": "summary",
+      "steps": [
+        "pagina-limite-capitulo"
+      ],
+      "collectedPages": 24,
+      "rawCharsTotal": 203170,
+      "uniqueCharsTotal": 103493,
+      "uniqueParas": 438,
+      "reachedChapterEnd": true,
+      "maxPagesHit": false,
+      "startChapterPage": 23,
+      "nextChapterPage": 46,
+      "pageSequence": [
+        23,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45
+      ],
+      "collectedHashes": [
+        {
+          "page": 23,
+          "chars": 1923,
+          "sha256": "390dab1d28b9e2ae828bff048158719a26379f55c3e3eb8af59a4b3149fd904b"
+        },
+        {
+          "page": 23,
+          "chars": 4307,
+          "sha256": "05111c177e096223d5956b6411f2ba48ed295994ba7bd96f1ff7ca88ec37f194"
+        },
+        {
+          "page": 24,
+          "chars": 4237,
+          "sha256": "9a1b7e9747a196fd0b42eadd55623b0a777130deb5c895f5402b101cca86f8a2"
+        },
+        {
+          "page": 25,
+          "chars": 4052,
+          "sha256": "f753b245d9c09fbdf6398a4048bfe834e67fc663dc480f6bb7331c1e617d49df"
+        },
+        {
+          "page": 26,
+          "chars": 4844,
+          "sha256": "1fade65c93811935b339692787cdca6a966405e2047cd47476bc7ace9b34be75"
+        },
+        {
+          "page": 27,
+          "chars": 4486,
+          "sha256": "69855188bd910f01a5d106f4b61ef9355d2390391299215e0f5090355d90afce"
+        },
+        {
+          "page": 28,
+          "chars": 4156,
+          "sha256": "efe82984f215ea9a7a6310d9cbfa5221181ad3a9692071148d982bdbb9a9c59b"
+        },
+        {
+          "page": 29,
+          "chars": 5008,
+          "sha256": "b6478fba4e4c1329db2b25352dd2997564d637cc77b6d4cbdbb0be00baae162b"
+        },
+        {
+          "page": 30,
+          "chars": 4935,
+          "sha256": "25a9f5949df1c7dcdd7ca3644f6323e25ea1bc821b53f72a80562b8194484678"
+        },
+        {
+          "page": 31,
+          "chars": 5557,
+          "sha256": "c27a96a38423bd8c8a32afd7f414cc935a6f98b080fe849cdcd4851d31acbce0"
+        },
+        {
+          "page": 32,
+          "chars": 5179,
+          "sha256": "5cc0738a45533889ffa917bb28a537c6562c3d9c39f611ad5a6e1ac9809e6487"
+        },
+        {
+          "page": 33,
+          "chars": 3436,
+          "sha256": "a5323d61df63f97773e2f1854dfd72a742f6efb561421be928b3c5064f941cc1"
+        },
+        {
+          "page": 34,
+          "chars": 4543,
+          "sha256": "89ba09928eaf1ce3569468a698cc6ba1aa88c4ad5640f87b829c87a53b2453f0"
+        },
+        {
+          "page": 35,
+          "chars": 4930,
+          "sha256": "64d5b1174841f5057a21e95b4a6a6a07643b1a254adc9a7ed595b1e4b44aaf11"
+        },
+        {
+          "page": 36,
+          "chars": 4321,
+          "sha256": "20daecb04a84266602431db577d6c9cb6330696cb553c6d8c3991e2aae6bd7de"
+        },
+        {
+          "page": 37,
+          "chars": 4359,
+          "sha256": "da2afa29dd3de19aa53f3e463841d0001b6b5b3993fec025ae945035097bf71b"
+        },
+        {
+          "page": 38,
+          "chars": 4357,
+          "sha256": "1d16587e4ff75ba7ae57be6c0b53b0408f8c0499425a35165eaf0f81cfd692c9"
+        },
+        {
+          "page": 39,
+          "chars": 4918,
+          "sha256": "d626e0576c34c950e5bebeed08db6a2b662aa6326ac00d8f2e29bc68eb83ae82"
+        },
+        {
+          "page": 40,
+          "chars": 4982,
+          "sha256": "ccd14d7a1c77150a9a8213932c0f443d49c27502c3cc1b77092f9e607b5009ef"
+        },
+        {
+          "page": 41,
+          "chars": 4415,
+          "sha256": "b19639754c719487f0f2568f51d2bdbbaa78f00f3bf337d22168dafb386b3124"
+        },
+        {
+          "page": 42,
+          "chars": 4117,
+          "sha256": "bff07c2261de6191a20d5a407d65dab5e9b2e81f13ad71d3842aa42ae372a616"
+        },
+        {
+          "page": 43,
+          "chars": 5480,
+          "sha256": "ecb47325b86ef632ab655218de2c2cd85fa049280272c4c6890b65ffe500ac1e"
+        },
+        {
+          "page": 44,
+          "chars": 3058,
+          "sha256": "8ee556b6fc5b51123406fdb3f7fbd2730efb7c3b24d3c8908742f25e2a7de671"
+        },
+        {
+          "page": 45,
+          "chars": 1893,
+          "sha256": "b4ff719936872c0b4d23f4a8f4dd27754cd18b1ce65f081d24b3cb63524c47a6"
+        }
+      ]
+    }
+  ]
+}
