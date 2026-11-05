@@ -1,0 +1,45 @@
+{
+  "test": "D",
+  "status": "PASS",
+  "steps": [
+    {
+      "step": "electron-launch-via-playwright",
+      "ok": true
+    },
+    {
+      "step": "ui-interaction",
+      "title": "UNIVESP Study Tool",
+      "outText": "Botão clicado - UI responsiva"
+    },
+    {
+      "step": "portable-target-viability",
+      "hasPortableTarget": true
+    }
+  ],
+  "approval": [
+    {
+      "criterion": "electronConduzidoPorPlaywright",
+      "met": true
+    },
+    {
+      "criterion": "uiOperadaNoMesmoProcesso",
+      "met": true
+    },
+    {
+      "criterion": "portableTargetDisponivel",
+      "met": true
+    }
+  ],
+  "electron": {
+    "title": "UNIVESP Study Tool",
+    "appVersion": "45.2.1",
+    "outText": "Botão clicado - UI responsiva",
+    "ok": true
+  },
+  "builder": {
+    "version": "26.18.0",
+    "targetConfigured": true,
+    "ok": true
+  },
+  "elapsedMs": 0
+}

@@ -1,0 +1,100 @@
+{
+  "test": "C",
+  "status": "PASS",
+  "pdfs": [
+    {
+      "title": "S1 Videoaula 1 - Slides de Apoio",
+      "url": "https://assets.univesp.br/disciplinas/ADM270/pdf/s1_slides_videoaula1.pdf",
+      "bytes": 939805,
+      "textLength": 5844,
+      "textSample": "Empreendedor e Empreendedorismo\nIntrodução\nEMPREENDEDORISMO E INOVAÇÃO\n\n-- 1 of 18 --\n\n O crescimento e o nível de desenvolvimento\neconômico de um país podem ser avaliados pela\neficiência com que são produzidos bens e\nserviços, que ao serem adquiridos elevam a\nqualidade de vida e o grau de bem-esta",
+      "pages": 18,
+      "pagesInfo": {
+        "PDFFormatVersion": "1.4",
+        "Language": "pt-BR",
+        "EncryptFilterName": null,
+        "IsLinearized": false,
+        "IsAcroFormPresent": false,
+        "IsXFAPresent": false,
+        "IsCollectionPresent": false,
+        "IsSignaturesPresent": false,
+        "Title": "O Estado de Natureza",
+        "Author": "Rafael Leal",
+        "CreationDate": "D:20230905152142-03'00'",
+        "ModDate": "D:20230905152142-03'00'",
+        "Producer": "Microsoft® PowerPoint® 2016",
+        "Creator": "Microsoft® PowerPoint® 2016"
+      },
+      "status": "extraido-integralmente"
+    },
+    {
+      "title": "S1 Videoaula 2 - Slides de Apoio",
+      "url": "https://assets.univesp.br/disciplinas/ADM270/pdf/s1_slides_videoaula2.pdf",
+      "bytes": 1379827,
+      "textLength": 4562,
+      "textSample": "Características\ndo Empreendedor\nEMPREENDEDORISMO E INOVAÇÃO\n\n-- 1 of 18 --\n\n É possível aprender a ser Empreendedor?\n Até tempos atrás, muitos autores acreditavam\nque essa fosse uma característica INATA, ou\nseja, que a pessoa nascia com capacidades para\ndesempenhar determinada atividade, no caso\nE",
+      "pages": 18,
+      "pagesInfo": {
+        "PDFFormatVersion": "1.4",
+        "Language": "pt-BR",
+        "EncryptFilterName": null,
+        "IsLinearized": false,
+        "IsAcroFormPresent": false,
+        "IsXFAPresent": false,
+        "IsCollectionPresent": false,
+        "IsSignaturesPresent": false,
+        "Title": "O Estado de Natureza",
+        "Author": "Rafael Leal",
+        "CreationDate": "D:20230905152122-03'00'",
+        "ModDate": "D:20230905152122-03'00'",
+        "Producer": "Microsoft® PowerPoint® 2016",
+        "Creator": "Microsoft® PowerPoint® 2016"
+      },
+      "status": "extraido-integralmente"
+    },
+    {
+      "title": "S1 Videoaula 3 - Slides de Apoio",
+      "url": "https://assets.univesp.br/disciplinas/ADM270/pdf/s1_slides_videoaula3.pdf",
+      "bytes": 1698417,
+      "textLength": 7265,
+      "textSample": "Importância da Inovação\npara o Brasil\nEMPREENDEDORISMO E INOVAÇÃO\n\n-- 1 of 26 --\n\nINOVAÇÃO E DESENVOLVIMENTO ECONÔMICO\n INOVAÇÃO – A reação de Obama\n Barack Obama lança esforço para estimular\ninvestimentos em inovação.\n O governo dos Estados Unidos anunciou o\nlançamento de uma concorrência para a",
+      "pages": 26,
+      "pagesInfo": {
+        "PDFFormatVersion": "1.4",
+        "Language": "pt-BR",
+        "EncryptFilterName": null,
+        "IsLinearized": false,
+        "IsAcroFormPresent": false,
+        "IsXFAPresent": false,
+        "IsCollectionPresent": false,
+        "IsSignaturesPresent": false,
+        "Title": "O Estado de Natureza",
+        "Author": "Rafael Leal",
+        "CreationDate": "D:20230905152301-03'00'",
+        "ModDate": "D:20230905152301-03'00'",
+        "Producer": "Microsoft® PowerPoint® 2016",
+        "Creator": "Microsoft® PowerPoint® 2016"
+      },
+      "status": "extraido-integralmente"
+    }
+  ],
+  "approval": [
+    {
+      "criterion": "pdfsDownloaded",
+      "met": true
+    },
+    {
+      "criterion": "textExtracted",
+      "met": true
+    },
+    {
+      "criterion": "paginationCaptured",
+      "met": true
+    },
+    {
+      "criterion": "allClassified",
+      "met": true
+    }
+  ],
+  "elapsedMs": 3080
+}

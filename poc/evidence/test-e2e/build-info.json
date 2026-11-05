@@ -1,0 +1,16 @@
+{
+    "winUnpacked":  {
+                        "sha256":  "4551ADABFAC9959F035D7B1F634596D1F6B5B7D17CC2182A441049F9C19D3F87",
+                        "builtAt":  "2026-11-03T17:43:11.9848951-03:00",
+                        "file":  "UnivespStudyTool.exe",
+                        "bytes":  249788928,
+                        "sizeMB":  238.2
+                    },
+    "portable":  {
+                     "sha256":  "4B85D1004F04418E3F7585F38259440A746EECDE4260D63F0025CE66F9C75E73",
+                     "builtAt":  "2026-11-03T17:45:53.5079474-03:00",
+                     "file":  "UnivespStudyTool-1.0.0.exe",
+                     "bytes":  124861093,
+                     "sizeMB":  119.1
+                 }
+}

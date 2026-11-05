@@ -1,0 +1,32 @@
+{
+  "startTime": "2026-11-03T21:03:59.941Z",
+  "phases": [
+    {
+      "name": "launch-browser",
+      "ok": true
+    },
+    {
+      "name": "login",
+      "ok": true,
+      "url": "https://ava.univesp.br/my/"
+    },
+    {
+      "name": "discover-courses",
+      "count": 10
+    }
+  ],
+  "cleanup": {
+    "ok": true,
+    "removed": true
+  },
+  "zip": {
+    "ok": true,
+    "bytes": 840512,
+    "files": 9,
+    "path": "C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-study-poc-1793739838131\\UNIVESP_ADM270_S1.zip",
+    "file": "C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-study-poc-1793739838131\\UNIVESP_ADM270_S1.zip"
+  },
+  "evidenceCopied": true,
+  "status": "ok",
+  "endTime": "2026-11-03T21:04:35.476Z"
+}

@@ -1,0 +1,44 @@
+# Dependencias
+node_modules/
+
+# Artefatos de execucao (sessao, cache, saida) — NUNCA versionar
+session/
+output/
+.cache/
+*.session.json
+
+# Credenciais e segredos — NUNCA versionar
+.env
+*.env
+login.env
+credentials.json
+secrets.*
+*.key
+*.pem
+
+# Logs
+*.log
+npm-debug.log*
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Artefatos de build/empacotamento
+dist/
+
+# Dump HTML autenticado (dados pessoais) — nunca versionar
+debug-mycourses.html
+
+# Evidências binárias e materiais baixados (copyright/privacidade)
+poc/evidence/**/tmp/
+poc/evidence/**/artifacts/
+poc/evidence/**/*.zip
+
+# Texto bruto extraído e saída da PoC (conteúdo protegido por copyright — a
+# ferramenta é para uso pessoal do estudante, não para republicação pública).
+# Os arquivos permanecem localmente como evidência; não são versionados.
+poc/evidence/module1/*.txt
+poc/evidence/module1/result.json
+poc/evidence/module2/result.json
+poc/evidence/test-e2e/saida/

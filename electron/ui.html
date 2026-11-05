@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>UNIVESP Study Tool — Etapa 2</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 24px; background: #f5f6f8; color: #1a1a2e; }
+    h1 { font-size: 22px; }
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-top: 12px; }
+    button { padding: 10px 18px; font-size: 15px; border: none; border-radius: 6px; background: #2b6cb0; color: #fff; cursor: pointer; }
+    button:disabled { background: #a0aec0; cursor: not-allowed; }
+    #log { font-family: Consolas, monospace; font-size: 12px; background: #111; color: #7dff9b; padding: 12px; border-radius: 6px; min-height: 200px; white-space: pre-wrap; }
+    .step { margin: 4px 0; }
+    .ok { color: #2f9e44; } .fail { color: #e03131; }
+  </style>
+</head>
+<body>
+  <h1>UNIVESP Study Tool — Validação Etapa 2 (empacotamento portátil)</h1>
+  <div class="card">
+    <p id="env">Carregando...</p>
+    <button id="start">Iniciar extração da PoC (ADM270 — Semana 1)</button>
+    <p><small>O login será feito manualmente na janela do navegador que abrir.</small></p>
+  </div>
+  <div class="card"><div id="log"></div></div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const startBtn = document.getElementById('start');
+    function addLine(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'step ' + (cls || '');
+      d.textContent = text;
+      logEl.appendChild(d);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    async function init() {
+      const env = await window.api.getEnv();
+      document.getElementById('env').textContent =
+        `Versão: ${env.appVersion} | Empacotado: ${env.packaged} | Saída: ${env.outputDir}`;
+    }
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      addLine('Iniciando...');
+      const res = await window.api.startPoc();
+      addLine('Finalizado: ' + JSON.stringify(res));
+    });
+    window.api.onStatus((s) => {
+      const txt = JSON.stringify(s);
+      addLine(txt, s.ok === false ? 'fail' : (s.ok ? 'ok' : ''));
+    });
+    init();
+  </script>
+</body>
+</html>

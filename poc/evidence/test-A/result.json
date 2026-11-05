@@ -1,0 +1,138 @@
+{
+  "test": "A",
+  "status": "PASS",
+  "steps": [
+    {
+      "step": "open-profile",
+      "userDataDir": "C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-poc-A-5510dab3"
+    },
+    {
+      "step": "login",
+      "ok": true,
+      "url": "https://ava.univesp.br/my/"
+    },
+    {
+      "step": "discover-courses",
+      "count": 10,
+      "probes": [
+        {
+          "url": "https://ava.univesp.br/admin/tool/custompage/view.php?id=3",
+          "finalUrl": "https://ava.univesp.br/admin/tool/custompage/view.php?id=3",
+          "links": 0
+        },
+        {
+          "url": "https://ava.univesp.br/my/",
+          "finalUrl": "https://ava.univesp.br/my/",
+          "links": 0
+        },
+        {
+          "url": "https://ava.univesp.br/",
+          "finalUrl": "https://ava.univesp.br/my/",
+          "links": 0
+        },
+        {
+          "url": "https://ava.univesp.br/my/courses.php",
+          "finalUrl": "https://ava.univesp.br/my/courses.php",
+          "links": 10
+        }
+      ]
+    },
+    {
+      "step": "discover-weeks",
+      "course": "Empreendedorismo e Inovação - ADM270 - Turma 002",
+      "sections": 9,
+      "modLinks": 88
+    },
+    {
+      "step": "profile-check",
+      "passwordStoreFiles": [
+        {
+          "file": "Login Data",
+          "bytes": 40960
+        },
+        {
+          "file": "Login Data-journal",
+          "bytes": 0
+        },
+        {
+          "file": "Web Data",
+          "bytes": 157696
+        },
+        {
+          "file": "Web Data-journal",
+          "bytes": 0
+        }
+      ],
+      "savedPasswords": 0,
+      "autofillPrefs": false,
+      "notes": [
+        "Tabela \"logins\" vazia — nenhuma senha salva (arquivo contém apenas o schema padrão do Chromium)."
+      ]
+    },
+    {
+      "step": "cleanup",
+      "ok": true,
+      "removed": true
+    }
+  ],
+  "approval": [
+    {
+      "criterion": "sessionUsable",
+      "met": true
+    },
+    {
+      "criterion": "coursesDetected",
+      "met": true
+    },
+    {
+      "criterion": "weeksDetected",
+      "met": true
+    },
+    {
+      "criterion": "noCredsPersisted",
+      "met": true
+    },
+    {
+      "criterion": "profileNoAutofill",
+      "met": true
+    }
+  ],
+  "elapsedMs": 129772,
+  "summary": {
+    "courses": [
+      "Digital Workplace e tendências em RH - ADM290 - Turma 002",
+      "Empreendedorismo e Inovação - ADM270 - Turma 002",
+      "Sociologia - SOC200 - Turma 002",
+      "Metodologias ágeis - CIN200 - Turma 002",
+      "Gestão de Pessoas - ADM250 - Turma 002",
+      "Indicadores de desempenho para a tomada de decisão - ADM260 - Turma 002",
+      "AIA - Ambientação e Integração Acadêmica",
+      "LEGADO_INT100 - Projetos e Métodos para a Produção do Conhecimento",
+      "Gestão Contábil - ADM230 - Turma 002",
+      "Estatística aplicada aos negócios - ADM240 - Turma 002"
+    ],
+    "weeksCount": 88,
+    "weekTitles": [
+      "Avisos",
+      "Live com facilitador",
+      "Apresentação da disciplina",
+      "Fórum de dúvidas gerais",
+      "Referências da disciplina",
+      "S1 - Início",
+      "S1 - Videoaulas",
+      "S1 - Texto-base - Empreendedorismo (Leia a Unidade 1 “Empreendedorismo”) | Teresa Cristina Lopes Fabrete",
+      "S1 - Texto-base - Empreendedorismo: dando asas ao espírito empreendedor (Leia o Capítulo 1 “Espírito empreendedor”) | Idalberto Chiavenato",
+      "S1 - Texto-base - Empreendedorismo (leia o capítulo 1 \"O empreendedorismo e a mentalidade empreendedora\") | Robert D. Hisrich, Michael P. Peters e Dean A. Shepherd",
+      "S1 - Vídeo-base - Palestra empreendedorismo e seus reflexos para o Brasil (Veja até 25min)",
+      "S1 - Fórum temático",
+      "S1 - Atividade Avaliativa",
+      "S1 - Aprofundando o tema",
+      "S1 - Em síntese",
+      "S1 - Live com facilitador",
+      "S2 - Início",
+      "S2 - Videoaulas",
+      "S2 - Texto-base - Empreendedorismo (Leia a Unidade 2) | Teresa Cristina Lopes Fabrete",
+      "S2 - Texto-base - Empreendedorismo: dando asas ao espírito empreendedor (Leia o Capítulo 2) | Idalberto Chiavenato"
+    ]
+  }
+}

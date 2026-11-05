@@ -1,0 +1,42 @@
+{
+  "name": "univespscraper",
+  "version": "1.0.0",
+  "description": "Ferramenta para extrair e organizar academicamente o conteudo das disciplinas da UNIVESP (AVA), sem armazenar credenciais.",
+  "main": "electron/main.js",
+  "author": "lrfsantos",
+  "license": "MIT",
+  "scripts": {
+    "app": "electron .",
+    "build:portable": "electron-builder --win portable",
+    "build:dir": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "br.univesp.studytool",
+    "productName": "UnivespStudyTool",
+    "files": [
+      "electron/**/*",
+      "src/lib/**/*",
+      "src/extract/**/*",
+      "!**/node_modules/*/{test,__tests__,tests,examples,docs}/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "UnivespStudyTool-${version}.exe"
+    },
+    "extraResources": []
+  },
+  "dependencies": {
+    "pdf-parse": "2.4.5",
+    "playwright-core": "^1.64.1",
+    "youtube-transcript": "1.3.1"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  }
+}
