@@ -13,6 +13,8 @@
 //     canvas) ou o leitor não carrega.
 // Nunca contorna DRM, canvas ou controles de acesso: registra e segue.
 
+const crypto = require('crypto');
+
 // ---- Constantes / padrões ----
 
 // Mensagens de erro/incompatibilidade que NÃO são conteúdo acadêmico.
@@ -27,6 +29,14 @@ const PAGEID_CONTENT_RE = /\/pages\/\d+\/content/i;
 const PLATAFORMA_BV_RE = /plataforma\.bvirtual|leitor\.bvirtual|\/Leitor\//i;
 
 // ---- Helpers de espera (evitam depender de tempos fixos) ----
+
+function sha256(s) {
+  return crypto.createHash('sha256').update(s || '').digest('hex');
+}
+
+function countParas(s) {
+  return (s || '').split(/\n{2,}/).filter((p) => p.trim()).length;
+}
 
 function waitTimeout(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -178,16 +188,28 @@ function validateContent({ text, expected, kind }) {
 
 // ---- Status honesto ----
 
-function statusForBook({ format, validation, readerLoaded, chapterNotFound }) {
+// `integral` exige EVIDÊNCIA POSITIVA de todas as validações (começo, meio, fim,
+// capítulo quando esperado, sem repetições e sem avisos). Ausência de validação
+// ou qualquer falha comprovada rebaixa o status — nunca `integral` por omissão.
+function statusForBook({ format, validation, readerLoaded, chapterNotFound, expected }) {
   if (!readerLoaded) return 'inaccessible';
   if (format === 'bvpdf' || format === 'bvleitor') return 'inaccessible'; // conteúdo em canvas/DRM
   if (chapterNotFound) return 'not_found';
-  if (!validation.hasText || !validation.noNonsense) {
-    if (validation.length > 0 && !validation.noNonsense) return 'inaccessible';
-    return 'not_found';
-  }
-  if (validation.warnings.length > 0) return 'partial';
-  return 'integral';
+  if (!validation.hasText) return 'not_found';
+  if (!validation.noNonsense) return 'inaccessible';
+
+  const chapterRequired = !!(expected && expected.chapter);
+  const integral =
+    validation.hasText &&
+    validation.noNonsense &&
+    validation.startOk &&
+    validation.midOk &&
+    validation.endOk &&
+    (!chapterRequired || validation.chapterOk === true) &&
+    (!validation.repetitions || validation.repetitions.length === 0) &&
+    Array.isArray(validation.warnings) &&
+    validation.warnings.length === 0;
+  return integral ? 'integral' : 'partial';
 }
 
 // ---- Extração EPUB (ex.: Chiavenato) ----
@@ -295,7 +317,7 @@ async function extractEpub(app, win, launchUrl, expected) {
   return {
     url: launchUrl,
     format: 'epub',
-    status: statusForBook({ format: 'epub', validation: finalValidation, readerLoaded: true, chapterNotFound }),
+    status: statusForBook({ format: 'epub', validation: finalValidation, readerLoaded: true, chapterNotFound, expected }),
     text: res.text,
     chars: res.text.trim().length,
     source: 'epub',
@@ -409,8 +431,11 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   const startChapterPage = expected && expected.chapter ? tocPages[expected.chapter] : null;
   const seenTexts = new Set();
   const collected = [];
+  const trace = Array.isArray(opts.trace) ? opts.trace : null;
   let reachedChapterEnd = false;
   let maxPagesHit = false;
+  let rawCharsTotal = 0;
+  let uniqueCharsTotal = 0;
 
   for (let i = 0; i < maxPages; i++) {
     const curPage = await getCurrentPrintedPage(app);
@@ -422,24 +447,44 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     // Coleta as páginas de conteúdo, deduplicando por texto (o leitor
     // pré-carrega a página seguinte — sem dedupe haveria conteúdo duplicado).
     const frames = await readPageContentFrames(app);
-    let added = false;
+    let added = 0;
     for (const f of frames) {
       const t = f.text.trim();
+      if (trace) {
+        rawCharsTotal += t.length;
+        trace.push({ step: i, kind: 'frame', page: curPage, frameId: f.id, chars: t.length, paras: countParas(t), isDup: seenTexts.has(t), sha256: sha256(t), head: t.slice(0, 40) });
+      }
       if (!t || seenTexts.has(t)) continue;
       seenTexts.add(t);
       collected.push({ page: curPage, text: t });
-      added = true;
+      uniqueCharsTotal += t.length;
+      added++;
     }
     // Fallback (sem TOC): cabeçalho "Capítulo N+1" no início de uma página.
     if (!nextChapterPage && collected.length >= 2 && nextChapter && frames.some((f) => nextChapter.test(f.text))) {
       reachedChapterEnd = true; steps.push('cabecalho-capitulo-seguinte'); break;
     }
     if (!added) { steps.push('sem-conteudo-novo'); break; }
+    if (trace) trace.push({ step: i, kind: 'step', page: curPage, framesSeen: frames.length, addedThisStep: added, collectedCount: collected.length, rawCharsTotal, uniqueCharsTotal });
     const ok = await clickNextPage(app);
     if (!ok) { steps.push('sem-botao-seguinte'); break; }
     await waitTimeout(2500);
   }
   if (!reachedChapterEnd && collected.length >= maxPages) { maxPagesHit = true; steps.push('limite-de-paginas'); }
+  if (trace) trace.push({
+    kind: 'summary',
+    steps: steps.slice(),
+    collectedPages: collected.length,
+    rawCharsTotal,
+    uniqueCharsTotal,
+    uniqueParas: countParas(collected.map((p) => p.text).join('\n\n')),
+    reachedChapterEnd,
+    maxPagesHit,
+    startChapterPage,
+    nextChapterPage,
+    pageSequence: collected.map((p) => p.page),
+    collectedHashes: collected.map((p) => ({ page: p.page, chars: p.text.trim().length, sha256: sha256(p.text.trim()) })),
+  });
 
   const text = collected.map((p) => `\n[PÁGINA ${p.page ? 'impressa ' + p.page : '?'}]\n${p.text}`).join('\n\n');
   // Confirma o capítulo pela FAIXA de páginas impressas do sumário (23..45 => cap. 1)
@@ -454,7 +499,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   return {
     url: launchUrl,
     format: 'pageid',
-    status: statusForBook({ format: 'pageid', validation, readerLoaded, chapterNotFound: false }),
+    status: statusForBook({ format: 'pageid', validation, readerLoaded, chapterNotFound: false, expected }),
     text,
     chars: text.trim().length,
     source: 'pageid',
