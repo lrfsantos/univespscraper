@@ -64,7 +64,7 @@ function log(ev, data) {
     await win.waitForSelector('body', { timeout: 30000 });
 
     // Login automático
-    log('LOGIN', { username: USERNAME });
+    log('LOGIN', { credentialsProvided: true });
     await win.goto('https://ava.univesp.br/custom/univesp_saml.php?wantsurl=' + encodeURIComponent('https://ava.univesp.br/') + '&login_hint=' + encodeURIComponent(USERNAME), { waitUntil: 'domcontentloaded', timeout: 60000 });
     await win.waitForSelector('form[name="f"]', { timeout: 30000 });
     await win.fill('input#password', PASSWORD);
@@ -115,7 +115,14 @@ function log(ev, data) {
     const accessible = result.books.filter((b) => !b.expectInaccessible);
     crit.accessibleExtracted = accessible.some((b) => b.status === 'integral' || b.status === 'partial');
     crit.accessibleValidated = accessible.every((b) => b.status === 'integral' || b.status === 'partial');
-    crit.noIntegralWithoutValidation = accessible.every((b) => b.status !== 'integral' || (b.validation && b.validation.warnings.length === 0));
+    crit.noIntegralWithoutValidation = accessible.every((b) => {
+      if (b.status !== 'integral') return true;
+      const v = b.validation;
+      return !!(v && v.hasText && v.noNonsense && v.startOk && v.midOk && v.endOk &&
+        (!b.expected || !b.expected.chapter || v.chapterOk === true) &&
+        (!v.repetitions || v.repetitions.length === 0) &&
+        Array.isArray(v.warnings) && v.warnings.length === 0);
+    });
     const bv = result.books.find((b) => b.expectInaccessible);
     crit.bvirtualMarkedInaccessible = !bv || bv.status === 'inaccessible';
     crit.noNonsenseAsContent = result.books.every((b) => !b.validation || b.validation.noNonsense === true || b.status === 'inaccessible');
