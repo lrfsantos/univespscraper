@@ -42,3 +42,10 @@ poc/evidence/module1/*.txt
 poc/evidence/module1/result.json
 poc/evidence/module2/result.json
 poc/evidence/test-e2e/saida/
+
+# Evidencias de extração de livros/vídeos: podem conter conteúdo protegido,
+# dados pessoais, nomes de usuário ou trechos extraídos. Nunca versionar.
+poc/evidence/**/result.json
+poc/evidence/**/run.log
+poc/evidence/**/tmp/
+poc/evidence/**/artifacts/
