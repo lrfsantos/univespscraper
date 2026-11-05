@@ -49,7 +49,7 @@ async function askCredentials() {
 
 function printHelp() {
   console.log(`
-univespscraper v${pkg.version} — Extrai e resume academicamente disciplinas da UNIVESP
+univespscraper v${pkg.version} — Extrai e organiza academicamente as disciplinas da UNIVESP
 
 USO:
   node src/cli.js scrape [opções]

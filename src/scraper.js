@@ -7,7 +7,6 @@ const { parsePage, classifyActivity } = require('./lib/extract');
 const { downloadPdf, pdfText } = require('./lib/pdf');
 const { getYoutubeTranscript } = require('./lib/transcripts');
 const { extractReading, parseRanges, parseChapter } = require('./lib/books');
-const { summarizeVideo } = require('./lib/summarize');
 const { saveReport } = require('./lib/report');
 
 const PDF_RE = /\.pdf($|[?#])/i;
@@ -88,14 +87,10 @@ async function processCourse({ cookies, course, opts }) {
         for (const ifr of iframes) w.videoaulas.videos.push({ url: ifr, title: '', type: 'youtube' });
         for (const v of page.videos || []) if (YT_RE.test(v.url)) w.videoaulas.videos.push(v);
         w.videoaulas.slides = page.pdfs || [];
-        // processa transcrição + resumo de cada vídeo
+        // processa transcrição de cada vídeo (sem resumo — regra: não resumir)
         for (const v of w.videoaulas.videos) {
           const tr = await getYoutubeTranscript(v.url);
-          if (tr.ok) {
-            const summ = await summarizeVideo(v.title || 'Videoaula', tr.transcript, opts);
-            v.transcript = tr.transcript;
-            v.summary = typeof summ.summary === 'string' ? summ.summary : (summ.points || []).join('\n');
-          }
+          if (tr.ok) v.transcript = tr.transcript;
         }
       } else if (kind === 'inicio') {
         w.inicio = await fetchActivity({ client, url: act.url });
@@ -104,10 +99,7 @@ async function processCourse({ cookies, course, opts }) {
         for (const v of (w.aprofundando.videos || [])) {
           if (YT_RE.test(v.url)) {
             const tr = await getYoutubeTranscript(v.url);
-            if (tr.ok) {
-              const summ = await summarizeVideo(v.title || 'Vídeo de apoio', tr.transcript, opts);
-              v.summary = typeof summ.summary === 'string' ? summ.summary : (summ.points || []).join('\n');
-            }
+            if (tr.ok) v.transcript = tr.transcript;
           }
         }
       } else if (kind === 'sintese') {
