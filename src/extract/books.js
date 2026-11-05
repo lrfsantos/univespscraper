@@ -138,9 +138,11 @@ function validateContent({ text, expected, kind }) {
   const start = t.slice(0, 400);
   const meaningfulStart = (start.match(/[a-zà-ú]{4,}/gi) || []).length >= 15;
   v.startOk = meaningfulStart && !FRONT_RE.test(start);
+  if (!v.startOk) v.warnings.push('inicio-nao-validado');
 
   const paras = t.split(/\n{2,}/).filter((p) => p.trim());
   v.midOk = v.length >= 3000 && paras.length >= 8;
+  if (!v.midOk) v.warnings.push('meio-nao-validado');
 
   if (kind === 'pageid') {
     v.endOk = !!expected && !!expected.reachedChapterEnd;
@@ -167,13 +169,9 @@ function validateContent({ text, expected, kind }) {
       if (!v.chapterOk) v.warnings.push(`capitulo-${expected.chapter}-nao-confirmado-no-texto`);
     }
   }
-  if (expected && expected.book) {
-    const tokens = expected.book.split(/\s+/).filter((w) => w.length > 3).slice(0, 3);
-    if (tokens.length >= 2) {
-      const bookRe = new RegExp(tokens.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
-      if (bookRe.test(t)) v.chapterOk = true; // reforça que é o livro certo
-    }
-  }
+  // O título do livro pode aparecer no sumário/cabeçalho sem que o capítulo
+  // solicitado tenha sido extraído. Nunca use expected.book para aprovar
+  // chapterOk; capítulo exige evidência própria (texto ou faixa de páginas).
 
   return v;
 }
