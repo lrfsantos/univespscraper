@@ -814,7 +814,12 @@ function parsePageidFrameIdentity(url, src) {
   const hay = `${url || ''} ${src || ''}`;
   const m = PAGEID_FRAME_RE.exec(hay);
   if (!m) return { pageid: null, pages: null };
-  return { pageid: m[1] != null ? parseInt(m[1], 10) : null, pages: m[2] != null ? parseInt(m[2], 10) : null };
+  const toNum = (s) => {
+    if (s == null) return null;
+    const n = parseInt(s, 10);
+    return Number.isNaN(n) || n < 0 ? null : n;
+  };
+  return { pageid: toNum(m[1]), pages: toNum(m[2]) };
 }
 
 // Decide se um frame é frame de CONTEÚDO pageid (e não o topo/shell). Puro.
@@ -830,7 +835,9 @@ async function readPageidFrames(app) {
     const src = await frame.evaluate(() => { const el = window.frameElement; return el ? el.getAttribute('src') || '' : ''; }).catch(() => '');
     if (!isPageidContentFrame(url, src)) continue;
     const identity = parsePageidFrameIdentity(url, src);
-    if (!identity.pageid && !identity.pages) continue;
+    // Verificação explícita de AUSÊNCIA (null/undefined): pageid/pages ZERO são
+    // identidades válidas e NUNCA devem ser descartadas por truthiness.
+    if (identity.pageid == null && identity.pages == null) continue;
     const style = await frame.evaluate(() => {
       const el = window.frameElement; if (!el) return null;
       const cs = getComputedStyle(el);
@@ -864,34 +871,56 @@ async function waitDriverChange(driver, prevState, timeoutMs = 8000) {
 }
 
 // NÚCLEO da sincronização (Issue B): captura o conteúdo do frame da página EXIBIDA
-// somente quando:
-//   1. a página exibida (pageid do topo) tem um frame de conteúdo com identidade
-//      compatível (pageid do frame == pageid exibido);
-//   2. o conteúdo desse frame NÃO é o da página anterior (hash != prevHash) — ou
-//      seja, a corrida "interface mostra a página N+1, mas o frame ainda tem a
-//      página N" NUNCA atribui conteúdo antigo à página nova (e vice-versa);
-//   3. há EXATAMENTE um frame candidato (múltiplos = ambíguo).
+// seguindo o contrato:
+//   1. obtém o estado atual do leitor (st1);
+//   2. identifica a página/PAGEID ESPERADA a partir de expectedState (a página que
+//      o laço de extração quer capturar) — não apenas o estado "ao vivo";
+//   3. obtém os frames disponíveis;
+//   4. re-verifica o estado (st2): se mudou entre as leituras (CASO C), descarta a
+//      tentativa inconsistente e sincroniza de novo;
+//   5. identifica o frame cuja identidade (pageid da URL/src) corresponde à página
+//      esperada — exatamente um candidato;
+//   6. o conteúdo do frame NÃO pode ser o da página anterior (hash != prevHash) —
+//      as corridas "interface mostra N+1, frame ainda tem N" (CASO A) e inversa
+//      (CASO B) NUNCA atribuem conteúdo errado à página;
+//   7. re-verifica a identidade APÓS escolher o frame (st3): se a página esperada
+//      mudou durante a captura (CASO D), descarta a captura e sincroniza de novo;
+//   8. dois frames com a mesma identidade (CASO E) → falha conservadora (ambíguo).
 // Não usa setTimeout como garantia: espera o estado VERIFICÁVEL do frame atualizar.
 // Testável: opera sobre um driver (leitor real ou simulado).
 async function syncCaptureFrame(driver, expectedState, prevHash, timeoutMs = 8000) {
   const deadline = Date.now() + timeoutMs;
   let last = null;
+  let lastStable = null;
+  let discards = 0;
   while (Date.now() < deadline) {
-    const st = await driver.state();
+    const st1 = await driver.state();
+    const pageTarget = expectedState && expectedState.pageid != null ? expectedState.pageid : st1.pageid;
     const frames = await driver.frames();
+    const st2 = await driver.state();
+    const sameAs = (a, b) => a != null && b != null && a !== b;
+    if (sameAs(st1.pageid, st2.pageid) || sameAs(st1.printed, st2.printed) || (pageTarget != null && st2.pageid != null && pageTarget !== st2.pageid)) {
+      discards++; last = { inconsistent: true }; await waitTimeout(300); continue;
+    }
     const content = frames.filter((f) => f.text && f.text.trim().length > 0);
-    const byIdentity = content.filter((f) => f.identity && f.identity.pageid != null && f.identity.pageid === st.pageid);
-    last = { st, byIdentity: byIdentity.length };
+    const byIdentity = content.filter((f) => f.identity && f.identity.pageid != null && f.identity.pageid === pageTarget);
+    last = { st: st2, byIdentity: byIdentity.length };
+    lastStable = st2;
     if (byIdentity.length === 0) { await waitTimeout(400); continue; }
     if (byIdentity.length > 1) {
-      return { status: 'ambiguous', pageid: st.pageid, printed: st.printed, reason: 'multiplos-frames-mesma-identidade', text: null, chars: 0, hash: null, audit: { pageid: st.pageid, printed: st.printed, status: 'ambiguous', reason: 'multiplos-frames-mesma-identidade', frames: byIdentity.map((f) => ({ identity: f.identity.pageid, hash: f.hash })) } };
+      return { status: 'ambiguous', pageid: st2.pageid, printed: st2.printed, reason: 'multiplos-frames-mesma-identidade', text: null, chars: 0, hash: null, discards, audit: { pageid: st2.pageid, printed: st2.printed, status: 'ambiguous', reason: 'multiplos-frames-mesma-identidade', discards, frames: byIdentity.map((f) => ({ identity: f.identity.pageid, hash: f.hash })) } };
     }
     const f = byIdentity[0];
     if (prevHash != null && f.hash === prevHash) { await waitTimeout(400); continue; }
-    return { status: 'captured', pageid: st.pageid, printed: st.printed, text: f.text, chars: f.chars, hash: f.hash, frameId: f.frameId, identity: f.identity, active: f.active, reason: null, audit: { pageid: st.pageid, printed: st.printed, frameIdentity: f.identity, frameId: f.frameId, origin: 'identity-sync', activeStyle: f.active, hash: f.hash, chars: f.chars, status: 'accepted' } };
+    const st3 = await driver.state();
+    if (sameAs(st2.pageid, st3.pageid) || sameAs(st2.printed, st3.printed) || (pageTarget != null && st3.pageid != null && pageTarget !== st3.pageid)) {
+      discards++; last = { inconsistent: true }; await waitTimeout(300); continue;
+    }
+    return { status: 'captured', pageid: st3.pageid, printed: st3.printed, text: f.text, chars: f.chars, hash: f.hash, frameId: f.frameId, identity: f.identity, active: f.active, reason: null, discards, audit: { pageid: st3.pageid, printed: st3.printed, frameIdentity: f.identity, frameId: f.frameId, origin: 'identity-sync', activeStyle: f.active, hash: f.hash, chars: f.chars, status: 'accepted', discards } };
   }
   const reason = last && last.byIdentity > 0 ? 'frame-nao-atualizou-conteudo' : 'sem-frame-identificavel';
-  return { status: 'rejected', pageid: last ? last.st.pageid : null, printed: last ? last.st.printed : null, text: null, chars: 0, hash: null, reason, audit: { pageid: last ? last.st.pageid : null, printed: last ? last.st.printed : null, status: 'rejected', reason } };
+  const ref = lastStable || (last && !last.inconsistent ? last.st : null);
+  return { status: 'rejected', pageid: ref ? ref.pageid : null, printed: ref ? ref.printed : null, text: null, chars: 0, hash: null, reason, discards, audit: { pageid: ref ? ref.pageid : null, printed: ref ? ref.printed : null, status: 'rejected', reason, discards } };
 }
 
 // Contrato do driver do leitor pageid (real ou simulado) usado pela extração.
@@ -936,6 +965,7 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
   let reachedChapterEnd = false;
   let maxPagesHit = false;
   let ambiguousCount = 0;
+  let discardedCount = 0;
   let rawCharsTotal = 0;
   let uniqueCharsTotal = 0;
   let prevHash = null;
@@ -949,7 +979,8 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
 
     const sync = await syncCaptureFrame(driver, prevState, prevHash, 8000);
     audit.push(sync.audit);
-    if (trace) trace.push({ step: i, kind: 'sync', pageid: sync.pageid, printed: sync.printed, status: sync.status, reason: sync.reason, chars: sync.chars || 0, hash: sync.hash, frameId: sync.frameId ?? null, activeStyle: sync.active ?? null });
+    discardedCount += sync.discards || 0;
+    if (trace) trace.push({ step: i, kind: 'sync', pageid: sync.pageid, printed: sync.printed, status: sync.status, reason: sync.reason, chars: sync.chars || 0, hash: sync.hash, frameId: sync.frameId ?? null, activeStyle: sync.active ?? null, discards: sync.discards || 0 });
 
     if (sync.status === 'ambiguous') {
       ambiguousCount++;
@@ -991,6 +1022,7 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     reachedChapterEnd,
     maxPagesHit,
     ambiguousCount,
+    discardedCount,
     startChapterPage,
     nextChapterPage,
     pageSequence: collected.map((p) => p.page),
@@ -1020,6 +1052,7 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     validation,
     audit,
     ambiguousCount,
+    discardedCount,
     unexpectedContent,
     pages: collected.length,
     reachedChapterEnd,
