@@ -26,7 +26,12 @@ const NONSENSE_RE =
 const FRONT_RE = /capa|frontisp[ií]cio|p[aá]gina de rosto|cr[eé]ditos|sobre o autor|sum[aá]rio|copyright|direitos reservados/i;
 
 const EPUB_CONTENT_RE = /\/epub\/OEBPS\/Text\//i;
-const PAGEID_CONTENT_RE = /\/pages\/\d+\/content/i;
+// Frame de conteúdo pageid: URL pages/N/content (forma antiga) OU iframe jigsaw
+// com identidade pageid (books/<id>/pageid/N?brand=vitalsource&create=true).
+// A JANELA DE TOPO (app.minhabiblioteca.../reader/books/.../pageid/N) NÃO é
+// conteúdo — fica excluída por exigir o host jigsaw ou a forma pages/N/content.
+const PAGEID_CONTENT_RE = /\/pages\/\d+\/content|jigsaw\.minhabiblioteca\.com\.br\/books\/[^\/]+\/pageid\/\d+/i;
+const PAGEID_FRAME_RE = /(?:pageid\/(\d+)|pages\/(\d+)\/content)/i;
 const PLATAFORMA_BV_RE = /plataforma\.bvirtual|leitor\.bvirtual|\/Leitor\//i;
 
 // ---- Helpers de espera (evitam depender de tempos fixos) ----
@@ -682,44 +687,136 @@ async function clickNextPage(app) {
   return false;
 }
 
-// Extrai o capítulo esperado navegando página a página até o próximo capítulo
-// ou o limite de páginas (maxPages). Issue B: o conteúdo é associado SOMENTE ao
-// frame ATIVO (página exibida), nunca aos frames de prefetch; a navegação aguarda
-// mudança verificável do estado (pageid/label) e cada página mantém trilha
-// auditável (página, frameId, origem, hash, validação). Associações ambíguas
-// impedem `integral`.
-async function extractPageid(app, win, launchUrl, expected, opts = {}) {
+// ---- Sincronização PAGEID: página exibida × frame de conteúdo (Issue B) ----
+
+// Identidade de página de um frame pageid a partir da URL do frame e do src do
+// iframe. Sinais observados no leitor real (VitalSource / Minha Biblioteca):
+//   - topo:        .../reader/books/<id>/pageid/<N>          (NÃO é conteúdo)
+//   - frame:       jigsaw.../books/<id>/pageid/<N>?brand=vitalsource&create=true
+//   - (variante)   .../pages/<N>/content
+// O `pageid` (0-based, igual ao do topo) é a identidade VERIFICÁVEL do frame; o
+// número da PÁGINA IMPRESSA (chrome "Página N") NÃO é igual ao pageid.
+function parsePageidFrameIdentity(url, src) {
+  const hay = `${url || ''} ${src || ''}`;
+  const m = PAGEID_FRAME_RE.exec(hay);
+  if (!m) return { pageid: null, pages: null };
+  return { pageid: m[1] != null ? parseInt(m[1], 10) : null, pages: m[2] != null ? parseInt(m[2], 10) : null };
+}
+
+// Decide se um frame é frame de CONTEÚDO pageid (e não o topo/shell). Puro.
+function isPageidContentFrame(url, src) {
+  const hay = `${url || ''} ${src || ''}`;
+  return /\/pages\/\d+\/content/i.test(hay) || /jigsaw\.minhabiblioteca\.com\.br\/books\/[^\/]+\/pageid\/\d+/i.test(hay);
+}
+
+// Lê, no leitor real, os frames de conteúdo pageid com identidade, estilo e texto.
+async function readPageidFrames(app) {
+  const out = [];
+  for (const { frame, url } of await collectFrames(app)) {
+    const src = await frame.evaluate(() => { const el = window.frameElement; return el ? el.getAttribute('src') || '' : ''; }).catch(() => '');
+    if (!isPageidContentFrame(url, src)) continue;
+    const identity = parsePageidFrameIdentity(url, src);
+    if (!identity.pageid && !identity.pages) continue;
+    const style = await frame.evaluate(() => {
+      const el = window.frameElement; if (!el) return null;
+      const cs = getComputedStyle(el);
+      return { scrolling: el.getAttribute('scrolling'), width: cs.width };
+    }).catch(() => null);
+    const text = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+    out.push({
+      url, src, identity,
+      style,
+      active: style ? isActiveFrameStyle(style) : false,
+      text: text || '',
+      chars: (text || '').length,
+      hash: sha256((text || '').trim()),
+      frameId: identity.pages != null ? identity.pages : identity.pageid,
+    });
+  }
+  return out;
+}
+
+// Aguarda uma mudança VERIFICÁVEL do estado da página (pageid/label) no driver —
+// não um tempo fixo. Retorna true se mudou dentro do prazo.
+async function waitDriverChange(driver, prevState, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const s = await driver.state();
+    if (s.pageid != null && prevState.pageid != null && s.pageid !== prevState.pageid) return true;
+    if (s.printed != null && prevState.printed != null && s.printed !== prevState.printed) return true;
+    await waitTimeout(400);
+  }
+  return false;
+}
+
+// NÚCLEO da sincronização (Issue B): captura o conteúdo do frame da página EXIBIDA
+// somente quando:
+//   1. a página exibida (pageid do topo) tem um frame de conteúdo com identidade
+//      compatível (pageid do frame == pageid exibido);
+//   2. o conteúdo desse frame NÃO é o da página anterior (hash != prevHash) — ou
+//      seja, a corrida "interface mostra a página N+1, mas o frame ainda tem a
+//      página N" NUNCA atribui conteúdo antigo à página nova (e vice-versa);
+//   3. há EXATAMENTE um frame candidato (múltiplos = ambíguo).
+// Não usa setTimeout como garantia: espera o estado VERIFICÁVEL do frame atualizar.
+// Testável: opera sobre um driver (leitor real ou simulado).
+async function syncCaptureFrame(driver, expectedState, prevHash, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  while (Date.now() < deadline) {
+    const st = await driver.state();
+    const frames = await driver.frames();
+    const content = frames.filter((f) => f.text && f.text.trim().length > 0);
+    const byIdentity = content.filter((f) => f.identity && f.identity.pageid != null && f.identity.pageid === st.pageid);
+    last = { st, byIdentity: byIdentity.length };
+    if (byIdentity.length === 0) { await waitTimeout(400); continue; }
+    if (byIdentity.length > 1) {
+      return { status: 'ambiguous', pageid: st.pageid, printed: st.printed, reason: 'multiplos-frames-mesma-identidade', text: null, chars: 0, hash: null, audit: { pageid: st.pageid, printed: st.printed, status: 'ambiguous', reason: 'multiplos-frames-mesma-identidade', frames: byIdentity.map((f) => ({ identity: f.identity.pageid, hash: f.hash })) } };
+    }
+    const f = byIdentity[0];
+    if (prevHash != null && f.hash === prevHash) { await waitTimeout(400); continue; }
+    return { status: 'captured', pageid: st.pageid, printed: st.printed, text: f.text, chars: f.chars, hash: f.hash, frameId: f.frameId, identity: f.identity, active: f.active, reason: null, audit: { pageid: st.pageid, printed: st.printed, frameIdentity: f.identity, frameId: f.frameId, origin: 'identity-sync', activeStyle: f.active, hash: f.hash, chars: f.chars, status: 'accepted' } };
+  }
+  const reason = last && last.byIdentity > 0 ? 'frame-nao-atualizou-conteudo' : 'sem-frame-identificavel';
+  return { status: 'rejected', pageid: last ? last.st.pageid : null, printed: last ? last.st.printed : null, text: null, chars: 0, hash: null, reason, audit: { pageid: last ? last.st.pageid : null, printed: last ? last.st.printed : null, status: 'rejected', reason } };
+}
+
+// Contrato do driver do leitor pageid (real ou simulado) usado pela extração.
+//   state():        { pageid, printed }
+//   frames():       frames de conteúdo com { identity:{pageid,pages}, active, text, chars, hash, frameId }
+//   next():         Promise<boolean> — navega para a próxima página
+//   chapterPages(): { capítulo: página impressa inicial }
+function createPageidDriver(app) {
+  return {
+    state: () => getCurrentPageState(app),
+    frames: () => readPageidFrames(app),
+    next: () => clickNextPage(app),
+    chapterPages: () => getTocChapterPages(app),
+  };
+}
+
+// Extrai o capítulo esperado com SINCRONIZAÇÃO página×frame (Issue B): captura o
+// estado inicial, navega, espera mudança verificável da página, espera o frame
+// correspondente atualizar e captura só depois da confirmação de identidade.
+async function extractPageidViaSync(driver, expected, opts = {}) {
   const maxPages = opts.maxPages || 120;
   const steps = [];
   const audit = [];
   const trace = Array.isArray(opts.trace) ? opts.trace : null;
-  let readerLoaded = false;
 
-  await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
-  const loaded = await poll(
-    app,
-    async () => {
-      const frames = await readContentFrameStyles(app);
-      const cls = classifyContentFrames(frames);
-      return cls.status === 'ok' && cls.active.text && cls.active.text.trim().length > 0 ? true : null;
-    },
-    { timeoutMs: 35000, interval: 2000 }
-  );
-  readerLoaded = !!loaded;
-
+  const initFrames = await driver.frames();
+  const readerLoaded = initFrames.some((f) => f.text && f.text.trim().length > 0);
   if (!readerLoaded) {
     return {
-      url: launchUrl, format: 'pageid', status: 'inaccessible', text: '', chars: 0,
+      url: null, format: 'pageid', status: 'inaccessible', text: '', chars: 0,
       readerLoaded: false, readerUrl: null, steps, attempts: ['leitor-nao-carregou'], error: 'leitor-nao-carregou',
       validation: validateContent({ text: '', expected, kind: 'pageid' }), audit: [],
     };
   }
 
   const nextChapter = expected && expected.chapter ? new RegExp(`(?:^|\\n)\\s*Cap[ií]tulo\\s*${expected.chapter + 1}\\b`, 'i') : null;
-  const tocPages = await getTocChapterPages(app);
+  const tocPages = await driver.chapterPages();
   const nextChapterPage = expected && expected.chapter ? tocPages[expected.chapter + 1] : null;
   const startChapterPage = expected && expected.chapter ? tocPages[expected.chapter] : null;
-  const seenHashes = new Map();
   const collected = [];
   const unexpectedContent = [];
   let reachedChapterEnd = false;
@@ -727,48 +824,44 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   let ambiguousCount = 0;
   let rawCharsTotal = 0;
   let uniqueCharsTotal = 0;
+  let prevHash = null;
 
-  let prevState = await getCurrentPageState(app);
+  let prevState = await driver.state();
   for (let i = 0; i < maxPages; i++) {
     const curPage = prevState.printed;
-    // Fim do capítulo: chegou à página impressa onde começa o próximo capítulo
-    // (fonte mais confiável: sumário do leitor).
     if (nextChapterPage && curPage != null && curPage >= nextChapterPage) {
       reachedChapterEnd = true; steps.push('pagina-limite-capitulo'); break;
     }
 
-    const frames = await readContentFrameStyles(app);
-    if (trace) {
-      for (const f of frames) {
-        rawCharsTotal += (f.text || '').length;
-        trace.push({ step: i, kind: 'frame', page: curPage, frameId: f.id, active: f.active, chars: (f.text || '').length, paras: countParas(f.text), isDup: seenHashes.has(`${curPage}|${sha256((f.text || '').trim())}`), sha256: sha256((f.text || '').trim()), head: (f.text || '').slice(0, 40) });
-      }
-    }
+    const sync = await syncCaptureFrame(driver, prevState, prevHash, 8000);
+    audit.push(sync.audit);
+    if (trace) trace.push({ step: i, kind: 'sync', pageid: sync.pageid, printed: sync.printed, status: sync.status, reason: sync.reason, chars: sync.chars || 0, hash: sync.hash, frameId: sync.frameId ?? null, activeStyle: sync.active ?? null });
 
-    const assoc = associateActivePage({ frames, printedPage: curPage, seenHashes });
-    audit.push(assoc.audit);
-    if (assoc.ambiguous) {
+    if (sync.status === 'ambiguous') {
       ambiguousCount++;
-      steps.push(assoc.reason);
-    } else if (assoc.accepted) {
-      collected.push({ page: curPage, text: assoc.text });
-      uniqueCharsTotal += assoc.chars;
+      steps.push('associacao-ambigua');
+    } else if (sync.status === 'captured') {
+      collected.push({ page: sync.printed, pageid: sync.pageid, text: sync.text });
+      uniqueCharsTotal += sync.chars;
+      rawCharsTotal += sync.chars;
+      prevHash = sync.hash;
+    } else {
+      steps.push(sync.reason === 'frame-nao-atualizou-conteudo' ? 'frame-sem-conteudo-atualizado' : 'sem-frame-identificavel');
+      break;
     }
 
-    // Fallback (sem TOC): cabeçalho "Capítulo N+1" no início de uma página.
-    if (!nextChapterPage && collected.length >= 2 && nextChapter && frames.some((f) => nextChapter.test(f.text))) {
+    if (!nextChapterPage && collected.length >= 2 && nextChapter && sync.status === 'captured' && nextChapter.test(sync.text.slice(0, 300))) {
       reachedChapterEnd = true; steps.push('cabecalho-capitulo-seguinte'); break;
     }
 
-    const ok = await clickNextPage(app);
+    const ok = await driver.next();
     if (!ok) { steps.push('sem-botao-seguinte'); break; }
-    const changed = await waitPageChange(app, prevState, 8000);
+    const changed = await waitDriverChange(driver, prevState, 8000);
     if (!changed) { steps.push('sem-mudanca-de-pagina'); break; }
-    prevState = await getCurrentPageState(app);
+    prevState = await driver.state();
   }
   if (!reachedChapterEnd && collected.length >= maxPages) { maxPagesHit = true; steps.push('limite-de-paginas'); }
 
-  // Conteúdo do próximo capítulo indevidamente incluído?
   if (collected.length && nextChapter) {
     const last = collected[collected.length - 1];
     if (nextChapter.test(last.text.slice(0, 300))) unexpectedContent.push('cabecalho-do-proximo-capitulo-no-ultimo-bloco');
@@ -787,12 +880,11 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     startChapterPage,
     nextChapterPage,
     pageSequence: collected.map((p) => p.page),
-    collectedHashes: collected.map((p) => ({ page: p.page, chars: p.text.trim().length, sha256: sha256(p.text.trim()) })),
+    pageidSequence: collected.map((p) => p.pageid),
+    collectedHashes: collected.map((p) => ({ page: p.page, pageid: p.pageid, chars: p.text.trim().length, sha256: sha256(p.text.trim()) })),
   });
 
   const text = collected.map((p) => `\n[PÁGINA ${p.page ? 'impressa ' + p.page : '?'}]\n${p.text}`).join('\n\n');
-  // Confirma o capítulo pela FAIXA de páginas impressas do sumário (23..45 => cap. 1)
-  // quando o TOC foi lido e o fim do capítulo foi alcançado.
   const chapterPageRangeConfirmed = !!(nextChapterPage && reachedChapterEnd);
   const validation = validateContent({
     text,
@@ -801,7 +893,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   });
 
   return {
-    url: launchUrl,
+    url: null,
     format: 'pageid',
     status: statusForBook({ format: 'pageid', validation, readerLoaded, chapterNotFound: false, expected }),
     text,
@@ -810,7 +902,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     readerUrl: null,
     readerLoaded,
     steps,
-    attempts: ['navegacao-paginas'],
+    attempts: ['navegacao-paginas-sincronizada'],
     validation,
     audit,
     ambiguousCount,
@@ -821,6 +913,29 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     tocPages,
     error: null,
   };
+}
+
+// Extrai o capítulo esperado no leitor real com sincronização página×frame.
+async function extractPageid(app, win, launchUrl, expected, opts = {}) {
+  await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+  const loaded = await poll(
+    app,
+    async () => {
+      const frames = await readPageidFrames(app);
+      return frames.some((f) => f.text && f.text.trim().length > 0) ? true : null;
+    },
+    { timeoutMs: 35000, interval: 2000 }
+  );
+  if (!loaded) {
+    return {
+      url: launchUrl, format: 'pageid', status: 'inaccessible', text: '', chars: 0,
+      readerLoaded: false, readerUrl: null, steps: [], attempts: ['leitor-nao-carregou'], error: 'leitor-nao-carregou',
+      validation: validateContent({ text: '', expected, kind: 'pageid' }), audit: [],
+    };
+  }
+  const driver = createPageidDriver(app);
+  const r = await extractPageidViaSync(driver, expected, opts);
+  return { ...r, url: launchUrl };
 }
 
 // ---- Entrada principal ----
@@ -883,6 +998,16 @@ module.exports = {
   waitPageChange,
   collectFrames,
   confirmEpubBoundaryDecision,
+  allWindows,
+  clickNextPage,
+  getCurrentPrintedPage,
+  parsePageidFrameIdentity,
+  isPageidContentFrame,
+  readPageidFrames,
+  syncCaptureFrame,
+  waitDriverChange,
+  createPageidDriver,
+  extractPageidViaSync,
   applyEpubStructuralValidation,
   fetchEpubPackageFromReader,
 };
