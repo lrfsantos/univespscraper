@@ -201,15 +201,22 @@ function findChapterBoundary({ pkg, chapter }) {
 }
 
 // Valida uma extração contra a estrutura do EPUB.
-// extractedDocIds: ids (ou caminhos) dos documentos efetivamente extraídos.
+// extractedDocIds: ids do spine, hrefs ou nomes de arquivo dos documentos
+// efetivamente extraídos (comparação tolerante: por id OU basename do href).
 function validateChapterExtraction({ pkg, chapter, extractedDocIds }) {
   const b = findChapterBoundary({ pkg, chapter });
   if (!b.boundaryKnown) {
     return { boundaryKnown: false, endOk: false, allChapterItemsExtracted: false, nextChapterIncluded: false, status: 'partial', reason: b.reason, chapterIds: [], nextChapterFirstId: null };
   }
-  const extracted = new Set(extractedDocIds || []);
-  const allChapterItemsExtracted = b.chapterIds.every((id) => extracted.has(id));
-  const nextChapterIncluded = extracted.has(b.nextChapterFirstId);
+  const norm = (s) => (s || '').replace(/\\/g, '/').split('/').pop().toLowerCase();
+  const extractedSet = new Set((extractedDocIds || []).map(norm));
+  const inExtracted = (id) => {
+    if (extractedSet.has(id.toLowerCase())) return true;
+    const href = pkg.manifest[id] && pkg.manifest[id].href;
+    return !!(href && extractedSet.has(norm(href)));
+  };
+  const allChapterItemsExtracted = b.chapterIds.every(inExtracted);
+  const nextChapterIncluded = inExtracted(b.nextChapterFirstId);
   const endOk = allChapterItemsExtracted && !nextChapterIncluded;
   return {
     boundaryKnown: true,
@@ -222,6 +229,47 @@ function validateChapterExtraction({ pkg, chapter, extractedDocIds }) {
     label: b.label,
     nextLabel: b.nextLabel,
   };
+}
+
+// ---- Parser do pacote a partir de STRINGS (produção: pacote servido por URL) ----
+
+// Parseia manifest + spine diretamente do XML do OPF (sem tocar no filesystem).
+// Útil para a extração de produção, onde o EPUB é servido por URL e o OPF é
+// obtido via fetch no frame de conteúdo (mesma origem).
+function parseOpfFromXml(opfXml) {
+  const root = parseXml(opfXml || '');
+  const manifest = {};
+  for (const item of findAll(root, 'item')) {
+    const id = item.attrs.id;
+    if (id) manifest[id] = { href: item.attrs.href || '', mediaType: item.attrs['media-type'] || '' };
+  }
+  const spine = [];
+  for (const it of findAll(root, 'itemref')) {
+    const idref = it.attrs.idref;
+    if (idref && manifest[idref]) spine.push(idref);
+  }
+  if (!spine.length) return null;
+  return { manifest, spine, packageDir: null, packageUrl: null };
+}
+
+// Parseia entradas de navegação do NCX (toc.ncx) a partir do XML.
+function navFromNcxXml(ncxXml) {
+  const root = parseXml(ncxXml || '');
+  const entries = [];
+  for (const np of findAll(root, 'navPoint')) {
+    const label = firstText(findAll(np, 'navLabel')[0]);
+    const content = findAll(np, 'content')[0];
+    if (content && content.attrs.src) entries.push({ label: label.trim(), href: content.attrs.src });
+  }
+  return entries;
+}
+
+// Parser completo a partir de strings (OPF + NCX opcional).
+function parsePackageFromXml({ opfXml, ncxXml } = {}) {
+  const pkg = parseOpfFromXml(opfXml);
+  if (!pkg) return { ok: false, reason: 'opf-ausente-ou-invalido' };
+  pkg.nav = ncxXml ? navFromNcxXml(ncxXml) : [];
+  return { ok: true, pkg };
 }
 
 // Parser completo de um pacote EPUB em diretório.
@@ -241,4 +289,7 @@ module.exports = {
   chapterNumber,
   CHAPTER_LABEL_RE,
   parseXml,
+  parsePackageFromXml,
+  parseOpfFromXml,
+  navFromNcxXml,
 };

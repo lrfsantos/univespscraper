@@ -374,10 +374,67 @@ function confirmEpubBoundaryDecision({ beforeDoc, beforeUrl, nextDocIdent, nextH
   return { confirmed, docChanged, nextDocMatches, headingMatches, nextDoc: ident.doc, nextIdref: ident.idref, beforeDoc: before.doc, beforeIdref: before.idref, reason };
 }
 
+// Aplica a validação ESTRUTURAL (Issue A) à extração: dados os documentos
+// efetivamente extraídos e o pacote EPUB (manifest/spine/nav), decide se o
+// capítulo é integral pela estrutura — não por pontuação nem por tamanho.
+// Puro e testável. Resultado:
+//   - used: true se o pacote foi usado (boundaryKnown=true) — passa a ser a
+//     evidência mais forte; usa=false quando o pacote não permitir decisão.
+//   - endOk: todos os documentos esperados do capítulo presentes E nenhum do
+//     capítulo seguinte incluído.
+function applyEpubStructuralValidation({ pkg, chapter, extractedDocIds }) {
+  const st = ep.validateChapterExtraction({ pkg, chapter, extractedDocIds });
+  return {
+    used: st.boundaryKnown === true,
+    boundaryKnown: st.boundaryKnown === true,
+    endOk: st.endOk === true,
+    allChapterItemsExtracted: st.allChapterItemsExtracted === true,
+    nextChapterIncluded: st.nextChapterIncluded === true,
+    chapterIds: st.chapterIds || [],
+    nextChapterFirstId: st.nextChapterFirstId || null,
+    status: st.status,
+    reason: st.reason || null,
+    label: st.label || null,
+    nextLabel: st.nextLabel || null,
+  };
+}
+
+// Busca o pacote EPUB real a partir do frame de conteúdo (mesma origem jigsaw),
+// sem contornar DRM: apenas fetch same-origin de content.opf/package.opf e
+// toc.ncx/nav.xhtml. Retorna { ok, pkg } quando o OPF válido for obtido.
+async function fetchEpubPackageFromReader(app) {
+  for (const { frame, url } of await collectFrames(app)) {
+    if (!EPUB_CONTENT_RE.test(url)) continue;
+    const base = url.replace(/\/Text\/[^?#]*.*$/, '/');
+    const got = await frame.evaluate(async (baseUrl) => {
+      const out = { opf: null, nav: null };
+      for (const c of ['content.opf', 'package.opf']) {
+        try {
+          const r = await fetch(baseUrl + c, { credentials: 'include' });
+          if (r.ok) { const t = await r.text(); if (/<spine/i.test(t) && /<manifest/i.test(t)) { out.opf = t; break; } }
+        } catch { /* pacote não acessível por esta via */ }
+      }
+      if (out.opf) {
+        for (const c of ['toc.ncx', 'nav.xhtml']) {
+          try { const r = await fetch(baseUrl + c, { credentials: 'include' }); if (r.ok) out.nav = await r.text(); } catch { /* nav opcional */ }
+        }
+      }
+      return out;
+    }, base).catch(() => null);
+    if (got && got.opf) {
+      const parsed = ep.parsePackageFromXml({ opfXml: got.opf, ncxXml: got.nav });
+      if (parsed.ok) return { ok: true, pkg: parsed.pkg, baseUrl: base, opfChars: got.opf.length, navChars: (got.nav || '').length };
+    }
+  }
+  return { ok: false, reason: 'pacote-epub-indisponivel' };
+}
+
 // Extrai o capítulo esperado com validação ESTRUTURAL do limite (Issue A):
 //   - identifica o documento/idref do capítulo no leitor;
-//   - confirma o limite navegando para o capítulo seguinte e verificando que o
-//     documento muda e começa com o próximo capítulo;
+//   - quando o PACOTE EPUB está acessível ao frame, usa manifest/spine/nav
+//     (epub-structure) para confirmar capítulo e limite — evidência mais forte;
+//   - senão, confirma o limite navegando para o capítulo seguinte e verificando a
+//     mudança de identidade do documento (mecanismo complementar);
 //   - NUNCA usa pontuação final como prova de integridade.
 async function extractEpub(app, win, launchUrl, expected) {
   const attempts = [];
@@ -459,37 +516,65 @@ async function extractEpub(app, win, launchUrl, expected) {
     }
   }
 
-  // 4) Confirmação do LIMITE estrutural: navega para o capítulo N+1 e verifica que
-  //    o documento ativo muda para o documento do capítulo N+1 (identidade
-  //    doc/idref). A correspondência do TEXTO ("Capítulo N+1" no cabeçalho) é
-  //    apenas confiança extra no audit — não é exigida, pois os documentos de
-  //    capítulo podem começar com outro texto (ex.: "O QUE VEREMOS ADIANTE").
-  //    Sem essa confirmação estrutural, endOk=false.
+  // 3.5) INTEGRAÇÃO ESTRUTURAL (Issue A): quando o PACOTE EPUB está acessível ao
+  //      frame de conteúdo (mesma origem), usa manifest/spine/nav (epub-structure)
+  //      para confirmar capítulo e limite — evidência mais forte que a navegação.
+  //      Compara os documentos efetivamente extraídos com os esperados; NÃO
+  //      considera integral se faltar documento do capítulo (allChapterItemsExtracted)
+  //      ou se incluir documento do capítulo seguinte (nextChapterIncluded).
   let epubBoundaryConfirmed = false;
   let nextDocIdent = null;
-  const beforeUrl = res.url;
-  const beforeDoc = parseEpubDocIdentity(beforeUrl);
+  let structVal = null;
+  let packageUsed = false;
+  let packageUnavailableReason = null;
   if (expected && expected.chapter) {
-    const nextClicked = await navigateEpubViaToc(app, expected.chapter + 1);
-    if (nextClicked) {
-      const after = await poll(
-        app,
-        async () => {
-          const d = await readEpubActiveDocument(app);
-          const t = (d.text || '').trim();
-          if (t.length >= 500 && d.url !== beforeUrl) return d;
-          return null;
-        },
-        { timeoutMs: 20000, interval: 2000 }
-      );
-      if (after) {
-        nextDocIdent = parseEpubDocIdentity(after.url);
-        const nextHead = (after.text || '').trim().slice(0, 200);
-        const decision = confirmEpubBoundaryDecision({
-          beforeDoc, beforeUrl, nextDocIdent, nextHead, chapter: expected.chapter + 1,
-        });
-        epubBoundaryConfirmed = decision.confirmed;
-        audit.push({ doc: nextDocIdent.doc, idref: nextDocIdent.idref, status: epubBoundaryConfirmed ? 'boundary-next-chapter' : 'boundary-not-confirmed', origin: 'epub-next-chapter-navigation', docChanged: decision.docChanged, nextDocMatches: decision.nextDocMatches, headingMatches: decision.headingMatches, reason: decision.reason, hash: sha256((after.text || '').trim().slice(0, 400)), chars: (after.text || '').length });
+    const pkgRes = await fetchEpubPackageFromReader(app);
+    if (pkgRes.ok) {
+      const docHref = ident.doc ? `Text/${ident.doc}.xhtml` : null;
+      structVal = applyEpubStructuralValidation({ pkg: pkgRes.pkg, chapter: expected.chapter, extractedDocIds: docHref ? [docHref] : [] });
+      packageUsed = true;
+      audit.push({ origin: 'epub-structural-package', boundaryKnown: structVal.boundaryKnown, endOk: structVal.endOk, allChapterItemsExtracted: structVal.allChapterItemsExtracted, nextChapterIncluded: structVal.nextChapterIncluded, chapterIds: structVal.chapterIds, nextChapterFirstId: structVal.nextChapterFirstId, docExtracted: docHref, pkgChars: pkgRes.opfChars, navChars: pkgRes.navChars });
+      if (structVal.boundaryKnown) {
+        epubBoundaryConfirmed = structVal.endOk;
+        if (!structVal.endOk) attempts.push('estrutura-epub-nao-confirma-integral');
+      }
+    } else {
+      packageUnavailableReason = pkgRes.reason || 'pacote-epub-indisponivel';
+      attempts.push('pacote-epub-indisponivel: ' + packageUnavailableReason);
+    }
+  }
+
+  // 4) Mecanismo COMPLEMENTAR: se o pacote não permitiu decisão estrutural,
+  //    navega para o capítulo N+1 e verifica que o documento ativo muda para o
+  //    documento do capítulo N+1 (identidade doc/idref). A correspondência do
+  //    TEXTO ("Capítulo N+1" no cabeçalho) é apenas confiança extra no audit —
+  //    não é exigida, pois os documentos de capítulo podem começar com outro
+  //    texto (ex.: "O QUE VEREMOS ADIANTE"). Sem confirmação estrutural, endOk=false.
+  if (!packageUsed || (structVal && !structVal.boundaryKnown)) {
+    const beforeUrl = res.url;
+    const beforeDoc = parseEpubDocIdentity(beforeUrl);
+    if (expected && expected.chapter) {
+      const nextClicked = await navigateEpubViaToc(app, expected.chapter + 1);
+      if (nextClicked) {
+        const after = await poll(
+          app,
+          async () => {
+            const d = await readEpubActiveDocument(app);
+            const t = (d.text || '').trim();
+            if (t.length >= 500 && d.url !== beforeUrl) return d;
+            return null;
+          },
+          { timeoutMs: 20000, interval: 2000 }
+        );
+        if (after) {
+          nextDocIdent = parseEpubDocIdentity(after.url);
+          const nextHead = (after.text || '').trim().slice(0, 200);
+          const decision = confirmEpubBoundaryDecision({
+            beforeDoc, beforeUrl, nextDocIdent, nextHead, chapter: expected.chapter + 1,
+          });
+          if (!packageUsed) epubBoundaryConfirmed = decision.confirmed;
+          audit.push({ doc: nextDocIdent.doc, idref: nextDocIdent.idref, status: epubBoundaryConfirmed ? 'boundary-next-chapter' : 'boundary-not-confirmed', origin: 'epub-next-chapter-navigation', docChanged: decision.docChanged, nextDocMatches: decision.nextDocMatches, headingMatches: decision.headingMatches, reason: decision.reason, hash: sha256((after.text || '').trim().slice(0, 400)), chars: (after.text || '').length });
+        }
       }
     }
   }
@@ -519,7 +604,7 @@ async function extractEpub(app, win, launchUrl, expected) {
     attempts,
     validation,
     chapterNotFound,
-    structural: { ident, nextDocIdent, epubBoundaryConfirmed, epubChapterConfirmed, audit },
+    structural: { ident, nextDocIdent, epubBoundaryConfirmed, epubChapterConfirmed, packageUsed, packageUnavailableReason, structVal, audit },
     error: null,
   };
 }
@@ -798,4 +883,6 @@ module.exports = {
   waitPageChange,
   collectFrames,
   confirmEpubBoundaryDecision,
+  applyEpubStructuralValidation,
+  fetchEpubPackageFromReader,
 };
