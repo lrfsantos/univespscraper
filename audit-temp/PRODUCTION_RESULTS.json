@@ -1,0 +1,124 @@
+{
+  "ts": "2026-11-06T20:16:05.652Z",
+  "results": [
+    {
+      "id": "S-ncx",
+      "title": "EPUB 2 (NCX): hierarquia e caminhos resolvidos",
+      "status": "PASS",
+      "detail": "nav=[{\"l\":\"Capítulo 1\",\"d\":0},{\"l\":\"1.1 Subcapítulo\",\"d\":1},{\"l\":\"Capítulo 2\",\"d\":0}]"
+    },
+    {
+      "id": "S-nav3",
+      "title": "EPUB 3 (nav.xhtml): só toc, hierarquia, fragmento removido, landmarks ignorados",
+      "status": "PASS",
+      "detail": "nav=[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"C:\\\\Users\\\\luiza\\\\AppData\\\\Local\\\\Temp\\\\epubp-PQueBv\\\\Text\\\\ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"C:\\\\Users\\\\luiza\\\\AppData\\\\Local\\\\Temp\\\\epubp-PQueBv\\\\Text\\\\ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"C:\\\\Users\\\\luiza\\\\AppData\\\\Local\\\\Temp\\\\epubp-PQueBv\\\\Text\\\\ch02.xhtml\"}]"
+    },
+    {
+      "id": "S-sub",
+      "title": "Caminhos relativos em subdiretórios resolvidos corretamente",
+      "status": "PASS",
+      "detail": "nav0.href=C:\\Users\\luiza\\AppData\\Local\\Temp\\epubp-kYaINs\\chapters\\part1\\c01.xhtml"
+    },
+    {
+      "id": "S-bad",
+      "title": "Pacote/NCX malformado não quebra (ok=false)",
+      "status": "PASS",
+      "detail": "{\"ok\":false,\"reason\":\"opf-ausente-ou-invalido\"}"
+    },
+    {
+      "id": "S-nochap",
+      "title": "Capítulo inexistente na navegação → limite não identificável",
+      "status": "PASS",
+      "detail": "boundaryKnown=false reason=capitulo-nao-identificado-na-navegacao"
+    },
+    {
+      "id": "S-collision",
+      "title": "Colisão de basename: caminho completo casa; basename ambíguo NÃO casa",
+      "status": "PASS",
+      "detail": "chapterIds=ch1 vcPath=true vcBasename=false"
+    },
+    {
+      "id": "S-multidoc",
+      "title": "Multi-XHTML: 2 docs → integral; falta doc → partial; repetido → ok; outro capítulo → partial",
+      "status": "PASS",
+      "detail": "ids=ch1,ch1a all=true missing=false rep=true other=false"
+    },
+    {
+      "id": "E-1",
+      "title": "Capítulo de 1 XHTML, pacote ok → integral",
+      "status": "PASS",
+      "detail": "status=integral endOk=true chapterOk=true"
+    },
+    {
+      "id": "E-2",
+      "title": "Capítulo multi-XHTML (2 docs) ambos capturados → integral",
+      "status": "PASS",
+      "detail": "status=integral captured=[\"Text/ch01a.xhtml\",\"Text/ch01b.xhtml\"] expected=2"
+    },
+    {
+      "id": "E-3",
+      "title": "Falta documento obrigatório (navegação não avança) → partial",
+      "status": "PASS",
+      "detail": "status=partial captured=[\"Text/ch01a.xhtml\"] expected=2"
+    },
+    {
+      "id": "E-4",
+      "title": "Documento repetido → dedup (sem duplicar)",
+      "status": "PASS",
+      "detail": "captured=[\"Text/ch01a.xhtml\"] status=partial"
+    },
+    {
+      "id": "E-5",
+      "title": "Navegação ao capítulo sem mudança de documento → não confirmado",
+      "status": "PASS",
+      "detail": "status=not_found chapterOk=false"
+    },
+    {
+      "id": "E-6",
+      "title": "Pacote ok mas limite não confirmável → fallback NÃO confirma (partial)",
+      "status": "PASS",
+      "detail": "status=partial endOk=false packageUsed=true boundaryKnown=false"
+    },
+    {
+      "id": "E-7",
+      "title": "Pacote indisponível → navegação confirma limite → integral",
+      "status": "PASS",
+      "detail": "status=integral endOk=true packageUsed=false"
+    },
+    {
+      "id": "E-8",
+      "title": "Texto do cap. 1 mas identidade de documento do cap. 2 → não integral",
+      "status": "PASS",
+      "detail": "status=not_found chapterOk=true"
+    },
+    {
+      "id": "P-1",
+      "title": "PAGEID zero aceito como identidade válida",
+      "status": "PASS",
+      "detail": "pages=1 pid0Accepted=true status=partial"
+    },
+    {
+      "id": "P-2",
+      "title": "Estado muda entre leituras (Caso C) → descarta tentativa inconsistente",
+      "status": "PASS",
+      "detail": "discards=1 pages=1 temP45=true"
+    },
+    {
+      "id": "P-3",
+      "title": "Estado muda durante a captura (Caso D) → captura descartada e re-sincronizada",
+      "status": "PASS",
+      "detail": "discards=1 pages=1 temP45=true"
+    },
+    {
+      "id": "P-4",
+      "title": "Dois frames com identidade ambígua (Caso E) → conservador",
+      "status": "PASS",
+      "detail": "ambiguous=1 status=not_found"
+    }
+  ],
+  "summary": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0
+  }
+}
