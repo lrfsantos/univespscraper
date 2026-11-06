@@ -136,3 +136,108 @@ de evidência positiva, páginas ambíguas e conteúdo inesperado continuam impe
 - `poc/test-regression-m3.js` (caso B-9)
 - `poc/probe-sync.js` (novo, diagnóstico do leitor)
 - `audit-temp/IMPLEMENTATION_RESULTS.md`, `REGRESSION_RESULTS.md`, `CHANGES_AND_PENDING_ITEMS.md`
+
+---
+
+# Consolidação definitiva da Fase 3 (2026-11-06)
+
+## 6. Correções aplicadas nesta rodada (Fase 3 — consolidação)
+
+### 6.1 EPUB 2/3 — navegação (3.1)
+- **EPUB 2/NCX** preservado: `navMap`/`navPoint`, hierarquia (profundidade), links
+  `content src`, resolução relativa ao arquivo NCX.
+- **EPUB 3/nav.xhtml** implementado (parser próprio): identifica o
+  `nav[epub:type="toc"]`, percorre `ol>li>a` com sublistas aninhadas (hierarquia),
+  obtém títulos e `href`, resolve caminhos relativos ao arquivo `nav.xhtml`,
+  remove fragmentos de URL do caminho do documento e **ignora** outros `nav`
+  (landmarks, page-list). Namespace `epub:` tolerado (prefixo alternativo).
+- Dedup de entradas por `rawHref` (fragmentos distintos do mesmo doc não colapsam).
+
+### 6.2 Identidade documental e sincronização (3.2)
+- `extractEpub` refatorado para **orquestração por adaptador**
+  (`extractEpubViaAdapter` + `createEpubReaderAdapter`): cada captura é associada à
+  identidade do documento que a produziu; após qualquer navegação, identidade E
+  texto são **revalidados** (nunca se reutiliza a captura anterior); navegação só é
+  considerada bem-sucedida se o documento ativo **mudou** (`waitEpubDocChange`);
+  se o documento não puder ser sincronizado → não `integral`.
+
+### 6.3 Capítulos multi-XHTML (3.3)
+- Registro individual de cada documento capturado (dedup por caminho resolvido);
+- coleta dos documentos do capítulo via `navigateNextDoc` (limitada), sem incluir
+  documentos de outros capítulos nem do capítulo seguinte;
+- `extractedDocIds` reflete **todos** os docs capturados (não só o último);
+- `integral` somente quando todos os documentos obrigatórios têm evidência;
+  documento ausente → `partial`.
+
+### 6.4 Colisões de basename (3.4)
+- Comparação por **caminho resolvido normalizado** (`pkgResolve` + `normPath`);
+  basename usado **somente se único** no spine; colisão
+  `Text/chapter01.xhtml` × `Appendix/chapter01.xhtml` → caminho casa, basename
+  ambíguo NÃO casa (teste S-collision).
+
+### 6.5 Confirmação de limites (3.5)
+- `confirmEpubBoundaryDecision` consumido corretamente: se o pacote está disponível
+  mas o limite não é confirmável, o fallback de navegação **não** produz falsa
+  confirmação (`packageUsed=true` → `epubBoundaryConfirmed` não sobrescrito).
+- Limite exige evidência estrutural (spine/navegação/mudança de documento);
+  pontuação/tamanho/título do livro nunca são prova de fim de capítulo.
+
+### 6.6 PAGEID — valores zero (4.1)
+- `readPageidFrames` usa **verificação explícita de ausência** (`== null`) — pageid
+  `0` e páginas `0` não são descartados por truthiness;
+- `parsePageidFrameIdentity` valida `parseInt` (NaN/negativos → null).
+
+### 6.7 PAGEID — contrato de sincronização (4.2)
+- `syncCaptureFrame` passa a usar `expectedState` (página esperada do laço) e
+  implementa o contrato: estado atual → página esperada → frames → frame com
+  identidade compatível → confirma identidade → captura → **revalida após a captura**;
+  estados inconsistentes (mudança entre leituras, Caso C/D) são **descartados**
+  (`discardedCount`) e a sincronização é retentada dentro do prazo.
+
+### 6.8 PAGEID — seleção de frame (4.4)
+- Seleção por **identidade de página na URL/src** do frame (sinal confiável,
+  verificado no DOM real); a heurística CSS (scrolling/largura) é apenas auxiliar
+  no audit. Sem prova de relação frame×página exibida → captura não é `integral`.
+
+## 7. Testes de produção desta rodada
+
+`poc/test-production-m3.js` — **19/19 PASS**:
+- **Estrutura EPUB 2/3** (S-*): NCX com hierarquia, nav.xhtml só `toc` (landmarks
+  ignorados), fragmento removido, subdiretórios, malformado, sem capítulo,
+  colisão de basename, multi-doc estrutural.
+- **Orquestração `extractEpubViaAdapter`** (E-*): cap. único → integral; multi-doc
+  2 docs → integral; doc faltando → partial; doc repetido → dedup; navegação sem
+  mudança → não confirmado; pacote ok mas limite não confirmável → partial (sem
+  falsa confirmação); pacote indisponível → navegação confirma → integral; texto do
+  cap. 1 com identidade do cap. 2 → não integral.
+- **Orquestração `extractPageidViaSync`** (P-*): pageid zero aceito (Caso F);
+  estado muda entre leituras → descarta (Caso C); estado muda durante captura →
+  descarta (Caso D); dois frames ambíguos → conservador (Caso E).
+
+## 8. Resumo de testes — Fase 3 (todas as suítes)
+
+| Suíte | Arquivo | Resultado |
+|---|---|---|
+| Regressão sintética (A/B/C/D) | `poc/test-regression-m3.js` | **29/29 PASS** |
+| Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | **14/14 PASS** |
+| **Produção (EPUB + PAGEID)** | `poc/test-production-m3.js` | **19/19 PASS** |
+| **Total** | | **62/62 PASS** |
+| Real no AVA (smoke) | `poc/test-module3.js` | 2026-11-06: leitor VitalSource não montou conteúdo (`inaccessible`/`leitor-nao-carregou`) — **sem validação live declarada**; registrada separadamente |
+
+## 9. Classificação e evidências
+
+- `integral` só com identidade confirmada, todos os documentos obrigatórios,
+  limites confirmados e sincronização válida — sem avisos.
+- `partial` quando falta documento, limite não confirmado, sincronização falhou ou
+  lacuna estrutural.
+- `inaccessible` quando a fonte não pôde ser acessada (sessão/plataforma/leitor).
+- `not_found` quando o recurso esperado não foi encontrado após busca válida.
+- Evidências registram: contagens de docs esperados/capturados, confirmação de
+  limites, tentativas, motivos de falha, avisos — sem conteúdo protegido.
+
+## 10. Segurança
+
+- Nenhum conteúdo integral de livro, senha, cookie ou token em commits/fixtures
+  (tudo sintético). `.gitignore` mantém evidências e perfis fora do versionamento.
+- Sem código novo de contorno de DRM/autenticação.
+- Fixtures de teste são originais e sintéticas.

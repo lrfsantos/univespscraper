@@ -102,3 +102,59 @@ as correções anteriores; comportamento conservador preservado):
   `poc/test-regression-m3.js`, `poc/probe-sync.js`, `audit-temp/IMPLEMENTATION_RESULTS.md`,
   `REGRESSION_RESULTS.md`, `CHANGES_AND_PENDING_ITEMS.md`, `INTEGRATION_RESULTS.json`.
 - Histórico **não** reescrito. Hashes completos informados na resposta final.
+
+---
+
+# Rodada Fase 3 — consolidação definitiva (2026-11-06)
+
+## 10. Correções desta rodada
+
+- **EPUB 3/nav.xhtml**: parser próprio (`navFromNavHtml`, `collectNavList`),
+  `nav[epub:type="toc"]`, hierarquia, caminhos relativos ao arquivo nav, fragmentos
+  removidos, landmarks ignorados; EPUB 2/NCX preservado.
+- **EPUB identidade/sincronização**: `extractEpubViaAdapter` (orquestração por
+  adaptador) revalida identidade+texto após cada navegação; navegação só vale se o
+  documento mudou; `epubDocPathFromUrl`, `navigateEpubNextDoc`, `waitEpubDocChange`.
+- **EPUB multi-XHTML**: captura de todos os docs do capítulo (dedup por caminho
+  resolvido); `extractedDocIds` completo; doc ausente → `partial`.
+- **EPUB colisões de basename**: comparação por caminho resolvido; basename só se
+  único no spine.
+- **EPUB limites**: fallback de navegação não confirma quando o pacote está
+  disponível mas o limite não é confirmável.
+- **PAGEID zero**: verificações `== null` (pageid 0/páginas 0 válidos);
+  `parsePageidFrameIdentity` trata NaN/negativos.
+- **PAGEID contrato de sincronização**: `syncCaptureFrame` usa `expectedState`,
+  descarta tentativas inconsistentes (Caso C/D, `discardedCount`) e revalida após a
+  captura; seleção de frame por identidade de URL (sinal confiável), CSS auxiliar.
+
+## 11. Testes — resultados reais
+
+| Suíte | Arquivo | Resultado |
+|---|---|---|
+| Regressão sintética (A/B/C/D) | `poc/test-regression-m3.js` | **29/29 PASS** |
+| Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | **14/14 PASS** |
+| **Produção (EPUB 2/3 + PAGEID)** | `poc/test-production-m3.js` | **19/19 PASS** |
+| **Total** | | **62/62 PASS** |
+| Real no AVA (smoke) | `poc/test-module3.js` | 2026-11-06: VitalSource não montou conteúdo (`inaccessible`/`leitor-nao-carregou`) — **sem validação live declarada** |
+
+## 12. Pendências / limitações (Fase 3)
+
+- **Validação real no AVA/VitalSource**: pendente — o leitor não montou conteúdo
+  nesta sessão (limite de sessão/dispositivos). Não é falha de implementação
+  corrigível localmente; será registrada separadamente quando o acesso estiver
+  estável (recomenda-se outra disciplina/semana).
+- **`fetchEpubPackageFromReader`** depende do modo EPUB do leitor; em modo pageid o
+  caminho de pacote não é usado e o limite vem da navegação complementar
+  (comportamento correto e documentado).
+- Demais pendências permanecem (Etapas 4/5, purga do histórico `8742012`, validação
+  do executável portable).
+
+## 13. Entrega Git (Fase 3)
+
+- Commit 1 — `fix: support EPUB 3 navigation` (`epub-structure.js`).
+- Commit 2 — `fix: synchronize EPUB document identity and extraction` (`books.js` EPUB).
+- Commit 3 — `fix: validate multi-document EPUB chapters` (`books.js` EPUB multi-doc/limites).
+- Commit 4 — `fix: synchronize PAGEID frame capture` (`books.js` PAGEID zero/contrato/corridas).
+- Commit 5 — `test: cover production EPUB and PAGEID extraction` (`test-production-m3.js` + artefatos JSON).
+- Commit 6 — `docs: consolidate phase 3 validation evidence` (IMPLEMENTATION_RESULTS, REGRESSION_RESULTS, CHANGES_AND_PENDING_ITEMS).
+- Histórico **não** reescrito. Hashes completos na resposta final.

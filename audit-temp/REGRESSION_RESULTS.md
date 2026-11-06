@@ -4,8 +4,9 @@
 > `poc/test-regression-m3.js` — **29/29 PASS**. Nenhum conteúdo protegido é
 > gravado: fixtures sintéticas, contagens e hashes sanitizados apenas.
 >
-> Follow-up do commit `053ffc6` (integrar EPUB estrutural + sincronizar PAGEID):
-> ver `audit-temp/IMPLEMENTATION_RESULTS.md` e `poc/test-integration-m3.js` (14/14 PASS).
+> Fase 3 — consolidação (2026-11-06): produção EPUB/PAGEID em
+> `poc/test-production-m3.js` (**19/19**) e integração `poc/test-integration-m3.js`
+> (**14/14**) — **62/62 no total**. Detalhes em `audit-temp/IMPLEMENTATION_RESULTS.md`.
 
 ## Resumo
 
@@ -15,10 +16,14 @@
 | B | Associação **frame ativo × página** no leitor pageid (inclui exclusão do topo da janela) | 9 | 9/9 PASS |
 | C | Critérios de aprovação independentes (integridade exige evidência) | 8 | 8/8 PASS |
 | D | Decisão de limite estrutural EPUB (camada de produção, pura) | 6 | 6/6 PASS |
-| **Total** | | **29** | **29/29 PASS** |
+| **Total (regressão sintética)** | | **29** | **29/29 PASS** |
+| Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | 14 | 14/14 PASS |
+| **Produção (EPUB 2/3 + PAGEID)** | `poc/test-production-m3.js` | 19 | 19/19 PASS |
+| **Total geral** | | **62** | **62/62 PASS** |
 
-Execução: `node poc/test-regression-m3.js` → `audit-temp/REGRESSION_RESULTS.json`.
-Integração (Issue A estrutural + Issue B sincronização): `node poc/test-integration-m3.js` → **14/14 PASS** (`audit-temp/INTEGRATION_RESULTS.json`).
+Execução: `node poc/test-regression-m3.js` → `audit-temp/REGRESSION_RESULTS.json`;
+`node poc/test-integration-m3.js` → `audit-temp/INTEGRATION_RESULTS.json`;
+`node poc/test-production-m3.js` → `audit-temp/PRODUCTION_RESULTS.json`.
 
 ---
 
