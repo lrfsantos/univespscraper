@@ -58,6 +58,10 @@ function log(ev, data) {
   const executablePath = typeof electronPath === 'string' ? electronPath : process.execPath;
   let app = null;
   try {
+    // Perfil TEMPORÁRIO e isolado por execução (requisito do projeto — o leitor
+    // VitalSource invalida a sessão quando detecta novo dispositivo, mas a decisão
+    // de reutilizar perfil persistente com cookies foi REVOGADA: .gitignore não
+    // substitui o requisito de isolamento). Sem userDataDir = perfil efêmero.
     app = await _electron.launch({ args: [browserEntry], executablePath });
     log('LAUNCH', { ok: true });
     const win = await app.firstWindow();
@@ -109,26 +113,11 @@ function log(ev, data) {
       }
     }
 
-    // Critérios
-    const crit = {};
-    crit.allClassified = result.books.every((b) => ['integral', 'partial', 'inaccessible', 'not_found'].includes(b.status));
-    const accessible = result.books.filter((b) => !b.expectInaccessible);
-    crit.accessibleExtracted = accessible.some((b) => b.status === 'integral' || b.status === 'partial');
-    crit.accessibleValidated = accessible.every((b) => b.status === 'integral' || b.status === 'partial');
-    crit.noIntegralWithoutValidation = accessible.every((b) => {
-      if (b.status !== 'integral') return true;
-      const v = b.validation;
-      return !!(v && v.hasText && v.noNonsense && v.startOk && v.midOk && v.endOk &&
-        (!b.expected || !b.expected.chapter || v.chapterOk === true) &&
-        (!v.repetitions || v.repetitions.length === 0) &&
-        Array.isArray(v.warnings) && v.warnings.length === 0);
-    });
-    const bv = result.books.find((b) => b.expectInaccessible);
-    crit.bvirtualMarkedInaccessible = !bv || bv.status === 'inaccessible';
-    crit.noNonsenseAsContent = result.books.every((b) => !b.validation || b.validation.noNonsense === true || b.status === 'inaccessible');
-
-    result.approval = Object.entries(crit).map(([k, v]) => ({ criterion: k, met: v }));
-    result.status = Object.values(crit).every(Boolean) ? 'PASS' : 'FAIL';
+    // Critérios independentes (Issue C): integridade exige evidência, não presença.
+    const { evaluateCriteria } = require('./lib/m3-criteria');
+    const evalRes = evaluateCriteria(result.books);
+    result.approval = Object.entries(evalRes.crit).map(([k, v]) => ({ criterion: k, met: v }));
+    result.status = evalRes.passed ? 'PASS' : 'FAIL';
   } catch (e) {
     result.status = 'erro';
     result.error = e.message;

@@ -14,6 +14,7 @@
 // Nunca contorna DRM, canvas ou controles de acesso: registra e segue.
 
 const crypto = require('crypto');
+const ep = require('./epub-structure');
 
 // ---- Constantes / padrões ----
 
@@ -71,6 +72,68 @@ async function poll(app, pred, { timeoutMs = 30000, interval = 1500 } = {}) {
   return value;
 }
 
+// ---- Associação PAGEID: frame ativo × página (Issue B) ----
+
+// Sinal observado no leitor Minha Biblioteca (pageid): o frame ATIVO (página do
+// livro exibida) tem scrolling="no" e largura fixa (~663px, margin auto); os
+// frames de prefetch/cache têm scrolling="yes" e width 100%. Puro e testável.
+function isActiveFrameStyle({ scrolling, width }) {
+  return scrolling === 'no' && !!width && width !== '100%' && width !== 'auto';
+}
+
+// Classifica um conjunto de frames de conteúdo em ativo/prefetch. Puro.
+// frames: [{ id, active }] (active = resultado de isActiveFrameStyle).
+function classifyContentFrames(frames) {
+  const actives = (frames || []).filter((f) => f.active);
+  if (actives.length === 1) return { status: 'ok', active: actives[0], count: frames.length };
+  if (actives.length === 0) return { status: 'ambiguous', reason: 'sem-frame-ativo-identificavel', count: frames.length };
+  return { status: 'ambiguous', reason: 'multiplos-frames-ativos', count: frames.length };
+}
+
+// Associa o conteúdo do frame ativo à página exibida, mantendo rastreabilidade.
+// Puro e testável. seenHashes: Map<`${printedPage}|${hash}` , printedPage> —
+// a deduplicação é POR IDENTIDADE (página + hash): remove repetições dentro da
+// mesma página sem apagar a associação quando o MESMO conteúdo ocorre em páginas
+// distintas (origem preservada).
+function associateActivePage({ frames, printedPage, seenHashes }) {
+  const cls = classifyContentFrames(frames);
+  if (cls.status !== 'ok') {
+    return { accepted: false, ambiguous: true, reason: cls.reason, text: '', audit: { printedPage, status: 'rejected', reason: cls.reason, frameId: null, hash: null, chars: 0 } };
+  }
+  const t = (cls.active.text || '').trim();
+  const hash = sha256(t);
+  const key = `${printedPage}|${hash}`;
+  const dupOf = seenHashes.get(key);
+  seenHashes.set(key, printedPage);
+  return {
+    accepted: !!t && dupOf === undefined,
+    ambiguous: false,
+    frameId: cls.active.id,
+    hash,
+    chars: t.length,
+    text: t,
+    audit: { printedPage, frameId: cls.active.id, origin: 'active-frame', hash, chars: t.length, status: dupOf === undefined ? 'accepted' : 'duplicate' },
+  };
+}
+
+// Lê, no leitor real, o frame de conteúdo e seu estilo (para isActiveFrameStyle).
+async function readContentFrameStyles(app) {
+  const out = [];
+  for (const { frame, url } of await collectFrames(app)) {
+    const m = url.match(/pages\/(\d+)\/content/);
+    if (!m) continue;
+    const style = await frame.evaluate(() => {
+      const el = window.frameElement;
+      if (!el) return null;
+      const cs = getComputedStyle(el);
+      return { scrolling: el.getAttribute('scrolling'), width: cs.width };
+    }).catch(() => null);
+    const text = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+    out.push({ id: m[1], url, text: text || '', active: style ? isActiveFrameStyle(style) : false });
+  }
+  return out;
+}
+
 // ---- Detecção de formato do leitor ----
 
 // Classifica o leitor após abertura do launchUrl. Retorna { format, readerUrl }.
@@ -86,16 +149,28 @@ async function detectFormat(app, win, launchUrl) {
       if (urls.some((u) => PAGEID_CONTENT_RE.test(u))) return { format: 'pageid', readerUrl: urls.find((u) => PAGEID_CONTENT_RE.test(u)) };
       return null;
     },
-    { timeoutMs: 30000, interval: 1500 }
+    { timeoutMs: 35000, interval: 1500 }
   );
   if (found) return found;
 
-  // Sem frame de conteúdo: verifica se é leitor bvirtual (canvas/DRM) ou desconhecido.
+  // Sem frame de conteúdo: verifica se é leitor bvirtual (canvas/DRM) ou
+  // redirecionamento de sessão do leitor (VitalSource login/logout — ocorre com
+  // sessão expirada ou limite de dispositivos). Distingue dos casos conhecidos;
+  // só 'unknown' se nada for reconhecido. Inclui URL/título de janelas, pois o
+  // redirect de sessão pode aparecer no título, não em URL de frame.
   const urls = (await collectFrames(app)).map((f) => f.url);
-  const anyUrl = urls.join(' ');
+  const winInfo = [];
+  for (const w of allWindows(app)) {
+    try { winInfo.push(w.url()); } catch { /* ignore */ }
+    try { winInfo.push(await w.title()); } catch { /* ignore */ }
+  }
+  const anyUrl = urls.concat(winInfo).join(' ');
   if (PLATAFORMA_BV_RE.test(anyUrl)) {
     const m = anyUrl.match(/plataforma\.bvirtual|leitor\.bvirtual|\/Leitor\//);
     return { format: m && m[0].includes('leitor.') ? 'bvleitor' : 'bvpdf', readerUrl: null };
+  }
+  if (/(vitalsource|logout|sess[aã]o expirou|session expired)/i.test(anyUrl)) {
+    return { format: 'reader-auth', readerUrl: null };
   }
   return { format: 'unknown', readerUrl: null };
 }
@@ -125,6 +200,9 @@ function endsAtSentenceBoundary(text) {
 
 // Valida começo/meio/fim e estrutura do conteúdo extraído.
 // kind: 'epub' (capítulo inteiro em 1 frame) | 'pageid' (páginas navegadas)
+// expected pode conter: reachedChapterEnd, epubBoundaryConfirmed, maxPagesHit,
+// chapterPageRangeConfirmed, startChapterPage, nextChapterPage, ambiguousPages,
+// unexpectedContent.
 function validateContent({ text, expected, kind }) {
   const v = {
     hasText: false,
@@ -136,6 +214,8 @@ function validateContent({ text, expected, kind }) {
     pageRangeNote: null,
     repetitions: [],
     warnings: [],
+    ambiguousPages: 0,
+    unexpectedContent: [],
     length: 0,
   };
   if (!text || !text.trim()) return v;
@@ -158,8 +238,20 @@ function validateContent({ text, expected, kind }) {
     v.endOk = !!expected && !!expected.reachedChapterEnd;
     if (!v.endOk) v.warnings.push(expected && expected.maxPagesHit ? 'fim-nao-confirmado-limite-de-paginas' : 'fim-de-capitulo-nao-confirmado');
   } else {
-    v.endOk = endsAtSentenceBoundary(t);
-    if (!v.endOk) v.warnings.push('possivel-truncamento-no-final');
+    // Issue A: fim do capítulo EPUB exige evidência ESTRUTURAL (limite alcançado),
+    // nunca apenas pontuação final. Pontuação é registrada apenas como nota.
+    v.endOk = !!expected && !!expected.epubBoundaryConfirmed;
+    v.endPunctuationNote = endsAtSentenceBoundary(t);
+    if (!v.endOk) v.warnings.push('fim-capitulo-nao-confirmado-estruturalmente');
+  }
+
+  if (expected && expected.ambiguousPages) {
+    v.ambiguousPages = expected.ambiguousPages;
+    v.warnings.push(`paginas-com-associacao-ambigua (${expected.ambiguousPages})`);
+  }
+  if (expected && Array.isArray(expected.unexpectedContent) && expected.unexpectedContent.length) {
+    v.unexpectedContent = expected.unexpectedContent.slice(0, 20);
+    v.warnings.push(`conteudo-de-outro-capitulo/pagina-incluido (${expected.unexpectedContent.length})`);
   }
 
   v.repetitions = detectRepetitions(t);
@@ -173,6 +265,10 @@ function validateContent({ text, expected, kind }) {
       if (expected.startChapterPage && expected.nextChapterPage) {
         v.pageRangeNote = `${expected.startChapterPage}..${expected.nextChapterPage - 1}`;
       }
+    } else if (kind === 'epub' && expected.epubChapterConfirmed) {
+      // Capítulo EPUB confirmado pela identidade estrutural (idref/documento do
+      // capítulo esperado no leitor) — não pelo título do livro.
+      v.chapterOk = true;
     } else {
       const capRe = new RegExp(`cap[ií]tulo\\s*${expected.chapter}\\b`, 'i');
       v.chapterOk = capRe.test(t);
@@ -181,16 +277,17 @@ function validateContent({ text, expected, kind }) {
   }
   // O título do livro pode aparecer no sumário/cabeçalho sem que o capítulo
   // solicitado tenha sido extraído. Nunca use expected.book para aprovar
-  // chapterOk; capítulo exige evidência própria (texto ou faixa de páginas).
+  // chapterOk; capítulo exige evidência própria (estrutura ou faixa de páginas).
 
   return v;
 }
 
 // ---- Status honesto ----
 
-// `integral` exige EVIDÊNCIA POSITIVA de todas as validações (começo, meio, fim,
-// capítulo quando esperado, sem repetições e sem avisos). Ausência de validação
-// ou qualquer falha comprovada rebaixa o status — nunca `integral` por omissão.
+// `integral` exige EVIDÊNCIA POSITIVA de todas as validações (começo, meio, fim
+// estrutural, capítulo quando esperado, sem páginas ambíguas, sem conteúdo de
+// outro capítulo, sem repetições e sem avisos). Ausência de validação ou qualquer
+// falha comprovada rebaixa o status — nunca `integral` por omissão.
 function statusForBook({ format, validation, readerLoaded, chapterNotFound, expected }) {
   if (!readerLoaded) return 'inaccessible';
   if (format === 'bvpdf' || format === 'bvleitor') return 'inaccessible'; // conteúdo em canvas/DRM
@@ -206,6 +303,8 @@ function statusForBook({ format, validation, readerLoaded, chapterNotFound, expe
     validation.midOk &&
     validation.endOk &&
     (!chapterRequired || validation.chapterOk === true) &&
+    (!validation.ambiguousPages || validation.ambiguousPages === 0) &&
+    (!validation.unexpectedContent || validation.unexpectedContent.length === 0) &&
     (!validation.repetitions || validation.repetitions.length === 0) &&
     Array.isArray(validation.warnings) &&
     validation.warnings.length === 0;
@@ -214,27 +313,38 @@ function statusForBook({ format, validation, readerLoaded, chapterNotFound, expe
 
 // ---- Extração EPUB (ex.: Chiavenato) ----
 
-// Obtém o texto do frame de conteúdo EPUB com o maior corpo significativo.
-async function readEpubFrame(app) {
-  let best = { text: '', url: '' };
+// Extrai identidade estrutural do documento EPUB a partir da URL:
+//   doc  = arquivo XHTML (Text/<doc>.xhtml)
+//   idref = item do spine (vnd.vst.idref=...)
+function parseEpubDocIdentity(url) {
+  const doc = (url.match(/epub\/OEBPS\/Text\/([^\/?#]+)\.xhtml/i) || [])[1] || null;
+  const idref = (url.match(/idref=([A-Za-z0-9_.-]+)/i) || [])[1] || (url.match(/vnd\.vst\.idref%3D([^\]%]+)/i) || [])[1] || null;
+  return { doc, idref };
+}
+
+// Lê o documento EPUB ativo (frame de conteúdo com mais texto) e sua identidade.
+async function readEpubActiveDocument(app) {
+  let best = { text: '', url: '', doc: null, idref: null };
   for (const { frame, url } of await collectFrames(app)) {
     if (!EPUB_CONTENT_RE.test(url)) continue;
     try {
       const txt = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
-      if (txt && txt.trim().length > best.text.length) best = { text: txt, url };
+      if (txt && txt.trim().length > best.text.length) best = { text: txt, url, ...parseEpubDocIdentity(url) };
     } catch { /* frame indisponível */ }
   }
   return best;
 }
 
-// Tenta navegar no sumário para o capítulo esperado (leitor EPUB da Minha Biblioteca).
-async function navigateEpubToChapter(app, chapter) {
-  const capRe = new RegExp(`^cap[ií]tulo\\s*${chapter}\\b`, 'i');
+// Navega para um capítulo via sumário acessível do leitor ("Acesse Capítulo N ...").
+async function navigateEpubViaToc(app, chapter) {
+  const capRe = new RegExp(`cap[ií]tulo\\s*${chapter}\\b`, 'i');
   for (const w of allWindows(app)) {
     try {
       const ok = await w.evaluate((re) => {
-        const btns = [...document.querySelectorAll('button, [role="button"], a')];
-        const target = btns.find((b) => re.test((b.innerText || b.textContent || '').replace(/\s+/g, ' ').trim()));
+        const els = [...document.querySelectorAll('button, [role="button"], a')];
+        const norm = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+        let target = els.find((el) => /^acesse\b/i.test(norm(el)) && re.test(norm(el)));
+        if (!target) target = els.find((el) => re.test(norm(el)));
         if (target) { target.click(); return true; }
         return false;
       }, capRe).catch(() => false);
@@ -244,15 +354,42 @@ async function navigateEpubToChapter(app, chapter) {
   return false;
 }
 
+// Decisão pura de confirmação do LIMITE estrutural do capítulo EPUB (Issue A).
+// Navegou-se para o capítulo N+1 via sumário do leitor; a evidência estrutural é a
+// MUDANÇA DE IDENTIDADE do documento ativo (doc/idref) para o documento do
+// capítulo N+1. O texto "Capítulo N+1" no cabeçalho é apenas confiança extra
+// (headingMatches) — não é exigido, pois os documentos podem começar com outro
+// texto (ex.: "O QUE VEREMOS ADIANTE"). Testável: puro, sem leitor.
+function confirmEpubBoundaryDecision({ beforeDoc, beforeUrl, nextDocIdent, nextHead, chapter }) {
+  const before = beforeDoc || parseEpubDocIdentity(beforeUrl || '');
+  const ident = nextDocIdent || {};
+  const nextRe = chapter != null ? new RegExp(`chapter0*${chapter}\\b|cap[ií]tulo\\s*${chapter}\\b`, 'i') : null;
+  const docChanged = (ident.doc !== undefined && before.doc !== undefined && ident.doc !== before.doc) ||
+    (!!ident.doc && before.doc !== ident.doc) ||
+    (!!ident.idref && before.idref !== undefined && ident.idref !== before.idref);
+  const nextDocMatches = !!(nextRe && ((ident.doc && nextRe.test(ident.doc)) || (ident.idref && nextRe.test(ident.idref))));
+  const headingMatches = !!(nextRe && nextHead && nextRe.test(String(nextHead)));
+  const confirmed = docChanged && nextDocMatches;
+  const reason = !nextRe ? 'sem-capitulo-esperado' : !docChanged ? 'documento-nao-mudou' : !nextDocMatches ? 'documento-seguinte-nao-identificado' : 'limite-estrutural-confirmado';
+  return { confirmed, docChanged, nextDocMatches, headingMatches, nextDoc: ident.doc, nextIdref: ident.idref, beforeDoc: before.doc, beforeIdref: before.idref, reason };
+}
+
+// Extrai o capítulo esperado com validação ESTRUTURAL do limite (Issue A):
+//   - identifica o documento/idref do capítulo no leitor;
+//   - confirma o limite navegando para o capítulo seguinte e verificando que o
+//     documento muda e começa com o próximo capítulo;
+//   - NUNCA usa pontuação final como prova de integridade.
 async function extractEpub(app, win, launchUrl, expected) {
   const attempts = [];
-  // 1ª tentativa: aguarda o frame de conteúdo carregar com texto significativo.
+  const audit = [];
+
+  // 1) Aguarda o leitor carregar com conteúdo significativo.
   let res = await poll(
     app,
     async () => {
-      const { text, url } = await readEpubFrame(app);
-      const t = (text || '').trim();
-      if (t.length >= 500 && !FRONT_RE.test(t.slice(0, 300))) return { text, url, attempt: 'espera-inicial' };
+      const d = await readEpubActiveDocument(app);
+      const t = (d.text || '').trim();
+      if (t.length >= 500 && !FRONT_RE.test(t.slice(0, 300))) return d;
       return null;
     },
     { timeoutMs: 35000, interval: 2000 }
@@ -260,19 +397,16 @@ async function extractEpub(app, win, launchUrl, expected) {
 
   if (!res) {
     attempts.push('espera-inicial-sem-conteudo');
-    // Retry controlado: tenta expandir o sumário e navegar para o capítulo.
     for (const w of allWindows(app)) {
       try { await w.locator('button:has-text("Expandir tudo")').first().click({ timeout: 3000 }).catch(() => {}); } catch { /* ignore */ }
     }
-    if (expected && expected.chapter) {
-      await navigateEpubToChapter(app, expected.chapter);
-    }
+    if (expected && expected.chapter) await navigateEpubViaToc(app, expected.chapter);
     res = await poll(
       app,
       async () => {
-        const { text, url } = await readEpubFrame(app);
-        const t = (text || '').trim();
-        if (t.length >= 500 && !FRONT_RE.test(t.slice(0, 300))) return { text, url, attempt: 'retry-navegacao' };
+        const d = await readEpubActiveDocument(app);
+        const t = (d.text || '').trim();
+        if (t.length >= 500 && !FRONT_RE.test(t.slice(0, 300))) return d;
         return null;
       },
       { timeoutMs: 25000, interval: 2000 }
@@ -280,7 +414,7 @@ async function extractEpub(app, win, launchUrl, expected) {
     if (res) attempts.push('retry-navegacao-ok');
     else attempts.push('retry-navegacao-sem-conteudo');
   } else {
-    attempts.push(res.attempt);
+    attempts.push('espera-inicial');
   }
 
   if (!res) {
@@ -290,67 +424,133 @@ async function extractEpub(app, win, launchUrl, expected) {
     };
   }
 
-  // Após obter conteúdo significativo, se o capítulo esperado não apareceu no
-  // texto, tenta navegar uma vez (capítulo errado = conteúdo possivelmente não é o pedido).
-  const validation = validateContent({ text: res.text, expected, kind: 'epub' });
-  let chapterNotFound = false;
-  if (expected && expected.chapter && !validation.chapterOk) {
-    const clicked = await navigateEpubToChapter(app, expected.chapter);
+  // 2) Captura o texto do capítulo ANTES de navegar para o próximo (limite).
+  const chapterText = (res.text || '').trim();
+  const ident = parseEpubDocIdentity(res.url);
+  audit.push({ doc: ident.doc, idref: ident.idref, status: 'accepted', origin: 'epub-content-frame', hash: sha256(chapterText), chars: chapterText.length });
+
+  // 3) Confirmação do capítulo por identidade estrutural (doc/idref) — nunca pelo
+  //    título do livro. Se o documento inicial não for o esperado, navega no sumário.
+  let epubChapterConfirmed = false;
+  const chapterRe = expected.chapter != null ? new RegExp(`chapter0*${expected.chapter}\\b|cap[ií]tulo\\s*${expected.chapter}\\b`, 'i') : null;
+  if (ident.doc && chapterRe && chapterRe.test(ident.doc)) epubChapterConfirmed = true;
+  if (ident.idref && chapterRe && chapterRe.test(ident.idref)) epubChapterConfirmed = true;
+  if (!epubChapterConfirmed && expected.chapter) {
+    const clicked = await navigateEpubViaToc(app, expected.chapter);
     if (clicked) {
       const after = await poll(
         app,
         async () => {
-          const { text, url } = await readEpubFrame(app);
-          const t = (text || '').trim();
-          if (t.length >= 500 && t !== res.text) return { text, url };
+          const d = await readEpubActiveDocument(app);
+          const t = (d.text || '').trim();
+          if (t.length >= 500 && t !== chapterText) return d;
           return null;
         },
         { timeoutMs: 20000, interval: 2000 }
       );
-      if (after) res = after;
+      if (after) {
+        res = after;
+        const t2 = (res.text || '').trim();
+        const id2 = parseEpubDocIdentity(res.url);
+        if (id2.doc && chapterRe && chapterRe.test(id2.doc)) epubChapterConfirmed = true;
+        if (id2.idref && chapterRe && chapterRe.test(id2.idref)) epubChapterConfirmed = true;
+        audit.push({ doc: id2.doc, idref: id2.idref, status: 'accepted', origin: 'epub-toc-navigation', hash: sha256(t2), chars: t2.length });
+      }
     }
-    const finalValidation = validateContent({ text: res.text, expected, kind: 'epub' });
-    if (!finalValidation.chapterOk) chapterNotFound = true;
   }
 
-  const finalValidation = validateContent({ text: res.text, expected, kind: 'epub' });
+  // 4) Confirmação do LIMITE estrutural: navega para o capítulo N+1 e verifica que
+  //    o documento ativo muda para o documento do capítulo N+1 (identidade
+  //    doc/idref). A correspondência do TEXTO ("Capítulo N+1" no cabeçalho) é
+  //    apenas confiança extra no audit — não é exigida, pois os documentos de
+  //    capítulo podem começar com outro texto (ex.: "O QUE VEREMOS ADIANTE").
+  //    Sem essa confirmação estrutural, endOk=false.
+  let epubBoundaryConfirmed = false;
+  let nextDocIdent = null;
+  const beforeUrl = res.url;
+  const beforeDoc = parseEpubDocIdentity(beforeUrl);
+  if (expected && expected.chapter) {
+    const nextClicked = await navigateEpubViaToc(app, expected.chapter + 1);
+    if (nextClicked) {
+      const after = await poll(
+        app,
+        async () => {
+          const d = await readEpubActiveDocument(app);
+          const t = (d.text || '').trim();
+          if (t.length >= 500 && d.url !== beforeUrl) return d;
+          return null;
+        },
+        { timeoutMs: 20000, interval: 2000 }
+      );
+      if (after) {
+        nextDocIdent = parseEpubDocIdentity(after.url);
+        const nextHead = (after.text || '').trim().slice(0, 200);
+        const decision = confirmEpubBoundaryDecision({
+          beforeDoc, beforeUrl, nextDocIdent, nextHead, chapter: expected.chapter + 1,
+        });
+        epubBoundaryConfirmed = decision.confirmed;
+        audit.push({ doc: nextDocIdent.doc, idref: nextDocIdent.idref, status: epubBoundaryConfirmed ? 'boundary-next-chapter' : 'boundary-not-confirmed', origin: 'epub-next-chapter-navigation', docChanged: decision.docChanged, nextDocMatches: decision.nextDocMatches, headingMatches: decision.headingMatches, reason: decision.reason, hash: sha256((after.text || '').trim().slice(0, 400)), chars: (after.text || '').length });
+      }
+    }
+  }
+
+  const chapterNotFound = !!(expected && expected.chapter && !epubChapterConfirmed);
+  const unexpectedContent = [];
+  if (expected && expected.chapter) {
+    const nextHeadingRe = new RegExp(`cap[ií]tulo\\s*${expected.chapter + 1}\\b`, 'i');
+    if (nextHeadingRe.test(chapterText.slice(0, 300))) unexpectedContent.push('cabecalho-do-proximo-capitulo-no-extraido');
+  }
+
+  const validation = validateContent({
+    text: chapterText,
+    expected: { ...expected, epubBoundaryConfirmed, epubChapterConfirmed, ambiguousPages: 0, unexpectedContent },
+    kind: 'epub',
+  });
+
   return {
     url: launchUrl,
     format: 'epub',
-    status: statusForBook({ format: 'epub', validation: finalValidation, readerLoaded: true, chapterNotFound, expected }),
-    text: res.text,
-    chars: res.text.trim().length,
+    status: statusForBook({ format: 'epub', validation, readerLoaded: true, chapterNotFound, expected }),
+    text: chapterText,
+    chars: chapterText.length,
     source: 'epub',
     readerUrl: res.url,
     readerLoaded: true,
     attempts,
-    validation: finalValidation,
+    validation,
     chapterNotFound,
+    structural: { ident, nextDocIdent, epubBoundaryConfirmed, epubChapterConfirmed, audit },
     error: null,
   };
 }
 
 // ---- Extração pageid (ex.: Hisrich) ----
 
-// Lê os frames de conteúdo (/pages/N/content), excluindo o chrome do leitor
-// (sumário, botões, margem) que polui a fidelidade. Retorna [{ id, text }].
-// O leitor pode pré-carregar a página seguinte em outro frame — a deduplicação
-// por texto é feita no chamador.
-async function readPageContentFrames(app) {
-  const out = [];
-  const seenIds = new Set();
-  for (const { frame, url } of await collectFrames(app)) {
-    const m = url.match(/pages\/(\d+)\/content/);
-    if (!m) continue;
-    const id = m[1];
-    if (seenIds.has(id)) continue;
-    seenIds.add(id);
+// Estado VERIFICÁVEL da página: pageid (URL principal, 0-based) e página impressa
+// (rótulo do chrome). Ambos avançam deterministicamente na navegação.
+async function getCurrentPageState(app) {
+  let pageid = null;
+  for (const w of allWindows(app)) {
     try {
-      const text = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
-      out.push({ id, text: text || '' });
-    } catch { /* frame indisponível */ }
+      const m = w.url().match(/pageid\/(\d+)/);
+      if (m) { pageid = parseInt(m[1], 10); break; }
+    } catch { /* ignore */ }
   }
-  return out;
+  const printed = await getCurrentPrintedPage(app);
+  return { pageid, printed };
+}
+
+// Aguarda uma mudança VERIFICÁVEL do estado da página (pageid/label) — não um
+// tempo fixo. Retorna true se mudou dentro do prazo.
+async function waitPageChange(app, prevState, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const s = await getCurrentPageState(app);
+    if (s.pageid != null && prevState.pageid != null && s.pageid !== prevState.pageid) return true;
+    if (s.printed != null && prevState.printed != null && s.printed !== prevState.printed) return true;
+    await waitTimeout(400);
+  }
+  return false;
 }
 
 // Lê o número da PÁGINA IMPRESSA atual do leitor (chrome: "Página N [/ M]").
@@ -398,20 +598,25 @@ async function clickNextPage(app) {
 }
 
 // Extrai o capítulo esperado navegando página a página até o próximo capítulo
-// ou o limite de páginas (maxPages). Nunca marca integral sem confirmar o fim.
+// ou o limite de páginas (maxPages). Issue B: o conteúdo é associado SOMENTE ao
+// frame ATIVO (página exibida), nunca aos frames de prefetch; a navegação aguarda
+// mudança verificável do estado (pageid/label) e cada página mantém trilha
+// auditável (página, frameId, origem, hash, validação). Associações ambíguas
+// impedem `integral`.
 async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   const maxPages = opts.maxPages || 120;
-  const pages = [];
   const steps = [];
+  const audit = [];
+  const trace = Array.isArray(opts.trace) ? opts.trace : null;
   let readerLoaded = false;
 
   await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
   const loaded = await poll(
     app,
     async () => {
-      const frames = await readPageContentFrames(app);
-      if (frames.some((f) => f.text && f.text.trim().length > 0)) return true;
-      return null;
+      const frames = await readContentFrameStyles(app);
+      const cls = classifyContentFrames(frames);
+      return cls.status === 'ok' && cls.active.text && cls.active.text.trim().length > 0 ? true : null;
     },
     { timeoutMs: 35000, interval: 2000 }
   );
@@ -421,7 +626,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     return {
       url: launchUrl, format: 'pageid', status: 'inaccessible', text: '', chars: 0,
       readerLoaded: false, readerUrl: null, steps, attempts: ['leitor-nao-carregou'], error: 'leitor-nao-carregou',
-      validation: validateContent({ text: '', expected, kind: 'pageid' }),
+      validation: validateContent({ text: '', expected, kind: 'pageid' }), audit: [],
     };
   }
 
@@ -429,48 +634,61 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   const tocPages = await getTocChapterPages(app);
   const nextChapterPage = expected && expected.chapter ? tocPages[expected.chapter + 1] : null;
   const startChapterPage = expected && expected.chapter ? tocPages[expected.chapter] : null;
-  const seenTexts = new Set();
+  const seenHashes = new Map();
   const collected = [];
-  const trace = Array.isArray(opts.trace) ? opts.trace : null;
+  const unexpectedContent = [];
   let reachedChapterEnd = false;
   let maxPagesHit = false;
+  let ambiguousCount = 0;
   let rawCharsTotal = 0;
   let uniqueCharsTotal = 0;
 
+  let prevState = await getCurrentPageState(app);
   for (let i = 0; i < maxPages; i++) {
-    const curPage = await getCurrentPrintedPage(app);
+    const curPage = prevState.printed;
     // Fim do capítulo: chegou à página impressa onde começa o próximo capítulo
     // (fonte mais confiável: sumário do leitor).
     if (nextChapterPage && curPage != null && curPage >= nextChapterPage) {
       reachedChapterEnd = true; steps.push('pagina-limite-capitulo'); break;
     }
-    // Coleta as páginas de conteúdo, deduplicando por texto (o leitor
-    // pré-carrega a página seguinte — sem dedupe haveria conteúdo duplicado).
-    const frames = await readPageContentFrames(app);
-    let added = 0;
-    for (const f of frames) {
-      const t = f.text.trim();
-      if (trace) {
-        rawCharsTotal += t.length;
-        trace.push({ step: i, kind: 'frame', page: curPage, frameId: f.id, chars: t.length, paras: countParas(t), isDup: seenTexts.has(t), sha256: sha256(t), head: t.slice(0, 40) });
+
+    const frames = await readContentFrameStyles(app);
+    if (trace) {
+      for (const f of frames) {
+        rawCharsTotal += (f.text || '').length;
+        trace.push({ step: i, kind: 'frame', page: curPage, frameId: f.id, active: f.active, chars: (f.text || '').length, paras: countParas(f.text), isDup: seenHashes.has(`${curPage}|${sha256((f.text || '').trim())}`), sha256: sha256((f.text || '').trim()), head: (f.text || '').slice(0, 40) });
       }
-      if (!t || seenTexts.has(t)) continue;
-      seenTexts.add(t);
-      collected.push({ page: curPage, text: t });
-      uniqueCharsTotal += t.length;
-      added++;
     }
+
+    const assoc = associateActivePage({ frames, printedPage: curPage, seenHashes });
+    audit.push(assoc.audit);
+    if (assoc.ambiguous) {
+      ambiguousCount++;
+      steps.push(assoc.reason);
+    } else if (assoc.accepted) {
+      collected.push({ page: curPage, text: assoc.text });
+      uniqueCharsTotal += assoc.chars;
+    }
+
     // Fallback (sem TOC): cabeçalho "Capítulo N+1" no início de uma página.
     if (!nextChapterPage && collected.length >= 2 && nextChapter && frames.some((f) => nextChapter.test(f.text))) {
       reachedChapterEnd = true; steps.push('cabecalho-capitulo-seguinte'); break;
     }
-    if (!added) { steps.push('sem-conteudo-novo'); break; }
-    if (trace) trace.push({ step: i, kind: 'step', page: curPage, framesSeen: frames.length, addedThisStep: added, collectedCount: collected.length, rawCharsTotal, uniqueCharsTotal });
+
     const ok = await clickNextPage(app);
     if (!ok) { steps.push('sem-botao-seguinte'); break; }
-    await waitTimeout(2500);
+    const changed = await waitPageChange(app, prevState, 8000);
+    if (!changed) { steps.push('sem-mudanca-de-pagina'); break; }
+    prevState = await getCurrentPageState(app);
   }
   if (!reachedChapterEnd && collected.length >= maxPages) { maxPagesHit = true; steps.push('limite-de-paginas'); }
+
+  // Conteúdo do próximo capítulo indevidamente incluído?
+  if (collected.length && nextChapter) {
+    const last = collected[collected.length - 1];
+    if (nextChapter.test(last.text.slice(0, 300))) unexpectedContent.push('cabecalho-do-proximo-capitulo-no-ultimo-bloco');
+  }
+
   if (trace) trace.push({
     kind: 'summary',
     steps: steps.slice(),
@@ -480,6 +698,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     uniqueParas: countParas(collected.map((p) => p.text).join('\n\n')),
     reachedChapterEnd,
     maxPagesHit,
+    ambiguousCount,
     startChapterPage,
     nextChapterPage,
     pageSequence: collected.map((p) => p.page),
@@ -492,7 +711,7 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   const chapterPageRangeConfirmed = !!(nextChapterPage && reachedChapterEnd);
   const validation = validateContent({
     text,
-    expected: { ...expected, reachedChapterEnd, maxPagesHit, chapterPageRangeConfirmed, startChapterPage, nextChapterPage },
+    expected: { ...expected, reachedChapterEnd, maxPagesHit, chapterPageRangeConfirmed, startChapterPage, nextChapterPage, ambiguousPages: ambiguousCount, unexpectedContent },
     kind: 'pageid',
   });
 
@@ -508,6 +727,9 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
     steps,
     attempts: ['navegacao-paginas'],
     validation,
+    audit,
+    ambiguousCount,
+    unexpectedContent,
     pages: collected.length,
     reachedChapterEnd,
     maxPagesHit,
@@ -521,27 +743,59 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
 // expected: { book, chapter } — identificação esperada do material (para validação).
 // opts: { maxPages } — limite de páginas do modo pageid.
 async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
-  const det = await detectFormat(app, win, launchUrl);
-  const base = { url: launchUrl, format: det.format, expected };
+  const attempts = [];
+  let det = null;
+  // O leitor restaura a última posição e monta os frames de conteúdo de forma
+  // assíncrona; um primeiro carregamento pode não expor os frames a tempo. Tenta
+  // até DETECT_RETRIES vezes com goto fresco — sem isso, 'unknown' vira um
+  // 'inaccessible' falso (erro de leitor, não de conteúdo).
+  for (let i = 0; i < 3; i++) {
+    det = await detectFormat(app, win, launchUrl);
+    if (det.format !== 'unknown' && det.format !== 'reader-auth') { attempts.push(`detectado=${det.format}`); break; }
+    attempts.push(`tentativa-${i + 1}-sem-frames-de-conteudo${det.format === 'reader-auth' ? '-sessao-leitor' : ''}`);
+    await waitTimeout(3000);
+  }
+  const base = { url: launchUrl, format: det.format, expected, attempts };
 
   if (det.format === 'epub') {
-    return extractEpub(app, win, launchUrl, expected);
+    const r = await extractEpub(app, win, launchUrl, expected);
+    return { ...r, attempts: [...attempts, ...(r.attempts || [])] };
   }
   if (det.format === 'pageid') {
-    return extractPageid(app, win, launchUrl, expected, opts);
+    const r = await extractPageid(app, win, launchUrl, expected, opts);
+    return { ...r, attempts: [...attempts, ...(r.attempts || [])] };
   }
-  if (det.format === 'bvpdf' || det.format === 'bvleitor') {
+  if (det.format === 'bvpdf' || det.format === 'bvleitor' || det.format === 'reader-auth') {
+    const err = det.format === 'reader-auth' ? 'sessao-do-leitor-nao-autorizada' : 'conteudo-em-canvas/DRM-nao-extraivel';
     return {
       ...base, status: 'inaccessible', text: '', chars: 0, source: det.format, readerLoaded: true,
-      readerUrl: det.readerUrl, attempts: [], error: 'conteudo-em-canvas/DRM-nao-extraivel',
-      validation: validateContent({ text: '', expected, kind: det.format === 'pageid' ? 'pageid' : 'epub' }),
+      readerUrl: det.readerUrl, error: err,
+      validation: validateContent({ text: '', expected, kind: 'epub' }),
     };
   }
   return {
     ...base, status: 'inaccessible', text: '', chars: 0, source: 'unknown', readerLoaded: false,
-    readerUrl: null, attempts: [], error: 'formato-de-leitor-nao-reconhecido',
+    readerUrl: null, error: 'formato-de-leitor-nao-reconhecido',
     validation: validateContent({ text: '', expected, kind: 'epub' }),
   };
 }
 
-module.exports = { extractBook, detectFormat, validateContent, statusForBook, detectRepetitions };
+module.exports = {
+  extractBook,
+  detectFormat,
+  validateContent,
+  statusForBook,
+  detectRepetitions,
+  isActiveFrameStyle,
+  classifyContentFrames,
+  associateActivePage,
+  parseEpubDocIdentity,
+  endsAtSentenceBoundary,
+  readEpubActiveDocument,
+  navigateEpubViaToc,
+  getCurrentPageState,
+  readContentFrameStyles,
+  waitPageChange,
+  collectFrames,
+  confirmEpubBoundaryDecision,
+};

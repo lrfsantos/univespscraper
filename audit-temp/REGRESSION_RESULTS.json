@@ -1,0 +1,175 @@
+{
+  "ts": "2026-11-06T00:34:03.613Z",
+  "results": [
+    {
+      "id": "A-1",
+      "title": "Capítulo completo, limite estrutural identificado",
+      "status": "PASS",
+      "detail": "endOk=true status=integral-valid"
+    },
+    {
+      "id": "A-2",
+      "title": "Capítulo truncado terminando em ponto final (reprodução da falsa aprovação antiga)",
+      "status": "PASS",
+      "detail": "oldEndOk(só pontuação)=true (falsa aprovação) | newEndOk(estrutural)=false (reprovado)"
+    },
+    {
+      "id": "A-3",
+      "title": "Capítulo distribuído em múltiplos XHTML (completo)",
+      "status": "PASS",
+      "detail": "chapterIds=ch01a,ch01b endOk=true"
+    },
+    {
+      "id": "A-4",
+      "title": "Documento do capítulo seguinte presente no spine não é incluído",
+      "status": "PASS",
+      "detail": "nextIncluded=true endOk=false"
+    },
+    {
+      "id": "A-5",
+      "title": "OPF ausente/inválido → partial",
+      "status": "PASS",
+      "detail": "parse={\"ok\":false,\"reason\":\"container-ausente-ou-invalido\"}"
+    },
+    {
+      "id": "A-6",
+      "title": "Capítulo solicitado não identificado estruturalmente → partial",
+      "status": "PASS",
+      "detail": "boundaryKnown=false reason=capitulo-nao-identificado-na-navegacao"
+    },
+    {
+      "id": "B-1",
+      "title": "Frame ativo (pág 45) + prefetch (pág 46) presentes → só ativo associado",
+      "status": "PASS",
+      "detail": "frameId=f45 accepted=true"
+    },
+    {
+      "id": "B-2",
+      "title": "Ordem dos frames invertida → associação correta",
+      "status": "PASS",
+      "detail": "frameId=f45"
+    },
+    {
+      "id": "B-3",
+      "title": "Frame ativo e inativo presentes → só o ativo é aceito",
+      "status": "PASS",
+      "detail": "frameId=f45"
+    },
+    {
+      "id": "B-4",
+      "title": "Sem frame ativo identificável → associação rejeitada (ambígua)",
+      "status": "PASS",
+      "detail": "ambiguous=true reason=sem-frame-ativo-identificavel"
+    },
+    {
+      "id": "B-5",
+      "title": "Múltiplos frames ativos → associação rejeitada (ambígua)",
+      "status": "PASS",
+      "detail": "ambiguous=true reason=multiplos-frames-ativos"
+    },
+    {
+      "id": "B-6",
+      "title": "Conteúdo duplicado na mesma página → dedup sem perda de identidade",
+      "status": "PASS",
+      "detail": "d1.accepted=true d2.audit.status=duplicate seenHashes=1"
+    },
+    {
+      "id": "B-7",
+      "title": "Mesmo conteúdo em páginas distintas → origem preservada",
+      "status": "PASS",
+      "detail": "origem da página 99=99 seenHashes=2"
+    },
+    {
+      "id": "B-8",
+      "title": "Prefetch do capítulo seguinte presente → não é associado ao capítulo atual",
+      "status": "PASS",
+      "detail": "active.id=f45"
+    },
+    {
+      "id": "C-1",
+      "title": "Todos os recursos esperados integrais → PASS",
+      "status": "PASS"
+    },
+    {
+      "id": "C-2",
+      "title": "Todos os recursos acessíveis parciais → FAIL",
+      "status": "PASS",
+      "detail": "expectedResourcesIntegral=false"
+    },
+    {
+      "id": "C-3",
+      "title": "Um acessível parcial e outro integral → FAIL (se ambos deveriam ser integrais)",
+      "status": "PASS"
+    },
+    {
+      "id": "C-4",
+      "title": "Recurso inacessível corretamente identificado → critério PASS",
+      "status": "PASS"
+    },
+    {
+      "id": "C-5",
+      "title": "Recurso integral sem validação de fim → NÃO integral",
+      "status": "PASS",
+      "detail": "statusForBook=partial"
+    },
+    {
+      "id": "C-6",
+      "title": "Recurso integral com capítulo incorreto → NÃO integral",
+      "status": "PASS",
+      "detail": "statusForBook=partial"
+    },
+    {
+      "id": "C-7",
+      "title": "Recurso integral com página de origem ambígua → NÃO integral",
+      "status": "PASS",
+      "detail": "statusForBook=partial"
+    },
+    {
+      "id": "C-8",
+      "title": "Recurso integral com conteúdo do capítulo seguinte incluído → NÃO integral",
+      "status": "PASS",
+      "detail": "statusForBook=partial"
+    },
+    {
+      "id": "D-1",
+      "title": "Doc muda p/ capítulo seguinte SEM \"Capítulo N+1\" no texto (caso Chiavenato) → confirmado",
+      "status": "PASS",
+      "detail": "{\"confirmed\":true,\"docChanged\":true,\"nextDocMatches\":true,\"headingMatches\":false,\"nextDoc\":\"chapter02\",\"nextIdref\":\"chapter02\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"limite-estrutural-confirmado\"}"
+    },
+    {
+      "id": "D-2",
+      "title": "Documento não muda → NÃO confirmado",
+      "status": "PASS",
+      "detail": "{\"confirmed\":false,\"docChanged\":false,\"nextDocMatches\":false,\"headingMatches\":true,\"nextDoc\":\"chapter01\",\"nextIdref\":\"chapter01\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"documento-nao-mudou\"}"
+    },
+    {
+      "id": "D-3",
+      "title": "Documento intermediário do capítulo (multi-doc) → NÃO confirmado",
+      "status": "PASS",
+      "detail": "{\"confirmed\":false,\"docChanged\":true,\"nextDocMatches\":false,\"headingMatches\":true,\"nextDoc\":\"chapter01b\",\"nextIdref\":\"chapter01b\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"documento-seguinte-nao-identificado\"}"
+    },
+    {
+      "id": "D-4",
+      "title": "idref muda para o capítulo seguinte → confirmado",
+      "status": "PASS",
+      "detail": "{\"confirmed\":true,\"docChanged\":true,\"nextDocMatches\":true,\"headingMatches\":true,\"nextDoc\":\"chapter01\",\"nextIdref\":\"chapter02\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"limite-estrutural-confirmado\"}"
+    },
+    {
+      "id": "D-5",
+      "title": "Sem capítulo esperado → NÃO confirmado",
+      "status": "PASS",
+      "detail": "{\"confirmed\":false,\"docChanged\":true,\"nextDocMatches\":false,\"headingMatches\":false,\"nextDoc\":\"chapter02\",\"nextIdref\":\"chapter02\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"sem-capitulo-esperado\"}"
+    },
+    {
+      "id": "D-6",
+      "title": "Doc muda + cabeçalho \"Capítulo N+1\" → confirmado (confiança extra)",
+      "status": "PASS",
+      "detail": "{\"confirmed\":true,\"docChanged\":true,\"nextDocMatches\":true,\"headingMatches\":true,\"nextDoc\":\"chapter02\",\"nextIdref\":\"chapter02\",\"beforeDoc\":\"chapter01\",\"beforeIdref\":\"chapter01\",\"reason\":\"limite-estrutural-confirmado\"}"
+    }
+  ],
+  "summary": {
+    "total": 28,
+    "passed": 28,
+    "failed": 0
+  }
+}
