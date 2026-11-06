@@ -1,20 +1,24 @@
 # Resultados de Regressão — Issues A/B/C (Módulo 3)
 
-> Data: 2026-11-05. Testes **sintéticos determinísticos** (sem AVA/leitor real) em
-> `poc/test-regression-m3.js` — **28/28 PASS**. Nenhum conteúdo protegido é
+> Data: 2026-11-05/06. Testes **sintéticos determinísticos** (sem AVA/leitor real) em
+> `poc/test-regression-m3.js` — **29/29 PASS**. Nenhum conteúdo protegido é
 > gravado: fixtures sintéticas, contagens e hashes sanitizados apenas.
+>
+> Follow-up do commit `053ffc6` (integrar EPUB estrutural + sincronizar PAGEID):
+> ver `audit-temp/IMPLEMENTATION_RESULTS.md` e `poc/test-integration-m3.js` (14/14 PASS).
 
 ## Resumo
 
 | Issue | Escopo | Casos | Status |
 |---|---|---|---|
 | A | Fim de capítulo EPUB exige evidência **estrutural** (nunca pontuação) | 6 | 6/6 PASS |
-| B | Associação **frame ativo × página** no leitor pageid | 8 | 8/8 PASS |
+| B | Associação **frame ativo × página** no leitor pageid (inclui exclusão do topo da janela) | 9 | 9/9 PASS |
 | C | Critérios de aprovação independentes (integridade exige evidência) | 8 | 8/8 PASS |
 | D | Decisão de limite estrutural EPUB (camada de produção, pura) | 6 | 6/6 PASS |
-| **Total** | | **28** | **28/28 PASS** |
+| **Total** | | **29** | **29/29 PASS** |
 
 Execução: `node poc/test-regression-m3.js` → `audit-temp/REGRESSION_RESULTS.json`.
+Integração (Issue A estrutural + Issue B sincronização): `node poc/test-integration-m3.js` → **14/14 PASS** (`audit-temp/INTEGRATION_RESULTS.json`).
 
 ---
 
@@ -59,11 +63,16 @@ aprovam `integral`.
 | B-6 | Conteúdo duplicado na **mesma** página → dedup sem perda de identidade | 2ª captura = `duplicate` — PASS |
 | B-7 | **Mesmo** conteúdo em páginas **distintas** → origem preservada | página 99 registrada, `seenHashes=2` — PASS |
 | B-8 | Prefetch do capítulo seguinte presente → não associado ao capítulo atual | `active.id=f45` — PASS |
+| B-9 | **Topo da janela** (`app.../reader/books/<id>/pageid/N`) NÃO é frame de conteúdo; iframe jigsaw e `pages/N/content` são | `topo=false, jigsaw=true, pages=true, shell=false` — PASS |
 
 Produção: `src/extract/books.js` (`classifyContentFrames`,
-`associateActivePage`, `extractPageid`). Na execução real de 20:38 o Hisrich foi
-`integral` (102.149 chars, 0 avisos) — sem o conteúdo do capítulo seguinte no
-último bloco (sobre-inclusão do registro antigo eliminada).
+`associateActivePage`, `extractPageid` + **sincronização pageid** via
+`extractPageidViaSync`/`syncCaptureFrame`/`readPageidFrames`/`isPageidContentFrame`).
+Na execução real de 20:38 o Hisrich foi `integral` (102.149 chars, 0 avisos) — sem o
+conteúdo do capítulo seguinte no último bloco. O mecanismo completo de sincronização
+(incluindo as corridas "interface muda antes do frame" e inversa) é exercitado pelos
+testes de integração em `poc/test-integration-m3.js` (seção B, leitor simulado
+realista) — ver `IMPLEMENTATION_RESULTS.md`.
 
 ## Issue C — Critérios de aprovação independentes
 
@@ -112,18 +121,36 @@ Refatorado o passo 4 de `extractEpub` para decisão pura e testável
 **Limitação ambiental**: após 21:00 o leitor VitalSource passou a recusar a montagem
 dos frames de conteúdo (tela de loading/`login.vitalsource.com/logout` — limite de
 sessão/dispositivos no servidor, acumulado pelos lançamentos). Por isso a
-revalidação live pós-correção da Issue D não foi possível nesta máquina; o código
-passa a classificar esse estado como `reader-auth → inaccessible` (honesto, nunca
-`integral` falso). O comportamento de produção das Issues A/B/C foi comprovado na
-execução de 20:38 e os casos de regressão são cobertos deterministicamente pela
-tabela acima. Um experimento de perfil persistente do leitor (para contornar a
-invalidação de sessão) foi **revogado**: o requisito do projeto é perfil temporário
-e isolado, e `.gitignore` não substitui esse requisito — o teste volta a usar perfil
-efêmero por execução.
+revalidação live pós-correção da Issue D e do follow-up não foi possível nesta
+máquina; o código passa a classificar esse estado como `reader-auth → inaccessible`
+(honesto, nunca `integral` falso) ou `inaccessible`/`not_found` quando o conteúdo
+não monta. Na rodada do follow-up (2026-11-06), os leitores montaram conteúdo de
+forma intermitente: quando não montam, a extração é honesta (ex.: Chiavenato
+`inaccessible/leitor-nao-carregou`; antes chegou a capturar 27 chars do topo
+"Minha Biblioteca" — corrigido por `isPageidContentFrame`, caso B-9). O
+comportamento de produção das Issues A/B/C foi comprovado na execução de 20:38; os
+casos de regressão são cobertos deterministicamente pela tabela acima e o mecanismo
+completo de sincronização pelas corridas dos testes de integração. Um experimento
+de perfil persistente do leitor (para contornar a invalidação de sessão) foi
+**revogado**: o requisito do projeto é perfil temporário e isolado, e `.gitignore`
+não substitui esse requisito — o teste volta a usar perfil efêmero por execução.
+
+## Testes de integração (follow-up)
+
+`poc/test-integration-m3.js` — **14/14 PASS** (ver `IMPLEMENTATION_RESULTS.md`):
+- **Issue A (EPUB estrutural)**: pacote por string parseado; cap. em 2 docs ambos
+  extraídos → `integral-valid`; falta de doc → `endOk=false`; doc do próximo
+  capítulo incluído → `endOk=false`; pacote indisponível → `used=false` (navegação
+  complementar); sem próximo capítulo → limite não identificável.
+- **Issue B (sincronização pageid)**: leitor simulado realista (identidade na
+  URL/src, pageid ≠ impressa, timers reais) cobrindo as 8 tabelas do follow-up,
+  incluindo as **corridas** "interface mostra 46, frame ainda 45" e inversa —
+  o conteúdo antigo NUNCA é atribuído à página nova.
 
 ## Arquivos
 
-- Testes: `poc/test-regression-m3.js`, `poc/lib/m3-criteria.js`
+- Testes: `poc/test-regression-m3.js`, `poc/test-integration-m3.js`, `poc/lib/m3-criteria.js`
 - Produção: `src/extract/books.js`, `src/extract/epub-structure.js`
-- Resultados JSON: `audit-temp/REGRESSION_RESULTS.json`
+- Resultados JSON: `audit-temp/REGRESSION_RESULTS.json`, `audit-temp/INTEGRATION_RESULTS.json`
+- Relatórios: `audit-temp/IMPLEMENTATION_RESULTS.md`, `audit-temp/CHANGES_AND_PENDING_ITEMS.md`
 - Evidência real: `poc/evidence/module3/run.log`, `poc/evidence/module3/tmp/*.txt`

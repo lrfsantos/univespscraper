@@ -126,6 +126,14 @@ function issueB() {
   // aqui verificamos a função de classificação pura para o cenário de sincronização (associação apenas do ativo).
   const r8 = books.classifyContentFrames([prefetch46, active45]);
   record({ id: group + '-8', title: 'Prefetch do capítulo seguinte presente → não é associado ao capítulo atual', status: (r8.status === 'ok' && r8.active.id === 'f45') ? 'PASS' : 'FAIL', detail: `active.id=${r8.active && r8.active.id}` });
+
+  // B9: o TOPO da janela (app.minhabiblioteca.../reader/books/<id>/pageid/N) NÃO é
+  // frame de conteúdo; só o iframe jigsaw (books/<id>/pageid/N) e pages/N/content o são.
+  const top = books.isPageidContentFrame('https://app.minhabiblioteca.com.br/reader/books/9788580553338/pageid/22', '');
+  const jig = books.isPageidContentFrame('', 'https://jigsaw.minhabiblioteca.com.br/books/9788580553338/pageid/22?brand=vitalsource&create=true');
+  const pages = books.isPageidContentFrame('https://jigsaw.minhabiblioteca.com.br/books/9788580553338/pageid/22/pages/22/content', '');
+  const shell = books.isPageidContentFrame('https://jigsaw.minhabiblioteca.com.br/mosaic/wrapper.html?uuid=x&type=book', '');
+  record({ id: group + '-9', title: 'Topo da janela NÃO é frame de conteúdo; iframe jigsaw e pages/N/content são', status: (!top && jig && pages && !shell) ? 'PASS' : 'FAIL', detail: `topo=${top} jigsaw=${jig} pages=${pages} shell=${shell}` });
 }
 
 // ==================== ISSUE C — critérios e status ====================

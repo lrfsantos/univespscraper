@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-06T00:34:03.613Z",
+  "ts": "2026-11-06T04:17:49.072Z",
   "results": [
     {
       "id": "A-1",
@@ -86,6 +86,12 @@
       "detail": "active.id=f45"
     },
     {
+      "id": "B-9",
+      "title": "Topo da janela NÃO é frame de conteúdo; iframe jigsaw e pages/N/content são",
+      "status": "PASS",
+      "detail": "topo=false jigsaw=true pages=true shell=false"
+    },
+    {
       "id": "C-1",
       "title": "Todos os recursos esperados integrais → PASS",
       "status": "PASS"
@@ -168,8 +174,8 @@
     }
   ],
   "summary": {
-    "total": 28,
-    "passed": 28,
+    "total": 29,
+    "passed": 29,
     "failed": 0
   }
 }

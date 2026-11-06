@@ -1,0 +1,94 @@
+{
+  "ts": "2026-11-06T04:18:40.152Z",
+  "results": [
+    {
+      "id": "A-parse",
+      "title": "Pacote EPUB por string (produção por URL) é parseado",
+      "status": "PASS",
+      "detail": "ok=true spine=4 nav=3"
+    },
+    {
+      "id": "A-1",
+      "title": "Cap. 1 em 2 docs, ambos extraídos → integral-valid",
+      "status": "PASS",
+      "detail": "used=true endOk=true chapterIds=ch01a,ch01b"
+    },
+    {
+      "id": "A-2",
+      "title": "Falta documento esperado do capítulo → endOk=false",
+      "status": "PASS",
+      "detail": "allChapterItemsExtracted=false endOk=false"
+    },
+    {
+      "id": "A-3",
+      "title": "Documento do capítulo seguinte incluído → endOk=false",
+      "status": "PASS",
+      "detail": "nextChapterIncluded=true endOk=false"
+    },
+    {
+      "id": "A-4",
+      "title": "Pacote indisponível → used=false (navegação complementar)",
+      "status": "PASS",
+      "detail": "used=false boundaryKnown=false"
+    },
+    {
+      "id": "A-5",
+      "title": "Sem próximo capítulo na navegação → limite não identificável",
+      "status": "PASS",
+      "detail": "boundaryKnown=false reason=proximo-capitulo-nao-identificado"
+    },
+    {
+      "id": "B-1",
+      "title": "Página 45 ativa e página 46 em prefetch → somente 45 capturada",
+      "status": "PASS",
+      "detail": "pages=1 temP46=false"
+    },
+    {
+      "id": "B-2",
+      "title": "CORRIDA: interface 46, frame ainda 45 → captura aguarda",
+      "status": "PASS",
+      "detail": "pages=2 bloco46Contem45=false status=not_found"
+    },
+    {
+      "id": "B-3",
+      "title": "CORRIDA INVERSA: frame 46 antes do número exibido → captura aguarda",
+      "status": "PASS",
+      "detail": "pages=2 bloco46Contem45=false status=not_found"
+    },
+    {
+      "id": "B-4",
+      "title": "Página e frame correspondem → captura aprovada",
+      "status": "PASS",
+      "detail": "pages=2 tem45=true tem46=true"
+    },
+    {
+      "id": "B-5",
+      "title": "Frame com conteúdo antigo (nunca atualiza) → captura rejeitada",
+      "status": "PASS",
+      "detail": "pages=1 steps=frame-sem-conteudo-atualizado"
+    },
+    {
+      "id": "B-6",
+      "title": "Dois frames candidatos (mesma identidade) → associação ambígua",
+      "status": "PASS",
+      "detail": "ambiguousCount=1"
+    },
+    {
+      "id": "B-7",
+      "title": "Nenhum frame identificável → associação rejeitada",
+      "status": "PASS",
+      "detail": "pages=1 steps=sem-frame-identificavel"
+    },
+    {
+      "id": "B-8",
+      "title": "Página seguinte (46) do capítulo seguinte → não incluída",
+      "status": "PASS",
+      "detail": "pages=1 reachedChapterEnd=true temP46=false"
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0
+  }
+}

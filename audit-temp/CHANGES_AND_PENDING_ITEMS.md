@@ -39,3 +39,66 @@
 
 - Autorização (ou não) para **purgar o histórico** do texto licenciado de `8742012`.
 - Aprovação (ou não) do Módulo 3 para avançar ao Módulo 4.
+
+---
+
+# Rodada follow-up — commit 053ffc6 (2026-11-05/06)
+
+## 6. Lacunas resolvidas (Issue A/B) e entrega
+
+A revisão independente apontou duas lacunas, resolvidas nesta rodada (sem reescrever
+as correções anteriores; comportamento conservador preservado):
+
+1. **Issue A — integração estrutural EPUB na produção**:
+   - `epub-structure.js`: parsing por **string XML** (`parsePackageFromXml`,
+     `parseOpfFromXml`, `navFromNcxXml`) para o pacote servido por URL, e
+     `validateChapterExtraction` tolerante a basename (id do spine OU href).
+   - `books.js`: `fetchEpubPackageFromReader` (fetch same-origin do OPF/nav no frame
+     de conteúdo jigsaw), `applyEpubStructuralValidation` (decisão pura) e passo 3.5
+     do `extractEpub`: quando o pacote está acessível, a **estrutura decide** o
+     limite; a navegação ao capítulo seguinte fica como mecanismo complementar.
+   - Teste de integração (contrato extração×validação estrutural): **6/6 PASS**.
+2. **Issue B — sincronização pageid (página exibida × frame)**:
+   - Identidade de página do frame na **URL/src** (`jigsaw.../books/<id>/pageid/N` ou
+     `pages/N/content`); topo da janela excluído (`isPageidContentFrame`, B-9).
+   - `extractPageidViaSync` + `syncCaptureFrame`: captura estado, navega, espera
+     mudança verificável da página, espera o frame correspondente atualizar o
+     conteúdo (hash ≠ anterior) e captura só após a confirmação de identidade;
+     conteúdo antigo / sem frame / múltiplos candidatos → rejeição conservadora.
+   - Testes de integração com leitor simulado realista, cobrindo as 8 tabelas do
+     follow-up, incl. as **corridas** (interface 46 × frame ainda 45, e inversa):
+     **8/8 PASS**.
+3. **Issue C**: `m3-criteria.js` e `statusForBook()` preservados; só o caso B-9
+   adicionado à regressão.
+
+## 7. Testes executados nesta rodada
+
+| Suíte | Resultado |
+|---|---|
+| `poc/test-regression-m3.js` (sintética A/B/C/D) | **29/29 PASS** |
+| `poc/test-integration-m3.js` (A estrutural + B sincronização) | **14/14 PASS** |
+| `poc/test-module3.js` (real no AVA) | sem validação live nesta rodada (leitor VitalSource intermitente; resultados honestos `inaccessible`/`not_found` quando o conteúdo não monta) |
+
+## 8. Pendências / limitações (follow-up)
+
+- **Validação live do caminho de pacote EPUB e do mecanismo de sincronização**:
+  não declarada nesta rodada — o leitor real montou conteúdo de forma intermitente
+  (limite de sessão/dispositivos do VitalSource). Coberta deterministicamente por
+  testes de integração com leitor simulado realista; recomenda-se revalidação em
+  momento com sessão estável e em outra disciplina/semana.
+- **`fetchEpubPackageFromReader`** depende de o leitor abrir o frame `epub/OEBPS/Text/`
+  (modo EPUB). Quando o VitalSource abre o livro em modo pageid, o caminho de pacote
+  não é usado e o limite vem da navegação complementar — comportamento correto e
+  documentado.
+- Demais pendências da rodada anterior permanecem (Etapas 4/5, purga do histórico,
+  validação do executável portable).
+
+## 9. Entrega Git
+
+- Commit 1 (Issue A — EPUB estrutural): `src/extract/epub-structure.js` + fiação em
+  `src/extract/books.js`.
+- Commit 2 (Issue B — sincronização pageid): `src/extract/books.js`.
+- Commit 3 (testes e documentação): `poc/test-integration-m3.js`,
+  `poc/test-regression-m3.js`, `poc/probe-sync.js`, `audit-temp/IMPLEMENTATION_RESULTS.md`,
+  `REGRESSION_RESULTS.md`, `CHANGES_AND_PENDING_ITEMS.md`, `INTEGRATION_RESULTS.json`.
+- Histórico **não** reescrito. Hashes completos informados na resposta final.
