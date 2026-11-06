@@ -105,33 +105,118 @@ function entryPath(entry, baseDir) {
   return entry && entry.href ? resolveRel(baseDir, entry.href) : null;
 }
 
-// ---- Navegação (NCX e/ou nav.xhtml) ----
+// Resolve uma referência (href) contra uma base (diretório do filesystem OU URL).
+// Fragmentos de URL (#...) NÃO fazem parte do caminho do documento — são
+// removidos. Usada tanto pelo parser de diretório quanto pelo parser por string
+// (produção por URL).
+function resolveRef(base, ref) {
+  if (!ref) return null;
+  const clean = String(ref).split('#')[0];
+  if (!clean) return null;
+  if (typeof base === 'string' && /^[a-z][a-z0-9+.-]*:\/\//i.test(base)) {
+    try { return new URL(clean, base).href; } catch { return null; }
+  }
+  try { return path.normalize(path.resolve(base, decodeURIComponent(clean))); } catch { return null; }
+}
 
-// Lê entradas de navegação: { label, href } na ordem do documento.
+// Resolve um href do pacote contra a base do OPF (diretório ou URL).
+// Sem base (modo string sem baseUrl), retorna o caminho relativo normalizado
+// (fragmentos removidos) para permitir comparação direta com hrefs de manifest.
+function pkgResolve(pkg, href) {
+  if (!pkg || !href) return null;
+  if (pkg.packageUrl) return resolveRef(pkg.packageUrl, href);
+  if (pkg.packageDir) return resolveRef(pkg.packageDir, href);
+  return normPath(String(href).split('#')[0]) || null;
+}
+
+// Caminho normalizado (minúsculas, separador '/') para comparação.
+function normPath(p) {
+  return (p || '').replace(/\\/g, '/').toLowerCase();
+}
+
+// ---- Navegação (EPUB 2 NCX e EPUB 3 nav.xhtml) ----
+
+// Coleta uma cadeia de navPoint do NCX preservando a HIERARQUIA (profundidade).
+// href resolvido relativamente ao diretório do arquivo NCX.
+function collectNcxNavPoint(np, baseDir, depth) {
+  const out = [];
+  const label = firstText(findAll(np, 'navLabel')[0]);
+  const content = findAll(np, 'content')[0];
+  if (content && content.attrs.src) {
+    out.push({ label: label.trim(), href: resolveRef(baseDir, content.attrs.src), rawHref: content.attrs.src, depth, kind: 'ncx' });
+  }
+  for (const child of findAll(np, 'navPoint')) {
+    out.push(...collectNcxNavPoint(child, baseDir, depth + 1));
+  }
+  return out;
+}
+
+// Verifica se um elemento nav é o SUMÁRIO (epub:type="toc"). Tolera prefixo de
+// namespace alternativo (ex.: epub:type) e marcação sem prefixo.
+function isTocNav(nav) {
+  const t = nav.attrs && nav.attrs['epub:type'];
+  if (t === 'toc' || /(^|\s)toc($|\s)/i.test(t || '')) return true;
+  if (nav.attrs && nav.attrs.type === 'toc') return true;
+  // sem atributo epub:type: só considera nav se for o único nav do documento
+  return false;
+}
+
+// Coleta a estrutura de listas do nav.xhtml (ol > li > a, com sublistas aninhadas),
+// preservando a HIERARQUIA. Só o nav epub:type="toc" é considerado sumário.
+function collectNavList(ol, baseDir, depth) {
+  const out = [];
+  for (const li of findAll(ol, 'li')) {
+    const a = findAll(li, 'a')[0];
+    if (a && a.attrs.href) {
+      const label = (a.children.map((c) => c.value || '').join('') || '').trim();
+      out.push({ label, href: resolveRef(baseDir, a.attrs.href), rawHref: a.attrs.href, depth, kind: 'nav' });
+    }
+    for (const sub of findAll(li, 'ol')) {
+      out.push(...collectNavList(sub, baseDir, depth + 1));
+    }
+  }
+  return out;
+}
+
+// Lê entradas de navegação: { label, href(resolvido), rawHref, depth, kind }.
+// Suporta EPUB 2 (NCX) e EPUB 3 (nav.xhtml com epub:type="toc"), na ordem do
+// documento. Caminhos resolvidos relativamente ao ARQUIVO de navegação.
 function readNav(pkg) {
   const entries = [];
-  // NCX: toc.ncx em qualquer lugar do pacote
+  const seen = new Set();
+  // EPUB 2: toc.ncx (media-type application/x-dtbncx+xml ou href *.ncx)
   for (const id of Object.keys(pkg.manifest)) {
     const e = pkg.manifest[id];
     if (!/ncx/i.test(e.mediaType) && !/\.ncx$/i.test(e.href)) continue;
     const p = entryPath(e, pkg.packageDir);
     const root = readXmlFile(p);
     if (!root) continue;
+    const baseDir = path.dirname(p);
     for (const np of findAll(root, 'navPoint')) {
-      const label = firstText(findAll(np, 'navLabel')[0]);
-      const content = findAll(np, 'content')[0];
-      if (content && content.attrs.src) entries.push({ label: label.trim(), href: resolveRel(pkg.packageDir, content.attrs.src) });
+      for (const en of collectNcxNavPoint(np, baseDir, 0)) {
+        // dedup por href RAW (com fragmento): entradas diferentes do MESMO doc
+        // (ex.: #sec1 e #sec1-1) NÃO são colapsadas.
+        const key = `${en.kind}:${en.rawHref}`;
+        if (!seen.has(key)) { seen.add(key); entries.push(en); }
+      }
     }
   }
-  // nav.xhtml (EPUB 3)
+  // EPUB 3: nav.xhtml com nav[epub:type="toc"]
   for (const id of Object.keys(pkg.manifest)) {
     const e = pkg.manifest[id];
     if (!/\.x?html?$/i.test(e.href)) continue;
     const p = entryPath(e, pkg.packageDir);
     const root = readXmlFile(p);
-    if (!root || !findAll(root, 'nav').length) continue;
-    for (const a of findAll(root, 'a')) {
-      if (a.attrs.href) entries.push({ label: (a.children.map((c) => c.value || '').join('') || '').trim(), href: resolveRel(pkg.packageDir, a.attrs.href) });
+    if (!root) continue;
+    const navs = findAll(root, 'nav');
+    const tocNav = navs.find(isTocNav);
+    if (!tocNav) continue;
+    const baseDir = path.dirname(p);
+    for (const ol of findAll(tocNav, 'ol')) {
+      for (const en of collectNavList(ol, baseDir, 0)) {
+        const key = `${en.kind}:${en.rawHref}`;
+        if (!seen.has(key)) { seen.add(key); entries.push(en); }
+      }
     }
   }
   return entries;
@@ -146,19 +231,27 @@ function chapterNumber(label) {
   return m ? parseInt(m[1], 10) : null;
 }
 
-// Mapeia uma entrada de navegação para um item do spine (por caminho).
+// Mapeia uma entrada de navegação para um item do spine.
+// Preferência: caminho RESOLVIDO (normalizado) do documento; basename apenas
+// quando for ÚNICO entre os itens do spine (rejeita correspondências ambíguas).
 function navEntryToSpineId(entry, pkg) {
   if (!entry || !entry.href) return null;
-  const base = entry.href.replace(/\\/g, '/').toLowerCase();
+  const resolved = normPath(entry.href);
+  const byPath = [];
+  const basenames = new Map();
   for (const id of pkg.spine) {
-    const href = (pkg.manifest[id].href || '').replace(/\\/g, '/').toLowerCase();
-    if (href === base) return id;
+    const href = pkg.manifest[id] && pkg.manifest[id].href;
+    if (!href) continue;
+    const hrefResolved = normPath(pkgResolve(pkg, href));
+    if (hrefResolved === resolved) byPath.push(id);
+    const base = normPath(href).split('/').pop();
+    if (base) basenames.set(base, (basenames.get(base) || []).concat(id));
   }
-  // fallback: mesmo nome de arquivo
-  const b = path.basename(base);
-  for (const id of pkg.spine) {
-    if (path.basename((pkg.manifest[id].href || '').toLowerCase()) === b) return id;
-  }
+  if (byPath.length === 1) return byPath[0];
+  if (byPath.length > 1) return null; // caminho ambíguo no spine
+  // fallback por basename SOMENTE se único
+  const b = normPath(entry.href).split('/').pop();
+  if (b && basenames.get(b) && basenames.get(b).length === 1) return basenames.get(b)[0];
   return null;
 }
 
@@ -201,19 +294,48 @@ function findChapterBoundary({ pkg, chapter }) {
 }
 
 // Valida uma extração contra a estrutura do EPUB.
-// extractedDocIds: ids do spine, hrefs ou nomes de arquivo dos documentos
-// efetivamente extraídos (comparação tolerante: por id OU basename do href).
+// extractedDocIds: ids do spine, hrefs (relativos ao OPF) ou caminhos RESOLVIDOS
+// dos documentos efetivamente extraídos. A comparação usa o CAMINHO RESOLVIDO
+// normalizado (colisões de basename entre diretórios distintos NÃO colidem);
+// basename é aceito somente quando for ÚNICO no spine.
 function validateChapterExtraction({ pkg, chapter, extractedDocIds }) {
   const b = findChapterBoundary({ pkg, chapter });
   if (!b.boundaryKnown) {
     return { boundaryKnown: false, endOk: false, allChapterItemsExtracted: false, nextChapterIncluded: false, status: 'partial', reason: b.reason, chapterIds: [], nextChapterFirstId: null };
   }
-  const norm = (s) => (s || '').replace(/\\/g, '/').split('/').pop().toLowerCase();
-  const extractedSet = new Set((extractedDocIds || []).map(norm));
-  const inExtracted = (id) => {
-    if (extractedSet.has(id.toLowerCase())) return true;
+  // Conjunto de formas normalizadas dos documentos extraídos: aceita id do spine,
+  // href (relativo ao OPF) e caminho resolvido — todos normalizados/resolvidos.
+  const extractedSet = new Set();
+  for (const raw of extractedDocIds || []) {
+    const s = String(raw);
+    extractedSet.add(normPath(s));
+    const res = pkgResolve(pkg, s);
+    if (res) extractedSet.add(normPath(res));
+    if (pkg.manifest[s] && pkg.manifest[s].href) {
+      const r = pkgResolve(pkg, pkg.manifest[s].href);
+      if (r) extractedSet.add(normPath(r));
+    }
+  }
+  // Caminho resolvido de cada item do spine (pode haver duplicados entre ids? não, cada id tem href).
+  const resolvedById = new Map();
+  const basenameCount = new Map();
+  for (const id of pkg.spine) {
     const href = pkg.manifest[id] && pkg.manifest[id].href;
-    return !!(href && extractedSet.has(norm(href)));
+    if (!href) continue;
+    const r = normPath(pkgResolve(pkg, href));
+    resolvedById.set(id, r);
+    const base = normPath(href).split('/').pop();
+    if (base) basenameCount.set(base, (basenameCount.get(base) || 0) + 1);
+  }
+  const inExtracted = (id) => {
+    const r = resolvedById.get(id);
+    if (r && extractedSet.has(r)) return true;
+    // id do spine diretamente
+    if (extractedSet.has(normPath(id))) return true;
+    // basename só se único
+    const href = pkg.manifest[id] && pkg.manifest[id].href;
+    const base = href ? normPath(href).split('/').pop() : '';
+    return !!(base && basenameCount.get(base) === 1 && extractedSet.has(base));
   };
   const allChapterItemsExtracted = b.chapterIds.every(inExtracted);
   const nextChapterIncluded = inExtracted(b.nextChapterFirstId);
@@ -253,22 +375,53 @@ function parseOpfFromXml(opfXml) {
 }
 
 // Parseia entradas de navegação do NCX (toc.ncx) a partir do XML.
+// Retorna { label, href(raw), rawHref, depth, kind } — href ainda NÃO resolvido;
+// a resolução contra a base acontece em resolveNavEntries.
 function navFromNcxXml(ncxXml) {
   const root = parseXml(ncxXml || '');
   const entries = [];
   for (const np of findAll(root, 'navPoint')) {
-    const label = firstText(findAll(np, 'navLabel')[0]);
-    const content = findAll(np, 'content')[0];
-    if (content && content.attrs.src) entries.push({ label: label.trim(), href: content.attrs.src });
+    for (const en of collectNcxNavPoint(np, '.', 0)) {
+      entries.push({ label: en.label, href: en.rawHref, rawHref: en.rawHref, depth: en.depth, kind: 'ncx' });
+    }
   }
   return entries;
 }
 
-// Parser completo a partir de strings (OPF + NCX opcional).
-function parsePackageFromXml({ opfXml, ncxXml } = {}) {
+// Parseia a navegação EPUB 3 (nav.xhtml) a partir do HTML/XML. Identifica o
+// nav[epub:type="toc"], preserva a hierarquia ol>li>a com sublistas e retorna
+// entradas com href RAW (resolvido depois contra a base do pacote).
+function navFromNavHtml(navHtml) {
+  const root = parseXml(navHtml || '');
+  const entries = [];
+  const navs = findAll(root, 'nav');
+  const tocNav = navs.find(isTocNav);
+  if (!tocNav) return entries;
+  for (const ol of findAll(tocNav, 'ol')) {
+    for (const en of collectNavList(ol, '.', 0)) {
+      entries.push({ label: en.label, href: en.rawHref, rawHref: en.rawHref, depth: en.depth, kind: 'nav' });
+    }
+  }
+  return entries;
+}
+
+// Resolve hrefs RAW de entradas de navegação contra a base (URL ou diretório),
+// removendo fragmentos e mantendo a hierarquia.
+function resolveNavEntries(entries, base) {
+  return (entries || []).map((e) => ({ ...e, href: resolveRef(base, e.href) }));
+}
+
+// Parser completo a partir de strings (OPF + NCX e/ou nav.xhtml).
+// baseUrl: URL do diretório do OPF (produção por URL) — usada para resolver hrefs
+// de manifest e navegação no mesmo espaço.
+function parsePackageFromXml({ opfXml, ncxXml, navHtml, baseUrl } = {}) {
   const pkg = parseOpfFromXml(opfXml);
   if (!pkg) return { ok: false, reason: 'opf-ausente-ou-invalido' };
-  pkg.nav = ncxXml ? navFromNcxXml(ncxXml) : [];
+  if (baseUrl) pkg.packageUrl = baseUrl;
+  let nav = [];
+  if (ncxXml) nav = nav.concat(navFromNcxXml(ncxXml));
+  if (navHtml) nav = nav.concat(navFromNavHtml(navHtml));
+  pkg.nav = resolveNavEntries(nav, baseUrl || '.');
   return { ok: true, pkg };
 }
 
@@ -292,4 +445,13 @@ module.exports = {
   parsePackageFromXml,
   parseOpfFromXml,
   navFromNcxXml,
+  navFromNavHtml,
+  resolveNavEntries,
+  isTocNav,
+  collectNavList,
+  collectNcxNavPoint,
+  readNav,
+  pkgResolve,
+  resolveRef,
+  normPath,
 };
