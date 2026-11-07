@@ -1,23 +1,23 @@
 {
-  "ts": "2026-11-07T18:57:19.126Z",
+  "ts": "2026-11-07T19:22:57.812Z",
   "results": [
     {
       "id": "E-1",
       "title": "Perfil criado em %TEMP% exclusivo (prefixo univesp-profile-)",
       "status": "PASS",
-      "detail": "dir=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839112-a039156e tmp=C:\\Users\\luiza\\AppData\\Local\\Temp"
+      "detail": "dir=<TEMP>\\univesp-profile-1794079377802-ffcd8a7c tmp=<TEMP>"
     },
     {
       "id": "E-2",
       "title": "installTempProfile configura userData/sessionData no diretório temporário exclusivo",
       "status": "PASS",
-      "detail": "userData=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839116-19554203"
+      "detail": "userData=<TEMP>\\univesp-profile-1794079377805-9521e759"
     },
     {
       "id": "E-3",
       "title": "Isolamento: cada execução usa um diretório de perfil DISTINTO",
       "status": "PASS",
-      "detail": "a=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839118-3708607c b=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839119-e3a530a0"
+      "detail": "a=<TEMP>\\univesp-profile-1794079377807-a36ec844 b=<TEMP>\\univesp-profile-1794079377808-f0f33c3e"
     },
     {
       "id": "E-4",

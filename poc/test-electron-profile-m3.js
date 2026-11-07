@@ -13,10 +13,11 @@ const { makeTempProfileDir, cleanupProfile, cleanupResidualProfiles, installTemp
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'ELECTRON_PROFILE_RESULTS.json');
 const results = [];
+function sanitize(s) { return String(s == null ? '' : s).split(os.tmpdir()).join('<TEMP>'); }
 function record(entry) {
-  results.push(entry);
+  results.push({ ...entry, title: sanitize(entry.title), detail: sanitize(entry.detail) });
   console.log(`[${entry.status}] ${entry.id}: ${entry.title}`);
-  if (entry.detail) console.log('    ', entry.detail);
+  if (entry.detail) console.log('    ', sanitize(entry.detail));
 }
 
 function fakeApp() {
