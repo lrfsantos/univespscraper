@@ -1,0 +1,64 @@
+{
+  "ts": "2026-11-07T18:57:19.032Z",
+  "results": [
+    {
+      "id": "H-1",
+      "title": "Cookie válido na origem → enviado (verificado no servidor)",
+      "status": "PASS",
+      "detail": "Cookie=\"sess=abc\""
+    },
+    {
+      "id": "H-2",
+      "title": "Cookie institucional NÃO vaza para host externo (verificado no servidor)",
+      "status": "PASS",
+      "detail": "Cookie=\"\" (esperado vazio)"
+    },
+    {
+      "id": "H-3",
+      "title": "Hostname malicioso (prefixo/contém) bloqueado; subdomínio real aceito",
+      "status": "PASS",
+      "detail": "sub.example.com=\"c=v\" notexample.com=\"\" example.com.evil.com=\"\""
+    },
+    {
+      "id": "H-4",
+      "title": "Cookie host-only enviado ao host exato, NÃO a outro host",
+      "status": "PASS",
+      "detail": "127.0.0.1=\"hostonly=h\" localhost=\"\""
+    },
+    {
+      "id": "H-5",
+      "title": "Cookie Secure NÃO enviado por HTTP (verificado no servidor)",
+      "status": "PASS",
+      "detail": "Cookie=\"\" (esperado vazio)"
+    },
+    {
+      "id": "H-6",
+      "title": "Cookie expirado bloqueado (verificado no servidor)",
+      "status": "PASS",
+      "detail": "Cookie=\"\" (esperado vazio)"
+    },
+    {
+      "id": "H-7",
+      "title": "Redirecionamento same-origin → cookie recalculado e enviado no destino",
+      "status": "PASS",
+      "detail": "status=200 finalCookie=\"same=ok\""
+    },
+    {
+      "id": "H-8",
+      "title": "Redirect cross-origin → SEM cookie institucional, SEM Authorization; custom não-sensível mantido",
+      "status": "PASS",
+      "detail": "status=200 cookieB=\"\" authB=\"\" xCustom=\"mantido\""
+    },
+    {
+      "id": "H-9",
+      "title": "PDF externo: só cookie válido p/ o host externo; NUNCA o do AVA",
+      "status": "PASS",
+      "detail": "Cookie=\"cookie=externo\""
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  }
+}

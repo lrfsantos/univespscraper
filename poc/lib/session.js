@@ -142,8 +142,9 @@ function cleanupProfile(userDataDir) {
 }
 
 // Login automático via SAML (autorizado pelo usuário para automação dos testes).
-// A senha é derivada dos números antes do "@" do e-mail institucional.
-// Usado apenas nos testes automatizados; o app final mantém o login manual.
+// A senha NUNCA é derivada ou inferida: é fornecida pelo usuário (parâmetro) ou
+// por variável de ambiente apenas em testes autorizados. O app final mantém o
+// login manual.
 async function autoLogin(context, { username, password, timeoutMs = 120000 } = {}) {
   const page = context.pages()[0] || (await context.newPage());
   await page.goto(
