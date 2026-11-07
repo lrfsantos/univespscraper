@@ -918,29 +918,59 @@ function isPageidContentFrame(url, src) {
   return /\/pages\/\d+\/content/i.test(hay) || /jigsaw\.minhabiblioteca\.com\.br\/books\/[^\/]+\/pageid\/\d+/i.test(hay);
 }
 
+// Normaliza a URL de um frame para comparação de identidade (ignora fragmento).
+function normFrameUrl(u) {
+  try {
+    const x = new URL(u);
+    x.hash = '';
+    return x.href;
+  } catch { return String(u || '').split('#')[0]; }
+}
+
 // Lê, no leitor real, os frames de conteúdo pageid com identidade, estilo e texto.
+// SEGURANÇA DA IDENTIDADE (auditoria):
+//   - identidade (location.href + src do iframe pai) e TEXTO são capturados no
+//     MESMO snapshot (um único frame.evaluate) — evita atribuir a página A o
+//     texto de B quando o frame navega entre operações separadas;
+//   - depois do snapshot, a URL capturada é REVALIDADa contra a URL do frame
+//     observada pelo driver (frame.url()); divergência ⇒ frame navegou durante a
+//     leitura ⇒ a captura é DESCARTADA por inteiro (não vira página válida e não
+//     reutiliza texto anterior);
+//   - a estabilidade geral do leitor NÃO substitui a validação da identidade
+//     individual do frame.
 async function readPageidFrames(app) {
   const out = [];
-  for (const { frame, url } of await collectFrames(app)) {
-    const src = await frame.evaluate(() => { const el = window.frameElement; return el ? el.getAttribute('src') || '' : ''; }).catch(() => '');
-    if (!isPageidContentFrame(url, src)) continue;
-    const identity = parsePageidFrameIdentity(url, src);
+  for (const { frame, url: frameUrl } of await collectFrames(app)) {
+    const snap = await frame.evaluate(() => {
+      const el = window.frameElement;
+      let style = null;
+      if (el) {
+        try { const cs = getComputedStyle(el); style = { scrolling: el.getAttribute('scrolling'), width: cs.width }; } catch { style = null; }
+      }
+      return {
+        url: location.href || '',
+        src: el ? el.getAttribute('src') || '' : '',
+        style,
+        text: document.body ? document.body.innerText : '',
+      };
+    }).catch(() => null);
+    if (!snap) continue;
+    // Revalidação: a URL capturada no snapshot precisa coincidir com a URL do
+    // frame observada pelo driver. Divergência ⇒ navegação durante a leitura.
+    if (frameUrl && snap.url && normFrameUrl(frameUrl) !== normFrameUrl(snap.url)) continue;
+    if (!isPageidContentFrame(snap.url, snap.src) && !isPageidContentFrame(frameUrl, snap.src)) continue;
+    const identity = parsePageidFrameIdentity(snap.url, snap.src);
     // Verificação explícita de AUSÊNCIA (null/undefined): pageid/pages ZERO são
     // identidades válidas e NUNCA devem ser descartadas por truthiness.
     if (identity.pageid == null && identity.pages == null) continue;
-    const style = await frame.evaluate(() => {
-      const el = window.frameElement; if (!el) return null;
-      const cs = getComputedStyle(el);
-      return { scrolling: el.getAttribute('scrolling'), width: cs.width };
-    }).catch(() => null);
-    const text = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+    const text = snap.text || '';
     out.push({
-      url, src, identity,
-      style,
-      active: style ? isActiveFrameStyle(style) : false,
-      text: text || '',
-      chars: (text || '').length,
-      hash: sha256((text || '').trim()),
+      url: snap.url, src: snap.src, identity,
+      style: snap.style,
+      active: snap.style ? isActiveFrameStyle(snap.style) : false,
+      text,
+      chars: text.length,
+      hash: sha256(text.trim()),
       frameId: identity.pages != null ? identity.pages : identity.pageid,
     });
   }

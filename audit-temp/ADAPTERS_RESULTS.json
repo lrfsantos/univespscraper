@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-07T02:26:12.875Z",
+  "ts": "2026-11-07T18:56:47.904Z",
   "results": [
     {
       "id": "A-1",
@@ -66,6 +66,24 @@
       "title": "collectNavList não duplica entradas em listas aninhadas (cada li uma vez)",
       "status": "PASS",
       "detail": "nav.length=3 (esperado 3)"
+    },
+    {
+      "id": "A-12",
+      "title": "EPUB3 nav: pai sem link NÃO recebe destino do filho (agrupamento preservado)",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Filho\",\"d\":1,\"h\":\"Text/ch2.xhtml\"},{\"l\":\"Topo\",\"d\":0,\"h\":\"Text/ch1.xhtml\"}]"
+    },
+    {
+      "id": "A-13",
+      "title": "EPUB3 nav: pai e filho com links próprios → hierarquia e ordem corretas",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Pai\",\"d\":0,\"h\":\"Text/ch1.xhtml\"},{\"l\":\"Filho\",\"d\":1,\"h\":\"Text/ch1a.xhtml\"}]"
+    },
+    {
+      "id": "A-14",
+      "title": "EPUB3 nav: 3+ níveis com agrupamento sem link → árvore/depth/ordem/unicidade",
+      "status": "PASS",
+      "detail": "[{\"l\":\"N1\",\"d\":0,\"h\":\"Text/ch1.xhtml\"},{\"l\":\"N2\",\"d\":1,\"h\":\"Text/ch1a.xhtml\"},{\"l\":\"N3\",\"d\":2,\"h\":\"Text/ch1a1.xhtml\"},{\"l\":\"N2b\",\"d\":2,\"h\":\"Text/ch1b.xhtml\"}]"
     },
     {
       "id": "B-1",
@@ -210,11 +228,23 @@
       "title": "syncCaptureFrame: estado ausente NÃO confirma captura (frame do pageid esperado não basta)",
       "status": "PASS",
       "detail": "status=rejected discards=2"
+    },
+    {
+      "id": "D-11",
+      "title": "readPageidFrames: corrida A→B durante a leitura → captura DESCARTADA (B não vira A)",
+      "status": "PASS",
+      "detail": "frames=0 (esperado 0 — divergência de identidade)"
+    },
+    {
+      "id": "D-12",
+      "title": "readPageidFrames: controle (A estável, identidade/texto coincidem) → captura aceita",
+      "status": "PASS",
+      "detail": "frames=1 pageid=45"
     }
   ],
   "summary": {
-    "total": 35,
-    "passed": 35,
+    "total": 40,
+    "passed": 40,
     "failed": 0
   }
 }

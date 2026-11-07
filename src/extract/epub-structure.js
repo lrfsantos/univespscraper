@@ -178,7 +178,10 @@ function collectNavList(ol, baseDir, depth) {
   const out = [];
   // Só li DIRETOS do ol (findAll seria recursivo e duplicaria os aninhados).
   for (const li of childrenNamed(ol, 'li')) {
-    const a = findAll(li, 'a')[0];
+    // SOMENTE o link FILHO DIRETO do li (findAll(li,'a')[0] poderia atribuir ao
+    // pai o link de um descendente). Agrupamentos sem link direto não recebem
+    // destino inventado — os links aninhados entram pela recursão abaixo.
+    const a = childrenNamed(li, 'a')[0];
     if (a && a.attrs.href) {
       const label = (a.children.map((c) => c.value || '').join('') || '').trim();
       out.push({ label, href: resolveRef(baseDir, a.attrs.href), rawHref: a.attrs.href, depth, kind: 'nav' });

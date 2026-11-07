@@ -55,6 +55,7 @@ function runInPage(fn, ctx, args) {
 class FakeFrame {
   constructor(opts = {}) {
     this.urlValue = opts.url || '';
+    this.locationHref = opts.locationHref; // override p/ simular corrida A→B durante a leitura
     this.text = opts.text || '';
     this.attrs = opts.attrs || {};
     this.width = opts.width || '';
@@ -68,6 +69,7 @@ class FakeFrame {
     const frameElement = { getAttribute: (n) => (n in this.attrs ? this.attrs[n] : null) };
     const ctx = {
       window: { frameElement },
+      location: { href: this.locationHref != null ? this.locationHref : this.urlValue },
       document: { body: { innerText: this.text }, querySelectorAll: () => [] },
       getComputedStyle: () => ({ width: this.width }),
       fetch: async (u) => {
@@ -236,6 +238,43 @@ function testParsePackage() {
     const p = ep.parsePackageFromXml({ opfXml: OPF3, navHtml: NAV3, baseUrl: OPF_BASE });
     const ok = p.pkg.nav.length === 3;
     record({ id: G + '-11', title: 'collectNavList não duplica entradas em listas aninhadas (cada li uma vez)', status: ok ? 'PASS' : 'FAIL', detail: `nav.length=${p.pkg.nav.length} (esperado 3)` });
+  }
+
+  // ---- Links FILHOS DIRETOS do li (4.1) ----
+  const navFromHtml = (html) => ep.navFromNavHtml(html);
+  const H = (inner) => `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><body><nav epub:type="toc">${inner}</nav></body></html>`;
+
+  // A-12: pai SEM link (agrupamento) + filho COM link → agrupamento não ganha
+  // destino inventado; só o filho entra.
+  {
+    const html = H(`<ol><li>Grupo sem link<ol><li><a href="Text/ch2.xhtml">Filho</a></li></ol></li><li><a href="Text/ch1.xhtml">Topo</a></li></ol>`);
+    const nav = navFromHtml(html);
+    const ok = nav.length === 2 && nav[0].label === 'Filho' && nav[0].depth === 1 && nav[0].rawHref === 'Text/ch2.xhtml' && nav[1].label === 'Topo' && nav[1].depth === 0;
+    record({ id: G + '-12', title: 'EPUB3 nav: pai sem link NÃO recebe destino do filho (agrupamento preservado)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(nav.map((e) => ({ l: e.label, d: e.depth, h: e.rawHref }))) });
+  }
+
+  // A-13: pai e filho COM links próprios → ambos, hierarquia e ordem preservadas.
+  {
+    const html = H(`<ol><li><a href="Text/ch1.xhtml">Pai</a><ol><li><a href="Text/ch1a.xhtml">Filho</a></li></ol></li></ol>`);
+    const nav = navFromHtml(html);
+    const ok = nav.length === 2 && nav[0].label === 'Pai' && nav[0].depth === 0 && nav[0].rawHref === 'Text/ch1.xhtml' && nav[1].label === 'Filho' && nav[1].depth === 1 && nav[1].rawHref === 'Text/ch1a.xhtml';
+    record({ id: G + '-13', title: 'EPUB3 nav: pai e filho com links próprios → hierarquia e ordem corretas', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(nav.map((e) => ({ l: e.label, d: e.depth, h: e.rawHref }))) });
+  }
+
+  // A-14: três+ níveis com agrupamento sem link → árvore, profundidade, ordem e
+  // unicidade dos destinos.
+  {
+    const html = H(`<ol><li><a href="Text/ch1.xhtml">N1</a><ol>
+      <li><a href="Text/ch1a.xhtml">N2</a><ol><li><a href="Text/ch1a1.xhtml">N3</a></li></ol></li>
+      <li>Grupo sem link<ol><li><a href="Text/ch1b.xhtml">N2b</a></li></ol></li>
+    </ol></li></ol>`);
+    const nav = navFromHtml(html);
+    const labels = nav.map((e) => e.label);
+    const depths = nav.map((e) => e.depth);
+    const hrefs = nav.map((e) => e.rawHref);
+    const unique = new Set(hrefs).size === hrefs.length;
+    const ok = labels.join(',') === 'N1,N2,N3,N2b' && depths.join(',') === '0,1,2,2' && unique;
+    record({ id: G + '-14', title: 'EPUB3 nav: 3+ níveis com agrupamento sem link → árvore/depth/ordem/unicidade', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(nav.map((e) => ({ l: e.label, d: e.depth, h: e.rawHref }))) });
   }
 }
 
@@ -487,6 +526,27 @@ async function testPageidAdapter() {
     const s = await books.syncCaptureFrame(drv, { pageid: 45 }, null, 500);
     const ok = s.status !== 'captured' && s.discards > 0;
     record({ id: G + '-10', title: 'syncCaptureFrame: estado ausente NÃO confirma captura (frame do pageid esperado não basta)', status: ok ? 'PASS' : 'FAIL', detail: `status=${s.status} discards=${s.discards}` });
+  }
+
+  // D-11 (corrida): leitor estável; frame começa com identidade A (45) e navega
+  // para B (46) DURANTE a leitura; texto pertence a B. readPageidFrames deve
+  // DESCARTAR a captura por inteiro (B nunca pode ser associado a A).
+  {
+    const frame = new FakeFrame({ url: JIGSAW(45), locationHref: JIGSAW(46), text: makeText('b46'), attrs: { src: JIGSAW(45), scrolling: 'no' }, width: '663px' });
+    const app = new FakeApp({ windows: [new FakeWindow({ url: SHELL(46), frames: [frame], buttons: [] })] });
+    const fr = await books.readPageidFrames(app);
+    const ok = fr.length === 0;
+    record({ id: G + '-11', title: 'readPageidFrames: corrida A→B durante a leitura → captura DESCARTADA (B não vira A)', status: ok ? 'PASS' : 'FAIL', detail: `frames=${fr.length} (esperado 0 — divergência de identidade)` });
+  }
+
+  // D-12 (controle): frame permanece em A (45) e identidade/texto coincidem →
+  // captura aceita.
+  {
+    const frame = new FakeFrame({ url: JIGSAW(45), text: makeText('a45'), attrs: { src: JIGSAW(45), scrolling: 'no' }, width: '663px' });
+    const app = new FakeApp({ windows: [new FakeWindow({ url: SHELL(45), frames: [frame], buttons: [] })] });
+    const fr = await books.readPageidFrames(app);
+    const ok = fr.length === 1 && fr[0].identity.pageid === 45 && fr[0].text.includes('a45');
+    record({ id: G + '-12', title: 'readPageidFrames: controle (A estável, identidade/texto coincidem) → captura aceita', status: ok ? 'PASS' : 'FAIL', detail: `frames=${fr.length} pageid=${fr[0] && fr[0].identity.pageid}` });
   }
 }
 
