@@ -49,3 +49,7 @@ poc/evidence/**/result.json
 poc/evidence/**/run.log
 poc/evidence/**/tmp/
 poc/evidence/**/artifacts/
+
+poc/evidence/**/probe*.json
+poc/evidence/**/run-fast.log
+
