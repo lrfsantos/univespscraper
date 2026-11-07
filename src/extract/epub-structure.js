@@ -57,6 +57,13 @@ function findAll(node, name) {
   return out;
 }
 
+// Filhos DIRETOS (findAll é recursivo; para coleções hierárquicas como ol>li e
+// navPoint>navPoint é preciso apenas o nível imediato — senão entradas aninhadas
+// são visitadas várias vezes e duplicadas).
+function childrenNamed(node, name) {
+  return (node && node.children ? node.children : []).filter((c) => c.name === name);
+}
+
 function firstText(node) {
   if (!node) return '';
   const t = findAll(node, '#text')[0];
@@ -86,15 +93,18 @@ function readOpf(opfPath) {
   const manifest = {};
   for (const item of findAll(root, 'item')) {
     const id = item.attrs.id;
-    if (id) manifest[id] = { href: item.attrs.href || '', mediaType: item.attrs['media-type'] || '' };
+    if (id) manifest[id] = { href: item.attrs.href || '', mediaType: item.attrs['media-type'] || '', properties: item.attrs.properties || '' };
   }
   const spine = [];
+  let spineToc = null;
+  const spineEl = findAll(root, 'spine')[0];
+  if (spineEl && spineEl.attrs && spineEl.attrs.toc) spineToc = spineEl.attrs.toc;
   for (const it of findAll(root, 'itemref')) {
     const idref = it.attrs.idref;
     if (idref && manifest[idref]) spine.push(idref);
   }
   if (!spine.length) return null;
-  return { manifest, spine, packageDir: path.dirname(opfPath) };
+  return { manifest, spine, spineToc, packageDir: path.dirname(opfPath) };
 }
 
 function resolveRel(baseDir, rel) {
@@ -145,7 +155,8 @@ function collectNcxNavPoint(np, baseDir, depth) {
   if (content && content.attrs.src) {
     out.push({ label: label.trim(), href: resolveRef(baseDir, content.attrs.src), rawHref: content.attrs.src, depth, kind: 'ncx' });
   }
-  for (const child of findAll(np, 'navPoint')) {
+  // Só filhos DIRETOS (findAll seria recursivo e duplicaria os aninhados).
+  for (const child of childrenNamed(np, 'navPoint')) {
     out.push(...collectNcxNavPoint(child, baseDir, depth + 1));
   }
   return out;
@@ -165,13 +176,15 @@ function isTocNav(nav) {
 // preservando a HIERARQUIA. Só o nav epub:type="toc" é considerado sumário.
 function collectNavList(ol, baseDir, depth) {
   const out = [];
-  for (const li of findAll(ol, 'li')) {
+  // Só li DIRETOS do ol (findAll seria recursivo e duplicaria os aninhados).
+  for (const li of childrenNamed(ol, 'li')) {
     const a = findAll(li, 'a')[0];
     if (a && a.attrs.href) {
       const label = (a.children.map((c) => c.value || '').join('') || '').trim();
       out.push({ label, href: resolveRef(baseDir, a.attrs.href), rawHref: a.attrs.href, depth, kind: 'nav' });
     }
-    for (const sub of findAll(li, 'ol')) {
+    // Só ol DIRETOS do li.
+    for (const sub of childrenNamed(li, 'ol')) {
       out.push(...collectNavList(sub, baseDir, depth + 1));
     }
   }
@@ -183,7 +196,6 @@ function collectNavList(ol, baseDir, depth) {
 // documento. Caminhos resolvidos relativamente ao ARQUIVO de navegação.
 function readNav(pkg) {
   const entries = [];
-  const seen = new Set();
   // EPUB 2: toc.ncx (media-type application/x-dtbncx+xml ou href *.ncx)
   for (const id of Object.keys(pkg.manifest)) {
     const e = pkg.manifest[id];
@@ -192,13 +204,10 @@ function readNav(pkg) {
     const root = readXmlFile(p);
     if (!root) continue;
     const baseDir = path.dirname(p);
-    for (const np of findAll(root, 'navPoint')) {
-      for (const en of collectNcxNavPoint(np, baseDir, 0)) {
-        // dedup por href RAW (com fragmento): entradas diferentes do MESMO doc
-        // (ex.: #sec1 e #sec1-1) NÃO são colapsadas.
-        const key = `${en.kind}:${en.rawHref}`;
-        if (!seen.has(key)) { seen.add(key); entries.push(en); }
-      }
+    const navMap = findAll(root, 'navMap')[0] || root;
+    // Só os navPoint de TOPO (collectNcxNavPoint já desce pelos filhos diretos).
+    for (const np of childrenNamed(navMap, 'navPoint')) {
+      for (const en of collectNcxNavPoint(np, baseDir, 0)) entries.push(en);
     }
   }
   // EPUB 3: nav.xhtml com nav[epub:type="toc"]
@@ -212,11 +221,11 @@ function readNav(pkg) {
     const tocNav = navs.find(isTocNav);
     if (!tocNav) continue;
     const baseDir = path.dirname(p);
-    for (const ol of findAll(tocNav, 'ol')) {
-      for (const en of collectNavList(ol, baseDir, 0)) {
-        const key = `${en.kind}:${en.rawHref}`;
-        if (!seen.has(key)) { seen.add(key); entries.push(en); }
-      }
+    // Apenas a PRIMEIRA lista (a de topo, ancestral de todas) — coletá-la uma vez
+    // produz a árvore completa sem duplicar os itens aninhados.
+    const topOl = findAll(tocNav, 'ol')[0];
+    if (topOl) {
+      for (const en of collectNavList(topOl, baseDir, 0)) entries.push(en);
     }
   }
   return entries;
@@ -363,15 +372,22 @@ function parseOpfFromXml(opfXml) {
   const manifest = {};
   for (const item of findAll(root, 'item')) {
     const id = item.attrs.id;
-    if (id) manifest[id] = { href: item.attrs.href || '', mediaType: item.attrs['media-type'] || '' };
+    if (id) manifest[id] = {
+      href: item.attrs.href || '',
+      mediaType: item.attrs['media-type'] || '',
+      properties: item.attrs.properties || '',
+    };
   }
   const spine = [];
+  let spineToc = null;
+  const spineEl = findAll(root, 'spine')[0];
+  if (spineEl && spineEl.attrs && spineEl.attrs.toc) spineToc = spineEl.attrs.toc;
   for (const it of findAll(root, 'itemref')) {
     const idref = it.attrs.idref;
     if (idref && manifest[idref]) spine.push(idref);
   }
   if (!spine.length) return null;
-  return { manifest, spine, packageDir: null, packageUrl: null };
+  return { manifest, spine, spineToc, packageDir: null, packageUrl: null };
 }
 
 // Parseia entradas de navegação do NCX (toc.ncx) a partir do XML.
@@ -380,7 +396,9 @@ function parseOpfFromXml(opfXml) {
 function navFromNcxXml(ncxXml) {
   const root = parseXml(ncxXml || '');
   const entries = [];
-  for (const np of findAll(root, 'navPoint')) {
+  const navMap = findAll(root, 'navMap')[0] || root;
+  // Só os navPoint de TOPO (collectNcxNavPoint desce pelos filhos diretos).
+  for (const np of childrenNamed(navMap, 'navPoint')) {
     for (const en of collectNcxNavPoint(np, '.', 0)) {
       entries.push({ label: en.label, href: en.rawHref, rawHref: en.rawHref, depth: en.depth, kind: 'ncx' });
     }
@@ -397,8 +415,11 @@ function navFromNavHtml(navHtml) {
   const navs = findAll(root, 'nav');
   const tocNav = navs.find(isTocNav);
   if (!tocNav) return entries;
-  for (const ol of findAll(tocNav, 'ol')) {
-    for (const en of collectNavList(ol, '.', 0)) {
+  // Apenas a PRIMEIRA lista (a de topo) — coletá-la uma vez produz a árvore
+  // completa, sem duplicar os itens aninhados.
+  const topOl = findAll(tocNav, 'ol')[0];
+  if (topOl) {
+    for (const en of collectNavList(topOl, '.', 0)) {
       entries.push({ label: en.label, href: en.rawHref, rawHref: en.rawHref, depth: en.depth, kind: 'nav' });
     }
   }
@@ -411,17 +432,43 @@ function resolveNavEntries(entries, base) {
   return (entries || []).map((e) => ({ ...e, href: resolveRef(base, e.href) }));
 }
 
+// Localiza os documentos de navegação (NCX e/ou nav.xhtml) pelos metadados do
+// manifest + spine, SEM depender de nomes fixos (toc.ncx/nav.xhtml):
+//   - NCX: item referenciado por <spine toc="..."> (EPUB 2), ou media-type
+//     application/x-dtbncx+xml, ou href terminado em .ncx;
+//   - EPUB 3 nav: item com properties="nav", ou href terminado em nav.xhtml.
+// Retorna hrefs RAW (relativos ao diretório do OPF) na ordem de preferência.
+function discoverNavTargets(pkg) {
+  const ncxHrefs = [];
+  const navHrefs = [];
+  if (!pkg || !pkg.manifest) return { ncxHrefs, navHrefs };
+  const push = (arr, href) => { if (href && !arr.includes(href)) arr.push(href); };
+  if (pkg.spineToc && pkg.manifest[pkg.spineToc]) push(ncxHrefs, pkg.manifest[pkg.spineToc].href);
+  for (const id of Object.keys(pkg.manifest)) {
+    const e = pkg.manifest[id];
+    const href = String(e.href || '');
+    const mt = String(e.mediaType || '');
+    const props = String(e.properties || '').split(/\s+/).filter(Boolean);
+    if (/x-dtbncx(\+xml)?/i.test(mt) || /\.ncx$/i.test(href)) push(ncxHrefs, href);
+    if (props.includes('nav')) push(navHrefs, href);
+    else if (/nav\.xhtml$/i.test(href)) push(navHrefs, href);
+  }
+  return { ncxHrefs, navHrefs };
+}
+
 // Parser completo a partir de strings (OPF + NCX e/ou nav.xhtml).
 // baseUrl: URL do diretório do OPF (produção por URL) — usada para resolver hrefs
-// de manifest e navegação no mesmo espaço.
-function parsePackageFromXml({ opfXml, ncxXml, navHtml, baseUrl } = {}) {
+// de manifest e navegação no mesmo espaço. ncxBase/navBase: diretórios dos arquivos
+// de navegação (padrão: baseUrl) — quando o nav.xhtml/NCX está em SUBDIRETÓRIO, os
+// hrefs internos são relativos ao ARQUIVO de navegação, não ao OPF.
+function parsePackageFromXml({ opfXml, ncxXml, navHtml, baseUrl, ncxBase, navBase } = {}) {
   const pkg = parseOpfFromXml(opfXml);
   if (!pkg) return { ok: false, reason: 'opf-ausente-ou-invalido' };
   if (baseUrl) pkg.packageUrl = baseUrl;
   let nav = [];
-  if (ncxXml) nav = nav.concat(navFromNcxXml(ncxXml));
-  if (navHtml) nav = nav.concat(navFromNavHtml(navHtml));
-  pkg.nav = resolveNavEntries(nav, baseUrl || '.');
+  if (ncxXml) nav = nav.concat(resolveNavEntries(navFromNcxXml(ncxXml), ncxBase || baseUrl || '.'));
+  if (navHtml) nav = nav.concat(resolveNavEntries(navFromNavHtml(navHtml), navBase || baseUrl || '.'));
+  pkg.nav = nav;
   return { ok: true, pkg };
 }
 
@@ -451,6 +498,8 @@ module.exports = {
   collectNavList,
   collectNcxNavPoint,
   readNav,
+  discoverNavTargets,
+  childrenNamed,
   pkgResolve,
   resolveRef,
   normPath,

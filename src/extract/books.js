@@ -404,32 +404,109 @@ function applyEpubStructuralValidation({ pkg, chapter, extractedDocIds }) {
   };
 }
 
+// Diretório do documento EPUB a partir da URL do frame (ex.: ".../epub/OEBPS/Text/").
+// Não presume que o documento esteja sempre diretamente em Text/ — usa o diretório
+// real do arquivo.
+function epubDocDirFromUrl(url) {
+  const u = String(url || '').split('#')[0];
+  const m = u.match(/^(.*\/)[^/]+$/);
+  return m ? m[1] : '';
+}
+
+// Candidatos a diretório do OPF a partir da URL do documento: o próprio diretório
+// do documento e seus ascendentes imediatos. Não presume que o OPF esteja sempre na
+// raiz de OEBPS.
+function candidateOpfDirs(contentUrl) {
+  const dirs = [];
+  const add = (d) => { if (d && !dirs.includes(d)) dirs.push(d); };
+  let dir = epubDocDirFromUrl(contentUrl);
+  for (let i = 0; i < 3 && dir; i++) {
+    add(dir);
+    const parent = dir.replace(/[^/]+\/?$/, '');
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return dirs;
+}
+
+// NÚCLEO da obtenção do pacote EPUB a partir da URL do frame de conteúdo, com
+// injeção de um `fetcher(absUrl) -> { ok, text, status? } | null` — permite testar o
+// fluxo REAL sem leitor: URL do frame -> fetch do OPF -> manifest -> localização da
+// navegação -> fetch do documento correto -> parser -> pacote estrutural. Regras:
+//   - separa SEMPRE ncxXml e navHtml (nunca sobrescreve um pelo outro);
+//   - localiza a navegação pelos metadados do manifest (properties="nav", <spine
+//     toc>, href real, media-type) — não por nomes fixos;
+//   - resolve os caminhos relativamente ao diretório do OPF (baseUrl);
+//   - se nenhum sumário for obtido, registra a ausência (navPresent=false) e o
+//     pacote fica SEM navegação: limite não confirmável -> fallback; NUNCA trata
+//     navegação vazia como evidência positiva de limite;
+//   - não declara o pacote completo apenas porque o OPF foi obtido.
+async function fetchEpubPackageFromFetcher(contentUrl, fetcher) {
+  let opfText = null;
+  let opfBase = null;
+  const opfAttempts = [];
+  for (const base of candidateOpfDirs(contentUrl)) {
+    for (const name of ['content.opf', 'package.opf']) {
+      const r = await fetcher(base + name);
+      opfAttempts.push({ url: base + name, ok: !!(r && r.ok), status: r && !r.ok ? r.status : undefined });
+      if (r && r.ok && /<spine/i.test(r.text) && /<manifest/i.test(r.text)) { opfText = r.text; opfBase = base; break; }
+    }
+    if (opfText) break;
+  }
+  if (!opfText) return { ok: false, reason: 'opf-indisponivel', opfAttempts };
+  const pre = ep.parseOpfFromXml(opfText);
+  if (!pre) return { ok: false, reason: 'opf-ausente-ou-invalido', opfAttempts };
+  const targets = ep.discoverNavTargets(pre);
+  let ncxXml = null;
+  let navHtml = null;
+  let ncxBase = null;
+  let navBase = null;
+  const dirOf = (abs) => { const i = String(abs).lastIndexOf('/'); return i > -1 ? String(abs).slice(0, i + 1) : String(abs); };
+  const navAttempts = [];
+  for (const href of targets.ncxHrefs) {
+    const abs = ep.resolveRef(opfBase, href);
+    const r = await fetcher(abs);
+    navAttempts.push({ href, abs, ok: !!(r && r.ok), status: r && !r.ok ? r.status : undefined });
+    if (r && r.ok) { ncxXml = r.text; ncxBase = dirOf(abs); break; }
+  }
+  for (const href of targets.navHrefs) {
+    const abs = ep.resolveRef(opfBase, href);
+    const r = await fetcher(abs);
+    navAttempts.push({ href, abs, ok: !!(r && r.ok), status: r && !r.ok ? r.status : undefined });
+    if (r && r.ok) { navHtml = r.text; navBase = dirOf(abs); break; }
+  }
+  const parsed = ep.parsePackageFromXml({ opfXml: opfText, ncxXml, navHtml, baseUrl: opfBase, ncxBase, navBase });
+  if (!parsed.ok) return { ok: false, reason: parsed.reason, opfAttempts, navAttempts };
+  return {
+    ok: true,
+    pkg: parsed.pkg,
+    baseUrl: opfBase,
+    opfChars: opfText.length,
+    ncxChars: ncxXml ? ncxXml.length : 0,
+    navChars: navHtml ? navHtml.length : 0,
+    navPresent: !!(ncxXml || navHtml),
+    navUsed: ncxXml ? 'ncx' : navHtml ? 'nav3' : 'none',
+    opfAttempts,
+    navAttempts,
+  };
+}
+
 // Busca o pacote EPUB real a partir do frame de conteúdo (mesma origem jigsaw),
-// sem contornar DRM: apenas fetch same-origin de content.opf/package.opf e
-// toc.ncx/nav.xhtml. Retorna { ok, pkg } quando o OPF válido for obtido.
+// sem contornar DRM: fetch same-origin, com descoberta da navegação pelo manifest.
 async function fetchEpubPackageFromReader(app) {
   for (const { frame, url } of await collectFrames(app)) {
     if (!EPUB_CONTENT_RE.test(url)) continue;
-    const base = url.replace(/\/Text\/[^?#]*.*$/, '/');
-    const got = await frame.evaluate(async (baseUrl) => {
-      const out = { opf: null, nav: null };
-      for (const c of ['content.opf', 'package.opf']) {
-        try {
-          const r = await fetch(baseUrl + c, { credentials: 'include' });
-          if (r.ok) { const t = await r.text(); if (/<spine/i.test(t) && /<manifest/i.test(t)) { out.opf = t; break; } }
-        } catch { /* pacote não acessível por esta via */ }
-      }
-      if (out.opf) {
-        for (const c of ['toc.ncx', 'nav.xhtml']) {
-          try { const r = await fetch(baseUrl + c, { credentials: 'include' }); if (r.ok) out.nav = await r.text(); } catch { /* nav opcional */ }
-        }
-      }
-      return out;
-    }, base).catch(() => null);
-    if (got && got.opf) {
-      const parsed = ep.parsePackageFromXml({ opfXml: got.opf, ncxXml: got.nav });
-      if (parsed.ok) return { ok: true, pkg: parsed.pkg, baseUrl: base, opfChars: got.opf.length, navChars: (got.nav || '').length };
-    }
+    const fetcher = async (absUrl) => {
+      try {
+        const r = await frame.evaluate(
+          (u) => fetch(u, { credentials: 'include' }).then(async (res) => (res.ok ? { ok: true, text: await res.text() } : { ok: false, status: res.status })).catch((e) => ({ ok: false, error: String((e && e.message) || e) })),
+          absUrl
+        );
+        return r || null;
+      } catch { return null; }
+    };
+    const res = await fetchEpubPackageFromFetcher(url, fetcher);
+    if (res.ok) return res;
   }
   return { ok: false, reason: 'pacote-epub-indisponivel' };
 }
@@ -1157,6 +1234,9 @@ module.exports = {
   extractPageidViaSync,
   applyEpubStructuralValidation,
   fetchEpubPackageFromReader,
+  fetchEpubPackageFromFetcher,
+  candidateOpfDirs,
+  epubDocDirFromUrl,
   extractEpubViaAdapter,
   createEpubReaderAdapter,
   epubDocPathFromUrl,
