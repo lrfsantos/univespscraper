@@ -1,0 +1,32 @@
+// npm test — executa todas as suítes relevantes em sequência e retorna código
+// diferente de zero se QUALQUER uma falhar.
+const { spawnSync } = require('child_process');
+const path = require('path');
+
+const root = path.join(__dirname, '..');
+const suites = [
+  'poc/test-regression-m3.js',
+  'poc/test-integration-m3.js',
+  'poc/test-production-m3.js',
+  'poc/test-adapters-m3.js',
+  'poc/test-orchestration-m3.js',
+  'poc/test-http-security-m3.js',
+  'poc/test-electron-profile-m3.js',
+];
+
+let failed = 0;
+let totalPassed = 0;
+let totalCases = 0;
+
+for (const s of suites) {
+  process.stdout.write(`\n=== ${s} ===\n`);
+  const r = spawnSync(process.execPath, [s], { cwd: root, stdio: 'inherit' });
+  if (r.status !== 0) {
+    failed++;
+    console.log(`>>> FALHOU: ${s}`);
+  }
+}
+
+console.log('\n=== RESUMO npm test ===');
+console.log(`suites=${suites.length} falhas=${failed}`);
+process.exit(failed ? 1 : 0);

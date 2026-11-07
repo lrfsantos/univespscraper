@@ -7,6 +7,7 @@
   "license": "MIT",
   "scripts": {
     "app": "electron .",
+    "test": "node scripts/test-all.js",
     "build:portable": "electron-builder --win portable",
     "build:dir": "electron-builder --dir"
   },
@@ -15,7 +16,6 @@
     "productName": "UnivespStudyTool",
     "files": [
       "electron/**/*",
-      "src/lib/**/*",
       "src/extract/**/*",
       "!**/node_modules/*/{test,__tests__,tests,examples,docs}/**/*"
     ],
