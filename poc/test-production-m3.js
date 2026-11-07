@@ -14,6 +14,21 @@ const OUT = path.join(__dirname, '..', 'audit-temp', 'PRODUCTION_RESULTS.json');
 const results = [];
 const sha = (s) => crypto.createHash('sha256').update(s || '').digest('hex');
 
+// Sanitiza a SAÍDA NA GERAÇÃO: caminhos locais temporários (com os dois
+// separadores e com escapes JSON) são substituídos por <TEMP> — nunca chegam ao
+// JSON versionado.
+const TMP_PREFIXES = [
+  os.tmpdir(),
+  os.tmpdir().replace(/\\/g, '/'),
+  os.tmpdir().replace(/\\/g, '\\\\'), // escape JSON de backslash (\ -> \\)
+  os.tmpdir().replace(/\\/g, '/').replace(/\//g, '\\/'),
+];
+function sanitizeDetail(s) {
+  let out = String(s == null ? '' : s);
+  for (const t of TMP_PREFIXES) out = out.split(t).join('<TEMP>');
+  return out;
+}
+
 function record(entry) {
   results.push(entry);
   console.log(`[${entry.status}] ${entry.id}: ${entry.title}`);
@@ -375,7 +390,7 @@ async function testPageidProduction() {
   await testPageidProduction();
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
+  fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results: results.map((r) => ({ ...r, title: sanitizeDetail(r.title), detail: sanitizeDetail(r.detail) })), summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
   console.log('\n=== RESUMO PRODUÇÃO ===');
   console.log('total:', results.length, '| PASS:', results.length - failed.length, '| FAIL:', failed.length);
   if (failed.length) { for (const f of failed) console.log('  -', f.id, f.title, '|', f.detail); process.exitCode = 1; }
