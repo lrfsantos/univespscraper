@@ -158,3 +158,66 @@ as correções anteriores; comportamento conservador preservado):
 - Commit 5 — `test: cover production EPUB and PAGEID extraction` (`test-production-m3.js` + artefatos JSON).
 - Commit 6 — `docs: consolidate phase 3 validation evidence` (IMPLEMENTATION_RESULTS, REGRESSION_RESULTS, CHANGES_AND_PENDING_ITEMS).
 - Histórico **não** reescrito. Hashes completos na resposta final.
+
+---
+
+# Rodada follow-up da revisão (2026-11-06)
+
+## 14. Correções do follow-up
+
+- **`fetchEpubPackageFromReader`**: separa `ncxXml`/`navHtml` (sem sobrescrita) e
+  entrega ao parser os campos corretos; núcleo `fetchEpubPackageFromFetcher` (DI).
+- **Descoberta de navegação pelo manifest**: `parseOpfFromXml` preserva
+  `properties` + `<spine toc>`; `discoverNavTargets` localiza NCX/nav.xhtml por
+  metadados (não por nomes fixos); resolução relativa ao diretório do OPF e do
+  arquivo de navegação; OPF pode estar fora da raiz de OEBPS (`candidateOpfDirs`).
+- **`parsePackageFromXml`/`navFromNavHtml`/`collectNavList`**: percorre apenas
+  filhos diretos (sem duplicar listas aninhadas); `ncxBase`/`navBase` para
+  subdiretórios.
+- **PAGEID `syncCaptureFrame`**: exige estado EXPLÍCITO/estável quando
+  `expectedState.pageid` está disponível — estado ausente NÃO confirma captura.
+- **Sanitização na geração**: `PRODUCTION_RESULTS.json` e `ADAPTERS_RESULTS.json`
+  substituem caminhos locais por `<TEMP>` na própria geração.
+
+## 15. Testes — follow-up (4 suítes, 97/97)
+
+| Suíte | Arquivo | Resultado |
+|---|---|---|
+| Regressão sintética (A/B/C/D) | `poc/test-regression-m3.js` | **29/29 PASS** |
+| Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | **14/14 PASS** |
+| Produção (EPUB 2/3 + PAGEID) | `poc/test-production-m3.js` | **19/19 PASS** |
+| **Adaptadores** | `poc/test-adapters-m3.js` | **35/35 PASS** |
+| **Total** | | **97/97 PASS** |
+| Real no AVA (smoke) | `poc/test-module3.js` | leitor não montou conteúdo — **sem validação live declarada** |
+
+Níveis de teste (relatório): (1) unitários — `test-adapters-m3.js` A-*; (2)
+orquestração com mocks — `test-production-m3.js` E-*/P-*; (3) adaptadores com
+fixtures — `test-adapters-m3.js` B-*/C-*/D-* (fetchEpubPackageFromFetcher,
+readPageidFrames, createEpubReaderAdapter); (4) DOM/Electron — não usado
+(fixtures de DOM/frames simulados; NÃO equivalem a validação real); (5) validação
+real AVA/VitalSource — não declarada (registrada separadamente).
+
+## 16. Pendências / limitações (follow-up)
+
+- **Validação real no AVA/VitalSource**: continua pendente (leitor não montou
+  conteúdo; limite de sessão/dispositivos). Não é corrigível localmente; registrada
+  separadamente quando o acesso estiver estável.
+- **DOM/Electron real**: os testes de adaptadores usam fixtures de DOM/frames
+  simulados — não equivalem a validação no Electron/VitalSource.
+- **`fetchEpubPackageFromReader`** depende do modo EPUB do leitor; em modo pageid o
+  pacote não é usado (limite via navegação complementar) — correto e documentado.
+- Demais pendências permanecem (Etapas 4/5, purga do histórico `8742012`, validação
+  do executável portable).
+
+## 17. Entrega Git (follow-up)
+
+- Commit 1 — `fix: connect EPUB3 navigation to package fetching`
+  (`epub-structure.js` + `books.js` fetch do pacote + `parsePackageFromXml`).
+- Commit 2 — `test: cover real EPUB package reader adapter`
+  (`poc/test-adapters-m3.js` A/B/C + `ADAPTERS_RESULTS.json`).
+- Commit 3 — `fix: reject unverified PAGEID reader state` (`books.js` syncCaptureFrame).
+- Commit 4 — `test: cover PAGEID frame collection adapter`
+  (`poc/test-adapters-m3.js` D + artefatos).
+- Commit 5 — `chore: sanitize phase 3 evidence` (`test-production-m3.js` +
+  `PRODUCTION_RESULTS.json` + docs).
+- Histórico **não** reescrito. Hashes completos na resposta final.

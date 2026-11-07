@@ -241,3 +241,95 @@ de evidência positiva, páginas ambíguas e conteúdo inesperado continuam impe
   (tudo sintético). `.gitignore` mantém evidências e perfis fora do versionamento.
 - Sem código novo de contorno de DRM/autenticação.
 - Fixtures de teste são originais e sintéticas.
+
+---
+
+# Follow-up da revisão — ligação EPUB 3 ↔ obtenção real do pacote (2026-11-06)
+
+## 11. Correções aplicadas nesta rodada (auditoria do commit `52960df`)
+
+### 11.1 `fetchEpubPackageFromReader()` — NCX × nav.xhtml sem sobrescrita (1)
+- **Antes**: a busca armazenava `toc.ncx` e `nav.xhtml` no mesmo `out.nav`
+  (sobrescrita) e chamava `parsePackageFromXml({ opfXml, ncxXml: got.nav })` —
+  conteúdo nav.xhtml podia ser entregue ao parser NCX.
+- **Agora**: núcleo `fetchEpubPackageFromFetcher(contentUrl, fetcher)` (DI,
+  testável) separa SEMPRE `ncxXml` e `navHtml`, busca cada documento no seu
+  formato e chama o parser com `{ opfXml, ncxXml, navHtml, baseUrl, ncxBase,
+  navBase }`. Nenhuma sobrescrita; `navUsed` registra `ncx`/`nav3`/`none`.
+
+### 11.2 Descoberta da navegação pelo manifest do OPF (2)
+- `parseOpfFromXml`/`readOpf` agora preservam `properties` de cada item do manifest
+  e o atributo `<spine toc="...">` (`spineToc`).
+- `discoverNavTargets(pkg)` localiza a navegação SEM nomes fixos: NCX via
+  `<spine toc>` → media-type `application/x-dtbncx+xml` → `*.ncx`; EPUB 3 via
+  `properties="nav"` → `nav.xhtml`.
+- A obtenção resolve os caminhos contra o **diretório do OPF** (`baseUrl`) e, para
+  arquivos de navegação em subdiretório, contra o **diretório do arquivo**
+  (`navBase`/`ncxBase`). Não presume OPF na raiz de OEBPS nem `Text/` fixo
+  (`candidateOpfDirs` ascende a partir do diretório real do documento).
+- Estrutura não resolvida → falha conservadora com motivo (`opf-indisponivel` /
+  `opf-ausente-ou-invalido`).
+
+### 11.3 `parsePackageFromXml` + `navFromNavHtml`/`collectNavList` (3)
+- `collectNavList` e `collectNcxNavPoint` agora percorrem **apenas filhos diretos**
+  (`childrenNamed`) — antes `findAll` recursivo duplicava entradas aninhadas;
+  a deduplicação posterior não escondia o defeito estrutural. A hierarquia e os
+  destinos são verificados por valores exatos nos testes.
+- `parsePackageFromXml` aceita `ncxBase`/`navBase` para resolver hrefs de
+  navegação relativos ao ARQUIVO (subdiretórios).
+
+### 11.4 Adapter EPUB testado no caminho real (4)
+- `fetchEpubPackageFromFetcher` testa o fluxo completo: URL do frame → fetch do
+  OPF → manifest → localização da navegação → fetch do documento correto →
+  parser correspondente → pacote estrutural (9 casos). Teste explícito garante que
+  conteúdo EPUB 3 **não** é entregue ao parser NCX.
+- `createEpubReaderAdapter` testado com app/frames/DOM simulado
+  (`fetchPackage`, `waitContent`, `readActive`, `navigateChapter`,
+  `navigateNextDoc`, `expandToc`).
+
+### 11.5 Adapter PAGEID — coleta real de frames + estado não confirmado (5)
+- `readPageidFrames` testado com frames simulados (URL/src válidos, shell/topo
+  excluído, dois frames com a mesma identidade, pageid zero, identidade ausente,
+  frame sem texto).
+- `createPageidDriver` + `extractPageidViaSync` testados ponta a ponta.
+- `syncCaptureFrame` **não aceita** captura quando o estado do leitor está ausente:
+  com `expectedState.pageid` disponível, exige correspondência EXPLÍCITA e estável
+  do estado (st1/st2/st3) — um frame com o pageid esperado não basta.
+
+### 11.6 Sanitização das evidências (6)
+- `poc/test-production-m3.js` e `poc/test-adapters-m3.js` sanitizam a saída NA
+  GERAÇÃO: caminhos locais (os dois separadores e escapes JSON) → `<TEMP>`.
+- `PRODUCTION_RESULTS.json` regenerado sem caminhos absolutos locais
+  (somente `<TEMP>\epubp-...`, identificador sintético). Demais JSON revisados sem
+  caminhos/credenciais.
+
+## 12. Resumo de testes — follow-up (4 suítes)
+
+| Suíte | Arquivo | Resultado |
+|---|---|---|
+| Regressão sintética (A/B/C/D) | `poc/test-regression-m3.js` | **29/29 PASS** |
+| Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | **14/14 PASS** |
+| Produção (EPUB 2/3 + PAGEID) | `poc/test-production-m3.js` | **19/19 PASS** |
+| **Adaptadores (parsePackage, fetch EPUB, readers EPUB/PAGEID)** | `poc/test-adapters-m3.js` | **35/35 PASS** |
+| **Total** | | **97/97 PASS** |
+
+Classificação: **5 níveis** — (1) unitários (parsePackage, collectNavList,
+discoverNavTargets — em `test-adapters-m3.js` A-*); (2) orquestração com mocks
+(driver/reader simulados — `test-production-m3.js` E-*/P-*); (3) adaptadores com
+fixtures (fetchEpubPackageFromFetcher, readPageidFrames, createEpubReaderAdapter —
+`test-adapters-m3.js` B-*/C-*/D-*); (4) DOM/Electron: **não usado** (fixtures de
+DOM/frames simulados em `test-adapters-m3.js`; nenhuma fixture equivale a
+validação real do VitalSource); (5) validação real AVA/VitalSource: **não
+declarada** (leitor não montou conteúdo — registrado separadamente).
+
+## 13. Arquivos alterados/criados (follow-up)
+
+- `src/extract/epub-structure.js` (childrenNamed, collectNavList/collectNcxNavPoint
+  sem duplicação, parseOpfFromXml/readOpf com properties+spineToc,
+  discoverNavTargets, parsePackageFromXml com ncxBase/navBase)
+- `src/extract/books.js` (fetchEpubPackageFromFetcher + candidateOpfDirs +
+  epubDocDirFromUrl; fetchEpubPackageFromReader; syncCaptureFrame exige estado
+  confirmado)
+- `poc/test-adapters-m3.js` (novo) e `audit-temp/ADAPTERS_RESULTS.json` (novo)
+- `poc/test-production-m3.js` (sanitização na geração)
+- `audit-temp/PRODUCTION_RESULTS.json` (regenerado, sanitizado)

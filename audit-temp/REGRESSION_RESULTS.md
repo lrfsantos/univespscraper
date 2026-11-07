@@ -5,8 +5,9 @@
 > gravado: fixtures sintéticas, contagens e hashes sanitizados apenas.
 >
 > Fase 3 — consolidação (2026-11-06): produção EPUB/PAGEID em
-> `poc/test-production-m3.js` (**19/19**) e integração `poc/test-integration-m3.js`
-> (**14/14**) — **62/62 no total**. Detalhes em `audit-temp/IMPLEMENTATION_RESULTS.md`.
+> `poc/test-production-m3.js` (**19/19**), integração `poc/test-integration-m3.js`
+> (**14/14**) e adaptadores `poc/test-adapters-m3.js` (**35/35**) — **97/97 no
+> total**. Detalhes em `audit-temp/IMPLEMENTATION_RESULTS.md`.
 
 ## Resumo
 
@@ -19,11 +20,13 @@
 | **Total (regressão sintética)** | | **29** | **29/29 PASS** |
 | Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | 14 | 14/14 PASS |
 | **Produção (EPUB 2/3 + PAGEID)** | `poc/test-production-m3.js` | 19 | 19/19 PASS |
-| **Total geral** | | **62** | **62/62 PASS** |
+| **Adaptadores** (parsePackage, fetch EPUB, readers) | `poc/test-adapters-m3.js` | 35 | 35/35 PASS |
+| **Total geral** | | **97** | **97/97 PASS** |
 
 Execução: `node poc/test-regression-m3.js` → `audit-temp/REGRESSION_RESULTS.json`;
 `node poc/test-integration-m3.js` → `audit-temp/INTEGRATION_RESULTS.json`;
-`node poc/test-production-m3.js` → `audit-temp/PRODUCTION_RESULTS.json`.
+`node poc/test-production-m3.js` → `audit-temp/PRODUCTION_RESULTS.json`;
+`node poc/test-adapters-m3.js` → `audit-temp/ADAPTERS_RESULTS.json`.
 
 ---
 
