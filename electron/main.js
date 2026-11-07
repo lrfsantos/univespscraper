@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { installTempProfile } = require('./profile');
 
 // UNIVESP Study Tool — Etapa 2: app Electron de validação do empacotamento portátil.
 // Escopo: abrir o app, login manual, executar a PoC (ADM270 S1) dentro do próprio
@@ -18,6 +19,11 @@ process.on('uncaughtException', (e) => { try { fs.appendFileSync(DEBUG_LOG, 'UNC
 process.on('unhandledRejection', (e) => { try { fs.appendFileSync(DEBUG_LOG, 'UNHANDLED: ' + (e && e.message) + '\n' + (e && e.stack || '') + '\n'); } catch {} });
 
 const isDev = !app.isPackaged;
+
+// Perfil temporário isolado por execução (requisito): evita persistência acidental
+// em %APPDATA%\<app> / %APPDATA%\Electron. Instalado ANTES do app ficar pronto.
+const profile = installTempProfile(app);
+dbg('profile userData=' + profile.dir + ' residualRemoved=' + profile.residual.removed);
 
 // Diretórios (melhor esforço, tudo temporário)
 function makeTempDir(label) {

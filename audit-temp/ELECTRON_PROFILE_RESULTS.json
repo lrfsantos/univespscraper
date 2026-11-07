@@ -1,0 +1,46 @@
+{
+  "ts": "2026-11-07T18:57:19.126Z",
+  "results": [
+    {
+      "id": "E-1",
+      "title": "Perfil criado em %TEMP% exclusivo (prefixo univesp-profile-)",
+      "status": "PASS",
+      "detail": "dir=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839112-a039156e tmp=C:\\Users\\luiza\\AppData\\Local\\Temp"
+    },
+    {
+      "id": "E-2",
+      "title": "installTempProfile configura userData/sessionData no diretório temporário exclusivo",
+      "status": "PASS",
+      "detail": "userData=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839116-19554203"
+    },
+    {
+      "id": "E-3",
+      "title": "Isolamento: cada execução usa um diretório de perfil DISTINTO",
+      "status": "PASS",
+      "detail": "a=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839118-3708607c b=C:\\Users\\luiza\\AppData\\Local\\Temp\\univesp-profile-1794077839119-e3a530a0"
+    },
+    {
+      "id": "E-4",
+      "title": "Limpeza normal (ao fechar) remove o perfil temporário",
+      "status": "PASS",
+      "detail": "removed=true"
+    },
+    {
+      "id": "E-5",
+      "title": "Limpeza residual: perfil antigo removido na inicialização; atual preservado",
+      "status": "PASS",
+      "detail": "removed=1 freshPreservado=true"
+    },
+    {
+      "id": "E-6",
+      "title": "cleanupProfile não apaga diretórios de outros aplicativos (fora do prefixo)",
+      "status": "PASS",
+      "detail": "ok=false existe=true"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

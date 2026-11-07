@@ -60,8 +60,10 @@ function log(ev, data) {
   try {
     // Perfil TEMPORÁRIO e isolado por execução (requisito do projeto — o leitor
     // VitalSource invalida a sessão quando detecta novo dispositivo, mas a decisão
-    // de reutilizar perfil persistente com cookies foi REVOGADA: .gitignore não
-    // substitui o requisito de isolamento). Sem userDataDir = perfil efêmero.
+    // de reutilizar perfil persistente com cookies foi REVOGADA). O perfil é
+    // instalado pelo próprio electron/browser.js (installTempProfile) em %TEMP%
+    // exclusivo — nunca %APPDATA%\Electron nem o perfil pessoal — com limpeza
+    // normal (ao fechar) e residual (na inicialização seguinte).
     app = await _electron.launch({ args: [browserEntry], executablePath });
     log('LAUNCH', { ok: true });
     const win = await app.firstWindow();

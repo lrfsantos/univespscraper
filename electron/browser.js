@@ -1,8 +1,13 @@
 const { app, BrowserWindow } = require('electron');
+const { installTempProfile } = require('./profile');
 
 // Instância "browser" de automação (Etapa 2 — um único Chromium).
 // É lançada via playwright-core._electron e conduzida pelo processo principal.
 // Carrega o AVA na janela, onde o estudante faz o login manual.
+
+// Perfil temporário isolado por execução (nunca %APPDATA%\Electron nem o perfil
+// pessoal). Deve ser instalado ANTES do app ficar pronto.
+installTempProfile(app);
 
 // User-Agent de Chrome comum (não o do Electron), pois leitores como a
 // Minha Biblioteca rejeitam o User-Agent do Electron ("navegador não compatível").
