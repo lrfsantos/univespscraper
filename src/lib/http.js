@@ -34,8 +34,13 @@ function parseSetCookie(sc, defaultHost) {
     attrs[k] = v;
   }
   const hostOnly = !attrs.domain;
-  const domain = hostOnly ? String(defaultHost || '').toLowerCase() : String(attrs.domain).replace(/^\.+/, '').toLowerCase();
+  const rawDomain = hostOnly ? String(defaultHost || '') : String(attrs.domain).replace(/^\.+/, '');
+  const domain = rawDomain.toLowerCase();
   if (!domain) return null;
+  // VALIDAÇÃO do atributo Domain (RFC 6265): o host da resposta só pode definir
+  // um domínio que seja o próprio host ou um sufixo legítimo (fronteira de rótulo).
+  // Domínios externos/não relacionados são REJEITADOS e não entram no cookie jar.
+  if (!hostOnly && !canSetDomain(defaultHost, rawDomain)) return null;
   const path = attrs.path && attrs.path.startsWith('/') ? attrs.path : '/';
   const secure = Object.prototype.hasOwnProperty.call(attrs, 'secure');
   let expires = null;
@@ -47,6 +52,16 @@ function parseSetCookie(sc, defaultHost) {
     if (!Number.isNaN(t)) expires = t;
   }
   return { name, value, domain, hostOnly, path, secure, expires };
+}
+
+// Um host só pode definir um cookie para o próprio host (exato) ou para um
+// domínio do qual é subdomínio legítimo (sufixo com fronteira de rótulo).
+function canSetDomain(host, declaredDomain) {
+  const h = String(host || '').toLowerCase();
+  const d = String(declaredDomain || '').replace(/^\.+/, '').toLowerCase();
+  if (!h || !d) return false;
+  if (d === h) return true;
+  return h.endsWith('.' + d);
 }
 
 function domainMatches(host, cookieDomain, hostOnly) {
@@ -62,8 +77,16 @@ function pathMatches(reqPath, cookiePath) {
   return p.startsWith(cookiePath.endsWith('/') ? cookiePath : cookiePath + '/');
 }
 
+// Efetiva a porta padrão do protocolo (https:443, http:80) antes de comparar.
+function effectivePort(u) {
+  if (u.port) return u.port;
+  if (u.protocol === 'https:') return '443';
+  if (u.protocol === 'http:') return '80';
+  return '';
+}
+
 function isSameOrigin(a, b) {
-  return a.protocol === b.protocol && a.hostname === b.hostname && (a.port || '80') === (b.port || '80');
+  return a.protocol === b.protocol && a.hostname === b.hostname && effectivePort(a) === effectivePort(b);
 }
 
 function createHttpClient(initialCookies = []) {
@@ -71,19 +94,29 @@ function createHttpClient(initialCookies = []) {
 
   // Aceita cookies no formato Playwright ({ name, value, domain, path, expires, secure })
   // e strings de Set-Cookie.
+  // HOST-ONLY × DOMAIN: a representação ORIGINAL do domínio decide — um domínio
+  // com ponto inicial (".example.com") é cookie de DOMÍNIO; sem ponto inicial
+  // ("example.com") é HOST-ONLY (só o hostname exato). NUNCA tratar todo cookie
+  // com a propriedade `domain` como cookie de domínio.
   for (const c of initialCookies) {
     const ck = typeof c === 'string'
       ? parseSetCookie(c, (c.match(/^([^;]+)/) || [''])[0])
       : c && c.name && c.value !== undefined
-        ? {
-            name: c.name,
-            value: c.value,
-            domain: String(c.domain || c.urlHost || '').replace(/^\.+/, '').toLowerCase(),
-            hostOnly: !c.domain,
-            path: c.path && c.path.startsWith('/') ? c.path : '/',
-            secure: !!c.secure,
-            expires: typeof c.expires === 'number' ? (c.expires < 1e12 ? c.expires * 1000 : c.expires) : null,
-          }
+        ? (() => {
+            const rawDomain = String(c.domain != null ? c.domain : c.urlHost || '');
+            const domainCookie = rawDomain.startsWith('.');
+            const domain = rawDomain.replace(/^\.+/, '').toLowerCase();
+            if (!domain) return null;
+            return {
+              name: c.name,
+              value: c.value,
+              domain,
+              hostOnly: !domainCookie,
+              path: c.path && c.path.startsWith('/') ? c.path : '/',
+              secure: !!c.secure,
+              expires: typeof c.expires === 'number' ? (c.expires < 1e12 ? c.expires * 1000 : c.expires) : null,
+            };
+          })()
         : null;
     if (!ck || !ck.domain) continue;
     cookieMap[`${ck.domain}|${ck.path}|${ck.name}`] = ck;
@@ -174,4 +207,4 @@ function stripSensitiveHeaders(headers) {
   return out;
 }
 
-module.exports = { createHttpClient, parseSetCookie, domainMatches, pathMatches, isSameOrigin };
+module.exports = { createHttpClient, parseSetCookie, canSetDomain, domainMatches, pathMatches, isSameOrigin };

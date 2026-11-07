@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-07T18:57:19.032Z",
+  "ts": "2026-11-07T21:08:34.452Z",
   "results": [
     {
       "id": "H-1",
@@ -54,11 +54,47 @@
       "title": "PDF externo: só cookie válido p/ o host externo; NUNCA o do AVA",
       "status": "PASS",
       "detail": "Cookie=\"cookie=externo\""
+    },
+    {
+      "id": "H-10",
+      "title": "Cookie host-only (example.com) NÃO enviado a sub.example.com",
+      "status": "PASS",
+      "detail": "sub=\"\" exact=\"h=v\""
+    },
+    {
+      "id": "H-11",
+      "title": "Cookie com Domain (.example.com) enviado a sub.example.com",
+      "status": "PASS",
+      "detail": "sub=\"d=v\""
+    },
+    {
+      "id": "H-12",
+      "title": "Cookie host-only enviado normalmente ao próprio host",
+      "status": "PASS",
+      "detail": "exact=\"ho=v\""
+    },
+    {
+      "id": "H-13",
+      "title": "Set-Cookie com Domain não autorizado (externo) é REJEITADO; host-only/exato aceitos",
+      "status": "PASS",
+      "detail": "cookieRecebido=\"ok=1; dom=1\" evilNoJarParaAva=false"
+    },
+    {
+      "id": "H-14",
+      "title": "canSetDomain: só exato ou subdomínio legítimo; externos/prefixo rejeitados",
+      "status": "PASS",
+      "detail": "[{\"h\":\"sub.example.com\",\"d\":\".example.com\",\"want\":true,\"got\":true},{\"h\":\"example.com\",\"d\":\".example.com\",\"want\":true,\"got\":true},{\"h\":\"example.com\",\"d\":\"example.com\",\"want\":true,\"got\":true},{\"h\":\"example.com\",\"d\":\"ava.univesp.br\",\"want\":false,\"got\":false},{\"h\":\"notexample.com\",\"d\":\"example.com\",\"want\":false,\"got\":false},{\"h\":\"sub.example.com\",\"d\":\"notexample.com\",\"want\":false,\"got\":false}]"
+    },
+    {
+      "id": "H-15",
+      "title": "isSameOrigin normaliza portas padrão (443/80); origens distintas ≠",
+      "status": "PASS",
+      "detail": "[{\"a\":\"https://example.com\",\"b\":\"https://example.com:443\",\"want\":true,\"got\":true},{\"a\":\"http://example.com\",\"b\":\"http://example.com:80\",\"want\":true,\"got\":true},{\"a\":\"https://example.com\",\"b\":\"https://example.com:80\",\"want\":false,\"got\":false},{\"a\":\"http://example.com\",\"b\":\"https://example.com\",\"want\":false,\"got\":false},{\"a\":\"http://example.com:8080\",\"b\":\"http://example.com:8081\",\"want\":false,\"got\":false}]"
     }
   ],
   "summary": {
-    "total": 9,
-    "passed": 9,
+    "total": 15,
+    "passed": 15,
     "failed": 0
   }
 }

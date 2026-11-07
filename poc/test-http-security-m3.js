@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
-const { createHttpClient } = require('../src/lib/http');
+const { createHttpClient, canSetDomain, isSameOrigin } = require('../src/lib/http');
 
 // Testes de SEGURANÇA do cliente HTTP (cookie jar + redirecionamentos).
 // Usa servidores LOCAIS reais (127.0.0.1 / localhost) e verifica os
@@ -41,11 +41,12 @@ function spyServer(handler) {
   });
 }
 
-function spyServerOnHost(host) {
+function spyServerOnHost(host, handler) {
   const received = [];
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       received.push({ url: req.url, headers: { ...req.headers }, method: req.method });
+      if (handler) { handler(req, res); return; }
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('ok');
     });
@@ -179,6 +180,83 @@ async function testHttpSecurity() {
       const ok = got === 'cookie=externo'; // apenas o cookie VÁLIDO para o host externo
       record({ id: G + '-9', title: 'PDF externo: só cookie válido p/ o host externo; NUNCA o do AVA', status: ok ? 'PASS' : 'FAIL', detail: `Cookie=${JSON.stringify(got)}` });
     } finally { await s.close(); }
+  }
+
+  // ---- Correções finais (host-only × Domain; validação de Domain; isSameOrigin) ----
+
+  // H-10: cookie host-only de example.com NÃO é enviado a sub.example.com.
+  {
+    const client = createHttpClient([{ name: 'h', value: 'v', domain: 'example.com', path: '/' }]); // sem ponto inicial → host-only
+    const atSub = client.cookieHeaderFor('sub.example.com', '/', true);
+    const atExact = client.cookieHeaderFor('example.com', '/', true);
+    const ok = atSub === '' && atExact.includes('h=v');
+    record({ id: G + '-10', title: 'Cookie host-only (example.com) NÃO enviado a sub.example.com', status: ok ? 'PASS' : 'FAIL', detail: `sub=${JSON.stringify(atSub)} exact=${JSON.stringify(atExact)}` });
+  }
+
+  // H-11: cookie com Domain .example.com É enviado a sub.example.com.
+  {
+    const client = createHttpClient([{ name: 'd', value: 'v', domain: '.example.com', path: '/' }]); // ponto inicial → Domain
+    const atSub = client.cookieHeaderFor('sub.example.com', '/', true);
+    const ok = atSub.includes('d=v');
+    record({ id: G + '-11', title: 'Cookie com Domain (.example.com) enviado a sub.example.com', status: ok ? 'PASS' : 'FAIL', detail: `sub=${JSON.stringify(atSub)}` });
+  }
+
+  // H-12: cookie host-only enviado normalmente ao próprio example.com.
+  {
+    const client = createHttpClient([{ name: 'ho', value: 'v', domain: 'example.com', path: '/' }]);
+    const atExact = client.cookieHeaderFor('example.com', '/', true);
+    const ok = atExact.includes('ho=v');
+    record({ id: G + '-12', title: 'Cookie host-only enviado normalmente ao próprio host', status: ok ? 'PASS' : 'FAIL', detail: `exact=${JSON.stringify(atExact)}` });
+  }
+
+  // H-13: Set-Cookie com Domain não autorizado é REJEITADO (não entra no jar).
+  {
+    const s = await spyServerOnHost('localhost', (req, res) => {
+      res.writeHead(200, { 'Set-Cookie': ['evil=1; Domain=ava.univesp.br', 'ok=1', 'dom=1; Domain=localhost'] });
+      res.end('ok');
+    });
+    try {
+      const client = createHttpClient([]);
+      // /set tenta: evil (Domain externo, rejeitado), ok (host-only, aceito),
+      // dom (Domain=localhost, exato, aceito)
+      await client.fetch(s.url + '/set');
+      s.received.length = 0;
+      await client.fetch(s.url + '/check');
+      const gotCheck = (s.received[0] && s.received[0].headers.cookie) || '';
+      const evilInJar = client.cookieHeaderFor('ava.univesp.br', '/', true).includes('evil=1');
+      const ok = !gotCheck.includes('evil=1') && gotCheck.includes('ok=1') && gotCheck.includes('dom=1') && !evilInJar;
+      record({ id: G + '-13', title: 'Set-Cookie com Domain não autorizado (externo) é REJEITADO; host-only/exato aceitos', status: ok ? 'PASS' : 'FAIL', detail: `cookieRecebido=${JSON.stringify(gotCheck)} evilNoJarParaAva=${evilInJar}` });
+    } finally { await s.close(); }
+  }
+
+  // H-14: canSetDomain (fronteira de rótulo / relação legítima).
+  {
+    const cases = [
+      ['sub.example.com', '.example.com', true],
+      ['example.com', '.example.com', true],
+      ['example.com', 'example.com', true],
+      ['example.com', 'ava.univesp.br', false],   // externo/não relacionado
+      ['notexample.com', 'example.com', false],    // apenas contém como prefixo
+      ['sub.example.com', 'notexample.com', false],
+    ];
+    const results = cases.map(([h, d, want]) => ({ h, d, want, got: canSetDomain(h, d) }));
+    const ok = results.every((r) => r.got === r.want);
+    record({ id: G + '-14', title: 'canSetDomain: só exato ou subdomínio legítimo; externos/prefixo rejeitados', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(results) });
+  }
+
+  // H-15: isSameOrigin com portas padrão normalizadas.
+  {
+    const u = (s) => new URL(s);
+    const cases = [
+      ['https://example.com', 'https://example.com:443', true],
+      ['http://example.com', 'http://example.com:80', true],
+      ['https://example.com', 'https://example.com:80', false],
+      ['http://example.com', 'https://example.com', false],
+      ['http://example.com:8080', 'http://example.com:8081', false],
+    ];
+    const results = cases.map(([a, b, want]) => ({ a, b, want, got: isSameOrigin(u(a), u(b)) }));
+    const ok = results.every((r) => r.got === r.want);
+    record({ id: G + '-15', title: 'isSameOrigin normaliza portas padrão (443/80); origens distintas ≠', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(results) });
   }
 }
 
