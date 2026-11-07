@@ -143,41 +143,54 @@ async function readContentFrameStyles(app) {
 
 // Classifica o leitor após abertura do launchUrl. Retorna { format, readerUrl }.
 // format: 'epub' | 'pageid' | 'bvpdf' | 'bvleitor' | 'unknown'
-async function detectFormat(app, win, launchUrl) {
-  await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
-  const found = await poll(
-    app,
-    async () => {
-      const frames = await collectFrames(app);
-      const urls = frames.map((f) => f.url);
-      if (urls.some((u) => EPUB_CONTENT_RE.test(u))) return { format: 'epub', readerUrl: urls.find((u) => EPUB_CONTENT_RE.test(u)) };
-      if (urls.some((u) => PAGEID_CONTENT_RE.test(u))) return { format: 'pageid', readerUrl: urls.find((u) => PAGEID_CONTENT_RE.test(u)) };
-      return null;
-    },
-    { timeoutMs: 35000, interval: 1500 }
-  );
-  if (found) return found;
-
-  // Sem frame de conteúdo: verifica se é leitor bvirtual (canvas/DRM) ou
-  // redirecionamento de sessão do leitor (VitalSource login/logout — ocorre com
-  // sessão expirada ou limite de dispositivos). Distingue dos casos conhecidos;
-  // só 'unknown' se nada for reconhecido. Inclui URL/título de janelas, pois o
-  // redirect de sessão pode aparecer no título, não em URL de frame.
-  const urls = (await collectFrames(app)).map((f) => f.url);
-  const winInfo = [];
-  for (const w of allWindows(app)) {
-    try { winInfo.push(w.url()); } catch { /* ignore */ }
-    try { winInfo.push(await w.title()); } catch { /* ignore */ }
-  }
+// Classifica o leitor JÁ ABERTO a partir de frames e janelas, SEM navegar.
+// Retorna { format, readerUrl, failureType? }.
+//   format: 'epub' | 'pageid' | 'bvpdf' | 'bvleitor' | 'reader-auth' | 'unknown'
+//   failureType (apenas quando NÃO é epub/pageid):
+//     'reader-auth' | 'no-frames' | 'unknown' | 'timeout'
+// Diferencia falha de AUTENTICAÇÃO (reader-auth) de ausência de frames
+// (no-frames) e de formato não reconhecido (unknown) — sem URLs/tokens/cookies.
+function classifyReader({ frames, windows }) {
+  const urls = (frames || []).map((f) => f.url).filter(Boolean);
+  const winInfo = (windows || []).filter(Boolean);
+  if (urls.some((u) => EPUB_CONTENT_RE.test(u))) return { format: 'epub', readerUrl: urls.find((u) => EPUB_CONTENT_RE.test(u)) };
+  if (urls.some((u) => PAGEID_CONTENT_RE.test(u))) return { format: 'pageid', readerUrl: urls.find((u) => PAGEID_CONTENT_RE.test(u)) };
   const anyUrl = urls.concat(winInfo).join(' ');
   if (PLATAFORMA_BV_RE.test(anyUrl)) {
     const m = anyUrl.match(/plataforma\.bvirtual|leitor\.bvirtual|\/Leitor\//);
     return { format: m && m[0].includes('leitor.') ? 'bvleitor' : 'bvpdf', readerUrl: null };
   }
-  if (/(vitalsource|logout|sess[aã]o expirou|session expired)/i.test(anyUrl)) {
-    return { format: 'reader-auth', readerUrl: null };
+  if (/(vitalsource|logout|sess[ãa]o expirou|session expired)/i.test(anyUrl)) {
+    return { format: 'reader-auth', readerUrl: null, failureType: 'reader-auth' };
   }
-  return { format: 'unknown', readerUrl: null };
+  if (!urls.length) return { format: 'unknown', readerUrl: null, failureType: 'no-frames' };
+  return { format: 'unknown', readerUrl: null, failureType: 'unknown' };
+}
+
+// Observa o leitor já aberto até uma classificação definitiva (sem navegar).
+// Retorna a última classificação; em timeout, mantém o failureType real
+// (no-frames/unknown) ou 'timeout' se nada foi classificado.
+async function observeReader(app, timeoutMs = 30000, interval = 1500) {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  while (Date.now() < deadline) {
+    const frames = await collectFrames(app);
+    const windows = [];
+    for (const w of allWindows(app)) {
+      try { windows.push(w.url()); } catch { /* ignore */ }
+      try { windows.push(await w.title()); } catch { /* ignore */ }
+    }
+    last = classifyReader({ frames, windows });
+    if (last.format !== 'unknown') return last;
+    await waitTimeout(interval);
+  }
+  return last || { format: 'unknown', readerUrl: null, failureType: 'timeout' };
+}
+
+// Observa/classifica o leitor já aberto (sem goto). A navegação/relaunch é
+// responsabilidade de extractBook (um lançamento por livro).
+async function detectFormat(app, win, launchUrl) {
+  return observeReader(app, 30000, 1500);
 }
 
 // ---- Validação de conteúdo (fidelidade) ----
@@ -609,11 +622,11 @@ async function extractEpubViaAdapter(reader, expected, opts = {}) {
   const trace = Array.isArray(opts.trace) ? opts.trace : null;
 
   // 1) Aguarda o leitor carregar com conteúdo significativo.
-  let res = await reader.waitContent(35000);
+  let res = await reader.waitContent(opts.waitContentTimeoutMs != null ? opts.waitContentTimeoutMs : 35000);
   if (!res) {
     await reader.expandToc().catch(() => {});
     if (expected && expected.chapter) await reader.navigateChapter(expected.chapter);
-    res = await reader.waitContent(25000);
+    res = await reader.waitContent(opts.retryWaitContentTimeoutMs != null ? opts.retryWaitContentTimeoutMs : 25000);
     attempts.push(res ? 'retry-navegacao-ok' : 'retry-navegacao-sem-conteudo');
   } else {
     attempts.push('espera-inicial');
@@ -799,8 +812,8 @@ async function extractEpubViaAdapter(reader, expected, opts = {}) {
 }
 
 // Extrai o capítulo esperado no leitor real (EPUB) com a orquestração de produção.
+// Reutiliza o leitor JÁ ABERTO (não faz goto) — o lançamento é de extractBook.
 async function extractEpub(app, win, launchUrl, expected, opts = {}) {
-  await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
   const reader = createEpubReaderAdapter(app);
   const r = await extractEpubViaAdapter(reader, expected, opts);
   return { ...r, url: launchUrl };
@@ -1155,14 +1168,14 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
 
 // Extrai o capítulo esperado no leitor real com sincronização página×frame.
 async function extractPageid(app, win, launchUrl, expected, opts = {}) {
-  await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+  // Reutiliza o leitor JÁ ABERTO (sem goto) — o lançamento é de extractBook.
   const loaded = await poll(
     app,
     async () => {
       const frames = await readPageidFrames(app);
       return frames.some((f) => f.text && f.text.trim().length > 0) ? true : null;
     },
-    { timeoutMs: 35000, interval: 2000 }
+    { timeoutMs: opts.waitTimeoutMs != null ? opts.waitTimeoutMs : 35000, interval: 2000 }
   );
   if (!loaded) {
     return {
@@ -1178,49 +1191,102 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
 
 // ---- Entrada principal ----
 
-// expected: { book, chapter } — identificação esperada do material (para validação).
-// opts: { maxPages } — limite de páginas do modo pageid.
-async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
-  const attempts = [];
-  let det = null;
-  // O leitor restaura a última posição e monta os frames de conteúdo de forma
-  // assíncrona; um primeiro carregamento pode não expor os frames a tempo. Tenta
-  // até DETECT_RETRIES vezes com goto fresco — sem isso, 'unknown' vira um
-  // 'inaccessible' falso (erro de leitor, não de conteúdo).
-  for (let i = 0; i < 3; i++) {
-    det = await detectFormat(app, win, launchUrl);
-    if (det.format !== 'unknown' && det.format !== 'reader-auth') { attempts.push(`detectado=${det.format}`); break; }
-    attempts.push(`tentativa-${i + 1}-sem-frames-de-conteudo${det.format === 'reader-auth' ? '-sessao-leitor' : ''}`);
-    await waitTimeout(3000);
-  }
-  const base = { url: launchUrl, format: det.format, expected, attempts };
-
-  if (det.format === 'epub') {
-    const r = await extractEpub(app, win, launchUrl, expected);
-    return { ...r, attempts: [...attempts, ...(r.attempts || [])] };
-  }
-  if (det.format === 'pageid') {
-    const r = await extractPageid(app, win, launchUrl, expected, opts);
-    return { ...r, attempts: [...attempts, ...(r.attempts || [])] };
-  }
-  if (det.format === 'bvpdf' || det.format === 'bvleitor' || det.format === 'reader-auth') {
-    const err = det.format === 'reader-auth' ? 'sessao-do-leitor-nao-autorizada' : 'conteudo-em-canvas/DRM-nao-extraivel';
-    return {
-      ...base, status: 'inaccessible', text: '', chars: 0, source: det.format, readerLoaded: true,
-      readerUrl: det.readerUrl, error: err,
-      validation: validateContent({ text: '', expected, kind: 'epub' }),
-    };
-  }
+// Resultado de falha padronizado (nunca 'integral'; sem dados sensíveis).
+function failureResult({ url, format, failureType, readerLoaded = false, error, expected, attempts = [], extra = {} }) {
   return {
-    ...base, status: 'inaccessible', text: '', chars: 0, source: 'unknown', readerLoaded: false,
-    readerUrl: null, error: 'formato-de-leitor-nao-reconhecido',
+    url, format, status: 'inaccessible', text: '', chars: 0,
+    readerLoaded, readerUrl: null, error,
+    failureType,
+    attempts,
     validation: validateContent({ text: '', expected, kind: 'epub' }),
+    ...extra,
   };
+}
+
+// expected: { book, chapter } — identificação esperada do material (para validação).
+// opts: { maxPages, observeTimeoutMs, observeInterval } — limites de navegação.
+// Orquestração ESTABILIZADA do VitalSource:
+//   - UM ÚNICO lançamento inicial por livro;
+//   - detectFormat observa o leitor já aberto (nunca navega);
+//   - extractEpub/extractPageid reutilizam o leitor (sem goto redundante);
+//   - reader-auth → interrompe IMEDIATAMENTE (zero retries, zero relaunches,
+//     zero extração) com readerLoaded:false e failureType 'reader-auth';
+//   - unknown → espera (observeTimeoutMs) e reavalia SEM navegar; se persistir,
+//     permite NO MÁXIMO UM relaunch e uma única reavaliação após ele;
+//   - relaunch que resultar em reader-auth → interrompe.
+async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
+  const observeTimeoutMs = opts.observeTimeoutMs != null ? opts.observeTimeoutMs : 30000;
+  const observeInterval = opts.observeInterval != null ? opts.observeInterval : 1500;
+  const attempts = [];
+  let gotoCount = 0;
+
+  const goto = async (relaunch) => {
+    gotoCount++;
+    attempts.push(relaunch ? `relaunch-${gotoCount}` : `launch-inicial`);
+    try { await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }); return true; }
+    catch { attempts.push('goto-falhou'); return false; }
+  };
+  const extract = async (format) => {
+    const r = format === 'epub'
+      ? await extractEpub(app, win, launchUrl, expected, opts)
+      : await extractPageid(app, win, launchUrl, expected, opts);
+    return { ...r, attempts: [...attempts, ...(r.attempts || [])] };
+  };
+  const finalize = (r) => {
+    // failureType a partir do resultado de extração (sem dados sensíveis).
+    if (r && r.failureType == null && r.status === 'inaccessible' && r.error) {
+      r.failureType = /leitor-nao-carregou|no-text/i.test(r.error) ? 'no-text' : 'network';
+    }
+    return r;
+  };
+
+  // 1) Lançamento inicial.
+  const ok0 = await goto(false);
+  if (!ok0) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
+  await waitTimeout(1500);
+
+  // 2) Observa o leitor já aberto (sem navegar).
+  let det = await observeReader(app, observeTimeoutMs, observeInterval);
+  attempts.push(`classificacao=${det.format}`);
+
+  // 3) reader-auth → interromper imediatamente.
+  if (det.format === 'reader-auth') {
+    return failureResult({ url: launchUrl, format: 'reader-auth', failureType: 'reader-auth', readerLoaded: false, error: 'sessao-do-leitor-nao-autorizada', expected, attempts });
+  }
+  if (det.format === 'epub' || det.format === 'pageid') {
+    return finalize(await extract(det.format));
+  }
+
+  // 4) Desconhecido (unknown/no-frames/bv*): um relaunch + uma reavaliação.
+  if (det.format === 'unknown') {
+    attempts.push('desconhecido-sem-relaunch');
+    const ok1 = await goto(true);
+    if (!ok1) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
+    await waitTimeout(1500);
+    det = await observeReader(app, observeTimeoutMs, observeInterval);
+    attempts.push(`reclassificacao=${det.format}`);
+    if (det.format === 'reader-auth') {
+      return failureResult({ url: launchUrl, format: 'reader-auth', failureType: 'reader-auth', readerLoaded: false, error: 'sessao-do-leitor-nao-autorizada', expected, attempts });
+    }
+    if (det.format === 'epub' || det.format === 'pageid') {
+      return finalize(await extract(det.format));
+    }
+    return failureResult({ url: launchUrl, format: 'unknown', failureType: det.failureType || 'unknown', readerLoaded: false, error: 'formato-de-leitor-nao-reconhecido', expected, attempts });
+  }
+
+  // 5) bvirtual (canvas/DRM) — leitor carregou, conteúdo não extraível.
+  return failureResult({
+    url: launchUrl, format: det.format, failureType: 'drm-not-extractable', readerLoaded: true,
+    error: 'conteudo-em-canvas/DRM-nao-extraivel', expected, attempts,
+    extra: { source: det.format, readerUrl: det.readerUrl },
+  });
 }
 
 module.exports = {
   extractBook,
   detectFormat,
+  classifyReader,
+  observeReader,
   validateContent,
   statusForBook,
   detectRepetitions,

@@ -1,0 +1,58 @@
+{
+  "ts": "2026-11-07T18:57:18.821Z",
+  "results": [
+    {
+      "id": "O-1",
+      "title": "EPUB normal: 1 lançamento, sem relaunch, extração executada",
+      "status": "PASS",
+      "detail": "goto=1 format=epub status=not_found attempts=[\"navegacao-capitulo-nao-executada\",\"pacote-epub-indisponivel: pacote-epub-indisponivel\",\"navegacao-limite-nao-executada\"]"
+    },
+    {
+      "id": "O-2",
+      "title": "PAGEID normal: 1 lançamento, reutiliza o leitor, coleta de páginas",
+      "status": "PASS",
+      "detail": "goto=1 format=pageid pages=1 status=partial"
+    },
+    {
+      "id": "O-3",
+      "title": "reader-auth → interrompe: zero retries/relaunches, readerLoaded=false",
+      "status": "PASS",
+      "detail": "goto=1 failureType=reader-auth readerLoaded=false"
+    },
+    {
+      "id": "O-4",
+      "title": "unknown que se recupera → extrai SEM relaunch",
+      "status": "PASS",
+      "detail": "goto=1 format=epub failureType=undefined"
+    },
+    {
+      "id": "O-5",
+      "title": "unknown persistente → exatamente 1 relaunch, sem extração",
+      "status": "PASS",
+      "detail": "goto=2 failureType=no-frames attempts=[\"launch-inicial\",\"classificacao=unknown\",\"desconhecido-sem-relaunch\",\"relaunch-2\",\"reclassificacao=unknown\"]"
+    },
+    {
+      "id": "O-6",
+      "title": "logout após o relaunch → interrompe (reader-auth)",
+      "status": "PASS",
+      "detail": "goto=2 failureType=reader-auth status=inaccessible"
+    },
+    {
+      "id": "O-7",
+      "title": "no-frames → failureType no-frames (diferenciado)",
+      "status": "PASS",
+      "detail": "failureType=no-frames status=inaccessible"
+    },
+    {
+      "id": "O-8",
+      "title": "no-text (frame epub sem texto) → failureType no-text",
+      "status": "PASS",
+      "detail": "failureType=no-text status=inaccessible error=leitor-nao-carregou-conteudo"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  }
+}
