@@ -1,0 +1,220 @@
+{
+  "ts": "2026-11-07T02:26:12.875Z",
+  "results": [
+    {
+      "id": "A-1",
+      "title": "Somente NCX → hierarquia e caminhos resolvidos",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01a.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml\"}]"
+    },
+    {
+      "id": "A-2",
+      "title": "Somente nav.xhtml → toc (hierarquia), fragmentos removidos, landmarks ignorados",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml\"}]"
+    },
+    {
+      "id": "A-3",
+      "title": "NCX + nav.xhtml simultâneos → ambos preservados (sem sobrescrita)",
+      "status": "PASS",
+      "detail": "total=6 ncx=3 nav3=3"
+    },
+    {
+      "id": "A-4",
+      "title": "nav.xhtml em subdiretório → hrefs resolvidos relativamente ao ARQUIVO de navegação",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/chapters/part1/c01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/chapters/part2/c02.xhtml\"}]"
+    },
+    {
+      "id": "A-5",
+      "title": "Caminho relativo ao OPF (Text/...) resolvido contra baseUrl",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml\"}]"
+    },
+    {
+      "id": "A-6",
+      "title": "Fragmentos de URL removidos dos caminhos resolvidos",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml\"}]"
+    },
+    {
+      "id": "A-7",
+      "title": "Hierarquia aninhada exata (profundidades e destinos por valor)",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01a.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml\"}]"
+    },
+    {
+      "id": "A-8",
+      "title": "Sumário ausente → pacote ok, navegação vazia (sem limite confirmável)",
+      "status": "PASS",
+      "detail": "nav.length=0"
+    },
+    {
+      "id": "A-9",
+      "title": "Navegação malformada → pacote ok, navegação vazia (sem crash)",
+      "status": "PASS",
+      "detail": "nav.length=0"
+    },
+    {
+      "id": "A-10",
+      "title": "Conteúdo nav.xhtml no campo NCX → NÃO é interpretado como NCX (vazio)",
+      "status": "PASS",
+      "detail": "nav.length=0"
+    },
+    {
+      "id": "A-11",
+      "title": "collectNavList não duplica entradas em listas aninhadas (cada li uma vez)",
+      "status": "PASS",
+      "detail": "nav.length=3 (esperado 3)"
+    },
+    {
+      "id": "B-1",
+      "title": "EPUB 2 realista (OPF + NCX): localiza NCX pelo spine toc, hierarquia preservada",
+      "status": "PASS",
+      "detail": "ok=true navUsed=ncx nav=3 spineToc=ncx"
+    },
+    {
+      "id": "B-2",
+      "title": "EPUB 3 realista (OPF + nav.xhtml): localiza nav por properties=\"nav\"",
+      "status": "PASS",
+      "detail": "ok=true navUsed=nav3 nav=3"
+    },
+    {
+      "id": "B-3",
+      "title": "EPUB 2 + EPUB 3 simultâneos → NCX e nav.xhtml preservados (sem sobrescrita, campos corretos)",
+      "status": "PASS",
+      "detail": "ok=true ncxChars=432 navChars=422 total=6"
+    },
+    {
+      "id": "B-4",
+      "title": "EPUB 3 com nav em subdiretório → hrefs resolvidos ao diretório do nav",
+      "status": "PASS",
+      "detail": "ok=true href=https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/chapters/part1/c01.xhtml"
+    },
+    {
+      "id": "B-5",
+      "title": "Manifest aponta para nome ≠ nav.xhtml (toc.xhtml, properties=\"nav\")",
+      "status": "PASS",
+      "detail": "ok=true navUsed=nav3 nav=3"
+    },
+    {
+      "id": "B-6",
+      "title": "Manifest sem navegação → pacote ok, navegação vazia (limite não confirmável)",
+      "status": "PASS",
+      "detail": "ok=true navUsed=none navPresent=false"
+    },
+    {
+      "id": "B-7",
+      "title": "OPF válido mas nav inacessível (404) → navegação vazia (conservador)",
+      "status": "PASS",
+      "detail": "ok=true navUsed=none navPresent=false"
+    },
+    {
+      "id": "B-8",
+      "title": "Resposta HTTP inválida (OPF 500) → opf-indisponivel",
+      "status": "PASS",
+      "detail": "ok=false reason=opf-indisponivel"
+    },
+    {
+      "id": "B-9",
+      "title": "Pacote incompleto (OPF sem spine) → opf-ausente-ou-invalido",
+      "status": "PASS",
+      "detail": "ok=false reason=opf-ausente-ou-invalido"
+    },
+    {
+      "id": "C-1",
+      "title": "createEpubReaderAdapter.fetchPackage() → fluxo real (frame, OPF, manifest, navegação, parser)",
+      "status": "PASS",
+      "detail": "ok=true navUsed=nav3 nav=3"
+    },
+    {
+      "id": "C-2",
+      "title": "createEpubReaderAdapter.waitContent/readActive → documento ativo com conteúdo",
+      "status": "PASS",
+      "detail": "url=https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml?favre=brett chars=5948"
+    },
+    {
+      "id": "C-3",
+      "title": "createEpubReaderAdapter.navigateChapter → navega via sumário (Acesse Capítulo N)",
+      "status": "PASS",
+      "detail": "clicked=true urlApos=https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml?favre=brett"
+    },
+    {
+      "id": "C-4",
+      "title": "createEpubReaderAdapter.navigateNextDoc → muda de documento (multi-XHTML)",
+      "status": "PASS",
+      "detail": "changed=true url=https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01a.xhtml?favre=brett"
+    },
+    {
+      "id": "C-5",
+      "title": "createEpubReaderAdapter.expandToc → clica Expandir tudo",
+      "status": "PASS",
+      "detail": "expandToc=true"
+    },
+    {
+      "id": "D-1",
+      "title": "readPageidFrames: URL de frame válida (jigsaw pageid) → identidade preservada",
+      "status": "PASS",
+      "detail": "frames=1 pageid=45"
+    },
+    {
+      "id": "D-2",
+      "title": "readPageidFrames: src do iframe válido identifica o frame de conteúdo",
+      "status": "PASS",
+      "detail": "frames=1 pageid=45"
+    },
+    {
+      "id": "D-3",
+      "title": "readPageidFrames: frame shell/topo (janela reader) NÃO é conteúdo",
+      "status": "PASS",
+      "detail": "frames=0 (esperado 0)"
+    },
+    {
+      "id": "D-4",
+      "title": "readPageidFrames: forma pages/N/content reconhecida",
+      "status": "PASS",
+      "detail": "frames=1 pages=7"
+    },
+    {
+      "id": "D-5",
+      "title": "readPageidFrames: dois frames com a mesma identidade são retornados (ambíguo na captura)",
+      "status": "PASS",
+      "detail": "frames=2"
+    },
+    {
+      "id": "D-6",
+      "title": "readPageidFrames: identidade PAGEID zero aceita (== null, não truthiness)",
+      "status": "PASS",
+      "detail": "frames=1 pageid=0"
+    },
+    {
+      "id": "D-7",
+      "title": "readPageidFrames: frame sem identidade (não-conteúdo) é excluído",
+      "status": "PASS",
+      "detail": "frames=0 (esperado 0)"
+    },
+    {
+      "id": "D-8",
+      "title": "readPageidFrames: frame sem texto retornado vazio (conteúdo atrasado é esperado na captura)",
+      "status": "PASS",
+      "detail": "frames=1 chars=0"
+    },
+    {
+      "id": "D-9",
+      "title": "createPageidDriver + extractPageidViaSync: coleta real dos frames via app simulado",
+      "status": "PASS",
+      "detail": "pages=2 discards=0 pageids=[0,1]"
+    },
+    {
+      "id": "D-10",
+      "title": "syncCaptureFrame: estado ausente NÃO confirma captura (frame do pageid esperado não basta)",
+      "status": "PASS",
+      "detail": "status=rejected discards=2"
+    }
+  ],
+  "summary": {
+    "total": 35,
+    "passed": 35,
+    "failed": 0
+  }
+}
