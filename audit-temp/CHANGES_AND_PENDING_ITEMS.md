@@ -221,3 +221,54 @@ real AVA/VitalSource — não declarada (registrada separadamente).
 - Commit 5 — `chore: sanitize phase 3 evidence` (`test-production-m3.js` +
   `PRODUCTION_RESULTS.json` + docs).
 - Histórico **não** reescrito. Hashes completos na resposta final.
+
+---
+
+# Rodada auditoria consolidada (2026-11-07)
+
+## 18. Plano de remediação do HISTÓRICO (S2) — NÃO EXECUTADO (depende do proprietário)
+
+Blobs com conteúdo protegido (texto integral de livros) ainda acessíveis pelo
+histórico (introduzidos em `8742012`, removidos do HEAD em `d6cf122`):
+
+| Arquivo | Blob | Bytes |
+|---|---|---|
+| poc/evidence/module3/result.json | 6200a6c7733393b37980193630ee54300283b450 | 160.458 |
+| poc/evidence/test-A/result.json | 6e9d4f581f38e9e8e01d49e2843a5bd62331a6cc | 4.104 |
+| poc/evidence/test-B/result.json | 0c516326826f01c6f923a2207f5e5a13719ebc1d | 2.285 |
+| poc/evidence/test-C/result.json | 3d736b9da6caf69bfc655a045ca22e325cfe7594 | 3.947 |
+| poc/evidence/test-D/result.json | 0ad05d6d466a48af6ce4202afca197c6ffc6cd14 | 869 |
+| poc/evidence/test-e2e/result.json | 57a4d2732d336d49ec4cc2adfab86fb1eb0fb0cb | 715 |
+
+Procedimento recomendado (não executado): reescrita de histórico (ex.
+`git filter-repo --path poc/evidence/... --invert-paths`) em cópia nova,
+re-verificação de credenciais/blob, atualização do remote e forçar push a partir
+da cópia corrigida — com impacto em forks/clones (história anterior permanece
+onde já foi clonada). Recomenda-se também tornar o repositório privado
+temporariamente até a limpeza. Requer autorização expressa do proprietário
+(regras da rodada: não reescrever histórico, não force-push).
+
+## 19. Pendências separadas
+
+- TÉCNICAS: nenhuma pendência de código desta rodada; validação real do
+  VitalSource (EPUB/pageid) continua dependente de sessão estável.
+- DECISÕES DO PROPRIETÁRIO: (1) autorizar limpeza do histórico (seção 18);
+  (2) avaliar troca de senha caso a regra descrita no antigo comentário seja
+  reconhecida; (3) decidir privacidade do repositório.
+- VALIDAÇÃO LIVE: não executada nesta rodada (regra da rodada). Deve ser tentada
+  em tarefa separada, com login manual legítimo e sessão estável, registrando
+  estado real (integral/partial/inaccessible/not_found). Não contornar restrições.
+- FASE 4: integração dos módulos ao fluxo final do Electron fora do escopo desta
+  rodada (planejada para outra etapa).
+
+## 20. Conclusão da rodada
+
+Todos os critérios de aceitação (seção 9) atendidos: segurança (sem credencial
+literal/comentário de regra; cookies por domínio/host-only/path/Secure/expiração;
+redirect cross-origin sem credenciais; sem conteúdo protegido novo), VitalSource
+(1 launch, sem goto redundante, zero retries após reader-auth, máx 1 relaunch,
+failureType diferenciado), perfil (temporário isolado + limpeza normal/residual
+testada), extração (hierarquia EPUB3 sem duplicação; identidade PAGEID validada
+antes/depois com descarte de corrida), build/testes (legado fora do pacote; npm
+test funcional; 125/125; critérios de integral preservados). Histórico NÃO
+reescrito; nenhuma força de push. Hashes completos na resposta final.

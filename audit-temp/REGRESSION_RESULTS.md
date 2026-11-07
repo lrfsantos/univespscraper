@@ -4,10 +4,13 @@
 > `poc/test-regression-m3.js` — **29/29 PASS**. Nenhum conteúdo protegido é
 > gravado: fixtures sintéticas, contagens e hashes sanitizados apenas.
 >
-> Fase 3 — consolidação (2026-11-06): produção EPUB/PAGEID em
-> `poc/test-production-m3.js` (**19/19**), integração `poc/test-integration-m3.js`
-> (**14/14**) e adaptadores `poc/test-adapters-m3.js` (**35/35**) — **97/97 no
-> total**. Detalhes em `audit-temp/IMPLEMENTATION_RESULTS.md`.
+> Fase 3 — consolidação (2026-11-06) e auditoria consolidada (2026-11-07):
+> produção EPUB/PAGEID em `poc/test-production-m3.js` (**19/19**), integração
+> `poc/test-integration-m3.js` (**14/14**), adaptadores `poc/test-adapters-m3.js`
+> (**40/40**), orquestração VitalSource `poc/test-orchestration-m3.js` (**8/8**),
+> segurança HTTP `poc/test-http-security-m3.js` (**9/9**) e perfil Electron
+> `poc/test-electron-profile-m3.js` (**6/6**) — **125/125 no total**. Detalhes em
+> `audit-temp/IMPLEMENTATION_RESULTS.md`.
 
 ## Resumo
 
@@ -20,8 +23,11 @@
 | **Total (regressão sintética)** | | **29** | **29/29 PASS** |
 | Integração (A estrutural + B sincronização) | `poc/test-integration-m3.js` | 14 | 14/14 PASS |
 | **Produção (EPUB 2/3 + PAGEID)** | `poc/test-production-m3.js` | 19 | 19/19 PASS |
-| **Adaptadores** (parsePackage, fetch EPUB, readers) | `poc/test-adapters-m3.js` | 35 | 35/35 PASS |
-| **Total geral** | | **97** | **97/97 PASS** |
+| **Adaptadores** (parsePackage, fetch EPUB, readers) | `poc/test-adapters-m3.js` | 40 | 40/40 PASS |
+| **Orquestração VitalSource** | `poc/test-orchestration-m3.js` | 8 | 8/8 PASS |
+| **Segurança HTTP** | `poc/test-http-security-m3.js` | 9 | 9/9 PASS |
+| **Perfil Electron** | `poc/test-electron-profile-m3.js` | 6 | 6/6 PASS |
+| **Total geral** | | **125** | **125/125 PASS** |
 
 Execução: `node poc/test-regression-m3.js` → `audit-temp/REGRESSION_RESULTS.json`;
 `node poc/test-integration-m3.js` → `audit-temp/INTEGRATION_RESULTS.json`;
@@ -162,3 +168,4 @@ não substitui esse requisito — o teste volta a usar perfil efêmero por execu
 - Resultados JSON: `audit-temp/REGRESSION_RESULTS.json`, `audit-temp/INTEGRATION_RESULTS.json`
 - Relatórios: `audit-temp/IMPLEMENTATION_RESULTS.md`, `audit-temp/CHANGES_AND_PENDING_ITEMS.md`
 - Evidência real: `poc/evidence/module3/run.log`, `poc/evidence/module3/tmp/*.txt`
+

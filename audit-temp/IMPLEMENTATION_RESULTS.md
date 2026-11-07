@@ -333,3 +333,103 @@ declarada** (leitor não montou conteúdo — registrado separadamente).
 - `poc/test-adapters-m3.js` (novo) e `audit-temp/ADAPTERS_RESULTS.json` (novo)
 - `poc/test-production-m3.js` (sanitização na geração)
 - `audit-temp/PRODUCTION_RESULTS.json` (regenerado, sanitizado)
+
+---
+
+# Auditoria consolidada — correções finais (2026-11-07)
+
+## 14. Segurança
+
+### 14.1 Comentário sobre senha (Claude S1) — CORRIGIDO
+- `poc/lib/session.js` continha o comentário "A senha é derivada dos números antes
+  do @ do e-mail institucional". Removido. Confirmado: NÃO existe lógica que derive
+  ou manipule senha dessa forma — `autoLogin` recebe a senha por parâmetro; o
+  login manual é digitado pelo usuário; apenas variáveis de ambiente em testes
+  autorizados. Sem indicação de comprometimento; recomenda-se ao proprietário
+  avaliar a troca da senha se reconhecer a regra descrita.
+
+### 14.2 Conteúdo protegido no histórico (Claude S2) — INVENTARIADO, SEM LIMPEZA
+- `poc/evidence/module3/result.json` (blob 6200a6c7, 160.458 bytes) contém texto
+  integral extraído (chiavenato 46.779 chars; hisrich 107.115 chars). Introduzido
+  por `8742012`, removido do HEAD por `d6cf122` ("Security: remove extracted book
+  text from public repository"). NÃO está no HEAD nem em refs atuais, MAS continua
+  acessível pelo histórico (8742012 é ancestral de master). Demais result.json
+  (test-A/B/C/D/e2e, 715-4.104 bytes) também presentes em 8742012.
+- `.gitignore` agora cobre `poc/evidence/**/result.json`, `tmp/`, `run.log`,
+  `probe*.json`, `run-fast.log` — novas inclusões equivalentes impedidas.
+- Limpeza de histórico NÃO executada (depende de autorização do proprietário).
+  Plano de remediação em CHANGES_AND_PENDING_ITEMS.md (seção 18).
+
+### 14.3 Cookies e redirecionamentos (Claude S3) — CORRIGIDO + TESTADO
+- `src/lib/http.js` reescrito: cookie jar respeita Domain/host-only, Path,
+  Secure e expiração; comparação de hostname por sufixo com fronteira de rótulo
+  (host === domain OU host.endsWith('.' + domain)) — host que apenas CONTÉM o
+  domínio como prefixo NÃO recebe cookies; cookies institucionais nunca são
+  enviados a hosts externos; redirecionamento CROSS-ORIGIN não reutiliza
+  Cookie/Authorization/cabeçalhos sensíveis (cookies recalculados para o destino;
+  Authorization descartado); limite de 10 redirecionamentos + timeout.
+- `poc/test-http-security-m3.js` (9/9) com servidores LOCAIS reais verificando os
+  cabeçalhos RECEBIDOS (não apenas o retorno de função auxiliar).
+
+## 15. Estabilização do VitalSource (orquestração)
+
+- `classifyReader({frames,windows})` puro + `observeReader()` (nunca navega);
+  `detectFormat` agora observa o leitor já aberto (sem goto).
+- `extractBook`: UM lançamento inicial por livro; `extractEpub`/`extractPageid`
+  reutilizam o leitor (sem goto redundante); `reader-auth` interrompe
+  IMEDIATAMENTE (zero retries/relaunches/extração, `readerLoaded:false`); unknown
+  espera e reavalia sem navegar; no máximo UM relaunch; relaunch que vira
+  reader-auth interrompe; `failureType` diferencia reader-auth / no-frames /
+  no-text / unknown / timeout / network (sem URLs/tokens/cookies).
+- `poc/test-orchestration-m3.js` (8/8) com mocks: EPUB normal, PAGEID normal,
+  reader-auth, unknown recuperável sem relaunch, unknown persistente (1 relaunch),
+  logout após relaunch, no-frames, no-text — com contagem real de goto()/relaunch.
+
+## 16. Perfil temporário do Electron
+
+- ACHADO: `%APPDATA%\univespscraper` e `%APPDATA%\Electron` existiam (perfil
+  persistente acidental — o comentário "Sem userDataDir = perfil efêmero" era
+  INCORRETO). Removido o perfil persistente do nosso app (`%APPDATA%\univespscraper`);
+  `%APPDATA%\Electron` NÃO foi tocado (pode ser de outros aplicativos).
+- `electron/profile.js` (novo): `installTempProfile(app)` define userData/sessionData
+  em diretório exclusivo `%TEMP%\univesp-profile-*`, limpeza normal (will-quit) e
+  residual (inicialização seguinte, apenas perfis antigos do app). Fiação em
+  `electron/browser.js` e `electron/main.js` (antes do app.whenReady).
+- `poc/test-electron-profile-m3.js` (6/6): caminho efetivo, isolamento, limpeza
+  normal, limpeza residual, não apaga diretórios de outros apps.
+
+## 17. Integridade EPUB3 e PAGEID
+
+- 4.1 `collectNavList`: usa SOMENTE o link FILHO DIRETO do `<li>`
+  (`childrenNamed(li,'a')[0]`) — agrupamentos sem link não recebem destino
+  inventado; hierarquia/ordem/unicidade preservadas. Testes A-12/A-13/A-14
+  (pai sem link, pai+filho com links, 3+ níveis com agrupamento).
+- 4.2 `readPageidFrames`: identidade (location.href + src) e TEXTO capturados num
+  ÚNICO snapshot (frame.evaluate); URL revalidada contra frame.url(); divergência
+  ⇒ descarte por inteiro (B nunca vira A). Testes D-11 (corrida A→B descartada) e
+  D-12 (controle A estável aceita).
+
+## 18. Empacotamento e testes
+
+- 5.1 `package.json`: `build.files` exclui `src/lib/**/*` (legado: auth, books,
+  discover, extract, http, pdf, report, transcripts) do portátil — o app Electron
+  usa apenas `electron/**`; `src/extract/**/*` mantido (módulo atual/Fase 4).
+  Legados NÃO apagados do repositório.
+- 5.2 `npm test` = `node scripts/test-all.js` — executa as 7 suítes em sequência e
+  retorna exit != 0 se qualquer uma falhar.
+
+## 19. Resumo de testes (7 suítes — 125/125)
+
+| Suíte | Arquivo | Resultado |
+|---|---|---|
+| Regressão sintética | `poc/test-regression-m3.js` | 29/29 |
+| Integração | `poc/test-integration-m3.js` | 14/14 |
+| Produção EPUB/PAGEID | `poc/test-production-m3.js` | 19/19 |
+| Adaptadores reais | `poc/test-adapters-m3.js` | 40/40 |
+| Orquestração VitalSource | `poc/test-orchestration-m3.js` | 8/8 |
+| Segurança HTTP | `poc/test-http-security-m3.js` | 9/9 |
+| Perfil Electron | `poc/test-electron-profile-m3.js` | 6/6 |
+| **Total** | | **125/125** |
+
+Critérios de `integral`/`partial`/`inaccessible`/`not_found` preservados; nenhum
+teste simulado é chamado de teste live; validação live NÃO executada nesta rodada.
