@@ -972,11 +972,21 @@ async function syncCaptureFrame(driver, expectedState, prevHash, timeoutMs = 800
   let discards = 0;
   while (Date.now() < deadline) {
     const st1 = await driver.state();
-    const pageTarget = expectedState && expectedState.pageid != null ? expectedState.pageid : st1.pageid;
+    const hasExpected = !!(expectedState && expectedState.pageid != null);
+    const pageTarget = hasExpected ? expectedState.pageid : (st1 && st1.pageid != null ? st1.pageid : null);
     const frames = await driver.frames();
     const st2 = await driver.state();
     const sameAs = (a, b) => a != null && b != null && a !== b;
-    if (sameAs(st1.pageid, st2.pageid) || sameAs(st1.printed, st2.printed) || (pageTarget != null && st2.pageid != null && pageTarget !== st2.pageid)) {
+    const p1 = st1 && st1.pageid != null ? st1.pageid : null;
+    const p2 = st2 && st2.pageid != null ? st2.pageid : null;
+    // O estado do leitor precisa ser EXPLÍCITO e ESTÁVEL:
+    //   - com página esperada (hasExpected): st1 e st2 DEVEM ser iguais a ela.
+    //     Ausência (null/undefined) NÃO é aceita como confirmação — um frame com o
+    //     pageid esperado NÃO autoriza captura se o estado do leitor não confirmar;
+    //   - sem página esperada: st1 e st2 precisam coincidir entre si e estar presentes.
+    const stateMatches = hasExpected ? (p1 === pageTarget && p2 === pageTarget) : (p1 != null && p1 === p2);
+    const printedStable = !sameAs(st1 && st1.printed, st2 && st2.printed);
+    if (!stateMatches || !printedStable) {
       discards++; last = { inconsistent: true }; await waitTimeout(300); continue;
     }
     const content = frames.filter((f) => f.text && f.text.trim().length > 0);
@@ -990,7 +1000,11 @@ async function syncCaptureFrame(driver, expectedState, prevHash, timeoutMs = 800
     const f = byIdentity[0];
     if (prevHash != null && f.hash === prevHash) { await waitTimeout(400); continue; }
     const st3 = await driver.state();
-    if (sameAs(st2.pageid, st3.pageid) || sameAs(st2.printed, st3.printed) || (pageTarget != null && st3.pageid != null && pageTarget !== st3.pageid)) {
+    const p3 = st3 && st3.pageid != null ? st3.pageid : null;
+    // Revalidação PÓS-escolha: a identidade precisa continuar confirmada no estado.
+    const st3Matches = hasExpected ? (p3 === pageTarget) : (p3 != null && p3 === p2);
+    const printedStable3 = !sameAs(st2 && st2.printed, st3 && st3.printed);
+    if (!st3Matches || !printedStable3) {
       discards++; last = { inconsistent: true }; await waitTimeout(300); continue;
     }
     return { status: 'captured', pageid: st3.pageid, printed: st3.printed, text: f.text, chars: f.chars, hash: f.hash, frameId: f.frameId, identity: f.identity, active: f.active, reason: null, discards, audit: { pageid: st3.pageid, printed: st3.printed, frameIdentity: f.identity, frameId: f.frameId, origin: 'identity-sync', activeStyle: f.active, hash: f.hash, chars: f.chars, status: 'accepted', discards } };
