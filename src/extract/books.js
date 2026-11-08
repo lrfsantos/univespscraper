@@ -340,17 +340,53 @@ function parseEpubDocIdentity(url) {
   return { doc, idref };
 }
 
-// Lê o documento EPUB ativo (frame de conteúdo com mais texto) e sua identidade.
+// Lê o documento EPUB ativo. NÃO seleciona apenas o frame com mais texto (C2):
+//   - só considera frames de conteúdo com IDENTIDADE confiável (doc/idref/caminho
+//     EPUB); conteúdo sem identidade é DESCARTADO;
+//   - quando as identidades divergem (múltiplos frames/documentos), tenta casar
+//     com a janela do leitor (URL do topo), que indica o documento ativo;
+//   - se ainda houver ambiguidade, retorna { ambiguous:true, reliable:false } —
+//     quem consome não pode tratar como documento ativo único/integral.
 async function readEpubActiveDocument(app) {
-  let best = { text: '', url: '', doc: null, idref: null };
-  for (const { frame, url } of await collectFrames(app)) {
+  const candidates = [];
+  for (const { win, frame, url } of await collectFrames(app)) {
     if (!EPUB_CONTENT_RE.test(url)) continue;
-    try {
-      const txt = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
-      if (txt && txt.trim().length > best.text.length) best = { text: txt, url, ...parseEpubDocIdentity(url) };
-    } catch { /* frame indisponível */ }
+    const ident = parseEpubDocIdentity(url);
+    const docPath = epubDocPathFromUrl(url);
+    const reliable = !!(ident.doc || ident.idref || docPath);
+    if (!reliable) continue; // sem identidade confiável → descartado
+    let text = '';
+    try { text = await frame.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => ''); } catch {}
+    candidates.push({ win, url, doc: ident.doc, idref: ident.idref, docPath, text, reliable: true });
   }
-  return best;
+  if (!candidates.length) return { text: '', url: '', doc: null, idref: null, docPath: null, ambiguous: false, reliable: false };
+
+  const identityKey = (c) => c.docPath || c.doc || c.idref || c.url;
+  const identities = new Set(candidates.map(identityKey));
+  const pick = (c) => ({ text: c.text, url: c.url, doc: c.doc, idref: c.idref, docPath: c.docPath, ambiguous: false, reliable: true });
+
+  // Identidade única e consistente → documento único.
+  if (identities.size === 1) {
+    const c = candidates.reduce((a, b) => (b.text.length > a.text.length ? b : a));
+    return pick(c);
+  }
+
+  // Identidades divergentes: casa com a URL da janela do leitor (documento ativo).
+  for (const w of allWindows(app)) {
+    let wUrl = '';
+    try { wUrl = String(w.url ? w.url() : ''); } catch {}
+    const match = candidates.filter((c) => (c.docPath && wUrl.includes(c.docPath)) || (c.doc && wUrl.includes(c.doc)));
+    if (match.length === 1) return pick(match[0]);
+    if (match.length > 1) break;
+  }
+
+  // Um único frame com conteúdo significativo → ativo presumido.
+  const withContent = candidates.filter((c) => (c.text || '').trim().length >= 500);
+  if (withContent.length === 1) return pick(withContent[0]);
+
+  // Ambíguo: nunca integral. Sinaliza reliable=false para o consumidor.
+  const c = candidates.reduce((a, b) => (b.text.length > a.text.length ? b : a));
+  return { text: c.text, url: c.url, doc: c.doc, idref: c.idref, docPath: c.docPath, ambiguous: true, reliable: false };
 }
 
 // Navega para um capítulo via sumário acessível do leitor ("Acesse Capítulo N ...").
@@ -534,26 +570,32 @@ function epubDocPathFromUrl(url) {
 
 // Navega para o próximo documento dentro do capítulo (multi-XHTML). Considera a
 // navegação bem-sucedida SOMENTE se o documento ativo mudou — o comando ter sido
-// executado não basta. Retorna { changed, doc }.
+// executado não basta. Corrige a corrida (C1): a identidade/URL do documento é
+// capturada ANTES do clique, e o novo documento só é aceito se a identidade
+// mudou (nunca se reutiliza uma leitura pós-clique sem referência ao estado
+// anterior). Retorna { changed, doc }.
 async function navigateEpubNextDoc(app) {
+  const before = await readEpubActiveDocument(app);
   for (const w of allWindows(app)) {
     try {
       const ok = await w.locator('button[aria-label="Seguinte"]').first().click({ timeout: 3000 }).then(() => true).catch(() => false);
       if (!ok) continue;
-      const beforeUrl = (await readEpubActiveDocument(app)).url;
+      let lastUrl = null;
       const after = await poll(
         app,
         async () => {
           const d = await readEpubActiveDocument(app);
-          if (d.url && d.url !== beforeUrl && (d.text || '').trim().length >= 500) return d;
+          const identityChanged = d.url && before.url && d.url !== before.url;
+          const hasContent = (d.text || '').trim().length >= 500;
+          if (identityChanged && hasContent && d.url !== lastUrl) { lastUrl = d.url; return d; }
           return null;
         },
         { timeoutMs: 12000, interval: 2000 }
       );
-      return { changed: !!after, doc: after };
+      return { changed: !!after, doc: after, beforeUrl: before.url };
     } catch { /* janela indisponível */ }
   }
-  return { changed: false, doc: null };
+  return { changed: false, doc: null, beforeUrl: before.url };
 }
 
 // Espera o documento ATIVO do leitor mudar (não apenas a página impressa).
@@ -721,22 +763,28 @@ async function extractEpubViaAdapter(reader, expected, opts = {}) {
   }
   addCapture(cur);
   if (expectedResolved && expectedResolved.length > 1) {
+    let hitMax = true;
     for (let i = 0; i < maxDocAdvances; i++) {
       const haveAll = expectedResolved.every((p) => captured.has(p));
-      if (haveAll) { attempts.push('todos-documentos-do-capitulo-capturados'); break; }
+      if (haveAll) { attempts.push('todos-documentos-do-capitulo-capturados'); hitMax = false; break; }
       const adv = await reader.navigateNextDoc();
-      if (!adv || !adv.changed || !adv.doc) { attempts.push('navegacao-proximo-documento-sem-mudanca'); break; }
+      if (!adv || !adv.changed || !adv.doc) { attempts.push('navegacao-proximo-documento-sem-mudanca'); hitMax = false; break; }
       const p = epubDocPathFromUrl(adv.doc.url);
-      if (!p) { attempts.push('proximo-documento-sem-caminho-identificavel'); break; }
+      if (!p) { attempts.push('proximo-documento-sem-caminho-identificavel'); hitMax = false; break; }
       // compara sempre no espaço RESOLVIDO/normalizado (mesmo de expectedResolved)
       const norm = ep.normPath(ep.pkgResolve(pkgRes.pkg, p) || p);
-      if (nextChapterFirstResolved && norm === nextChapterFirstResolved) { attempts.push('atingiu-inicio-proximo-capitulo'); break; }
-      if (expectedResolved && !expectedResolved.includes(norm)) { attempts.push('documento-fora-do-capitulo: ' + p); break; }
+      if (nextChapterFirstResolved && norm === nextChapterFirstResolved) { attempts.push('atingiu-inicio-proximo-capitulo'); hitMax = false; break; }
+      if (expectedResolved && !expectedResolved.includes(norm)) { attempts.push('documento-fora-do-capitulo: ' + p); hitMax = false; break; }
       const st = addCapture(adv.doc);
       if (st === 'duplicate') continue;
       if (st === 'accepted') cur = adv.doc;
-      else { attempts.push('captura-sem-identidade: ' + st); break; }
+      else { attempts.push('captura-sem-identidade: ' + st); hitMax = false; break; }
       if (trace) trace.push({ kind: 'doc-capture', path: p, chars: (adv.doc.text || '').length, hash: sha256((adv.doc.text || '').trim()) });
+    }
+    // C4: limite de avanços atingido sem confirmação independente do fim — o
+    // limite artificial NUNCA é tratado como fim natural do capítulo.
+    if (hitMax && !expectedResolved.every((p) => captured.has(p))) {
+      attempts.push(`limite-maxDocAdvances-atingido:${maxDocAdvances}`);
     }
   }
 
@@ -1033,7 +1081,15 @@ async function syncCaptureFrame(driver, expectedState, prevHash, timeoutMs = 800
       discards++; last = { inconsistent: true }; await waitTimeout(300); continue;
     }
     const content = frames.filter((f) => f.text && f.text.trim().length > 0);
-    const byIdentity = content.filter((f) => f.identity && f.identity.pageid != null && f.identity.pageid === pageTarget);
+    // C3: aceita a identidade `pages/N/content` (identity.pages) mesmo quando
+    // identity.pageid não está disponível — o frameId já prioriza pages.
+    const byIdentity = content.filter((f) => {
+      const id = f.identity;
+      if (!id) return false;
+      const p = id.pageid != null ? id.pageid : null;
+      const g = id.pages != null ? id.pages : null;
+      return (p != null && p === pageTarget) || (g != null && g === pageTarget);
+    });
     last = { st: st2, byIdentity: byIdentity.length };
     lastStable = st2;
     if (byIdentity.length === 0) { await waitTimeout(400); continue; }
