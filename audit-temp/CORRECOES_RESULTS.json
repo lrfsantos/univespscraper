@@ -1,0 +1,205 @@
+{
+  "generatedAt": "2026-11-08T22:54:39.723Z",
+  "total": 33,
+  "failed": 0,
+  "results": [
+    {
+      "id": "A-1",
+      "title": "Todas as semanas são encontradas (3) e a seção Geral não é semana",
+      "status": "PASS",
+      "detail": "ids=[\"0\",\"1\",\"2\",\"3\"] relevantes=[\"1\",\"2\",\"3\"] nomes=[\"Geral\",\"Semana 1\",\"Semana 2\",\"Semana 3\"]"
+    },
+    {
+      "id": "A-2",
+      "title": "Semana 1 preserva TODOS os recursos (inclusive de li aninhados), na ordem, sem duplicar",
+      "status": "PASS",
+      "detail": "urls=[\"https://ava.univesp.br/mod/page/view.php?id=101\",\"https://ava.univesp.br/mod/lti/launch.php?id=102&triggerview=0\",\"https://ava.univesp.br/mod/page/view.php?id=103\",\"https://assets.univesp.br/ADM270/s1_material.pdf\",\"https://www.youtube.com/embed/AAAA1111\"] kinds=[\"page\",\"book\",\"page\",\"pdf\",\"video\"]"
+    },
+    {
+      "id": "A-3",
+      "title": "Nenhum recurso da semana 1 vazou para a semana 2 (limites corretos)",
+      "status": "PASS",
+      "detail": "semana2=[\"https://ava.univesp.br/mod/page/view.php?id=201\",\"https://assets.univesp.br/ADM270/s2_extra.pdf\"]"
+    },
+    {
+      "id": "A-4",
+      "title": "Semana sem recursos -> lista vazia (sem recurso fantasma)",
+      "status": "PASS",
+      "detail": "recursos=0"
+    },
+    {
+      "id": "A-5",
+      "title": "Livro LTI carrega expected com capítulo declarado pelo AVA (correção E na descoberta)",
+      "status": "PASS",
+      "detail": "expected={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\"}"
+    },
+    {
+      "id": "A-6",
+      "title": "HTML com quebras/ordem de atributos diferentes -> mesma descoberta (sem regex frágil)",
+      "status": "PASS",
+      "detail": "recursos=5 (esperado 5)"
+    },
+    {
+      "id": "B-1",
+      "title": "Matéria ativa e acessível permanece selecionável",
+      "status": "PASS",
+      "detail": "{\"title\":\"Estatística para Administração\",\"situacao\":\"ativa\",\"available\":true}"
+    },
+    {
+      "id": "B-2",
+      "title": "Matéria concluída e acessível permanece selecionável",
+      "status": "PASS",
+      "detail": "{\"title\":\"Matemática Aplicada concluída\",\"situacao\":\"concluida\",\"available\":true}"
+    },
+    {
+      "id": "B-3",
+      "title": "Matéria antiga (sem marcador de situação) permanece selecionável",
+      "status": "PASS",
+      "detail": "{\"title\":\"História do Brasil\",\"situacao\":\"ativa\",\"available\":true}"
+    },
+    {
+      "id": "B-4",
+      "title": "Matéria inativa e acessível permanece selecionável",
+      "status": "PASS",
+      "detail": "{\"title\":\"Geografia inativa\",\"situacao\":\"inativa\",\"available\":true}"
+    },
+    {
+      "id": "B-5",
+      "title": "Matéria com evidência concreta de indisponibilidade é desabilitada",
+      "status": "PASS",
+      "detail": "{\"title\":\"Física Geral indisponível\",\"situacao\":\"indisponivel\",\"available\":false}"
+    },
+    {
+      "id": "B-6",
+      "title": "Estado indeterminado não desabilita a matéria automaticamente",
+      "status": "PASS",
+      "detail": "{\"title\":\"Sociologia\",\"situacao\":\"ativa\",\"available\":true}"
+    },
+    {
+      "id": "B-7",
+      "title": "As quatro primeiras matérias (ativa/concluída/antiga/inativa) continuam selecionáveis",
+      "status": "PASS",
+      "detail": "selecionáveis=4 de 4 (só evidência concreta desabilita)"
+    },
+    {
+      "id": "B-8",
+      "title": "Interface distingue situação acadêmica (rótulo) e só desabilita com available=false",
+      "status": "PASS",
+      "detail": "rótuloSituacao=true desabilitaPorAvailable=true (validação por inspeção do ui.html)"
+    },
+    {
+      "id": "C-1",
+      "title": "Contrato consistente: envelope extracao + event (backend) e interface aceita extracao/progresso",
+      "status": "PASS",
+      "detail": "backendOk=true semEnvelopeAntigo=true uiOk=true (validação por inspeção de main.js/ui.html)"
+    },
+    {
+      "id": "C-2",
+      "title": "Três integral + um parcial + um inacessível -> done=3, pending=2, barra=100, sem dupla contagem",
+      "status": "PASS",
+      "detail": "done=3 pending=2 total=5 bar=100 counts={\"integral\":3,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0}"
+    },
+    {
+      "id": "C-3",
+      "title": "Progresso parcial reflete o trabalho real (3/5 -> barra 60%), sem conclusão prematura",
+      "status": "PASS",
+      "detail": "bar=60 done=3 pending=0"
+    },
+    {
+      "id": "C-4",
+      "title": "Cancelamento é comunicado (event cancelado) e refletido na interface",
+      "status": "PASS",
+      "detail": "status=cancelado done=2 pending=0 uiRefleteCancel=true (simulação + inspeção)"
+    },
+    {
+      "id": "D-1",
+      "title": "Contrato achatado backend<->UI (título/mensagem/status/counts no topo, com fallback)",
+      "status": "PASS",
+      "detail": "backendFlat=true uiFlat=true (validação por inspeção de main.js/ui.html)"
+    },
+    {
+      "id": "D-2",
+      "title": "Extração integral -> status concluído, ZIP salvável",
+      "status": "PASS",
+      "detail": "label=concluído overallStatus=concluído counts={\"integral\":2,\"partial\":0,\"inaccessible\":0,\"not_found\":0,\"unsupported\":0,\"video\":1}"
+    },
+    {
+      "id": "D-3",
+      "title": "Extração com pendências (parcial/inacessível) -> concluído com pendências, ainda salvável",
+      "status": "PASS",
+      "detail": "label=concluído com pendências overallStatus=concluído com pendências counts={\"integral\":1,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0}"
+    },
+    {
+      "id": "D-4",
+      "title": "Extração sem recursos válidos -> pendências documentadas, sem sucesso falso, botão ZIP disponível",
+      "status": "PASS",
+      "detail": "label=concluído com pendências overallStatus=concluído com pendências botãoSalvarHabilitado=true"
+    },
+    {
+      "id": "D-5",
+      "title": "Falha de extração não vira tela de sucesso (UI trata r.ok=false antes de showResult)",
+      "status": "PASS",
+      "detail": "ordemCancelado->falha->showResult=true (inspeção do ui.html)"
+    },
+    {
+      "id": "D-6",
+      "title": "Cancelamento comunicado corretamente (UI r.cancelled; backend status cancelado), sem sucesso falso",
+      "status": "PASS",
+      "detail": "ui=true backend=true (inspeção)"
+    },
+    {
+      "id": "D-7",
+      "title": "Cancelamento da janela de destino não vira falha; botão reabilitado e mensagem clara",
+      "status": "PASS",
+      "detail": "backend=true ui=true (inspeção)"
+    },
+    {
+      "id": "E-1",
+      "title": "extractBook recebe expected real (resource.expected || parseExpectedFromResource) — não {} silencioso",
+      "status": "PASS",
+      "detail": "flowPassesExpected=true (inspeção do flow.js)"
+    },
+    {
+      "id": "E-2",
+      "title": "Capítulo e intervalo de páginas declarados pelo AVA são extraídos (sem inventar)",
+      "status": "PASS",
+      "detail": "cap={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\"} pag={\"book\":\"Livro XYZ - páginas 10 a 25\",\"chapter\":null,\"hasChapter\":false,\"pageRange\":{\"start\":10,\"end\":25},\"hasPageRange\":true,\"source\":\"ancora-do-ava\"}"
+    },
+    {
+      "id": "E-3",
+      "title": "Ausência de capítulo/páginas é explícita (hasChapter:false, hasPageRange:false), nunca inventada",
+      "status": "PASS",
+      "detail": "{\"book\":\"Material de apoio\",\"chapter\":null,\"hasChapter\":false,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\"}"
+    },
+    {
+      "id": "E-4",
+      "title": "Funções estruturais de navegação/sincronização EPUB presentes no módulo (não temporizadores fixos)",
+      "status": "PASS",
+      "detail": "navigateEpubNextDoc=true waitEpubDocChange=true readPageidFrames=true syncCaptureFrame=true applyEpubStructuralValidation=true fetchEpubPackageFromReader=true"
+    },
+    {
+      "id": "E-5",
+      "title": "Sem prova de limite (expected vazio) -> endOk=false; só com reachedChapterEnd -> endOk=true (conservador)",
+      "status": "PASS",
+      "detail": "semFim endOk=false warnings=[\"fim-de-capitulo-nao-confirmado\"] | comFim endOk=true"
+    },
+    {
+      "id": "E-6",
+      "title": "Os 14 cenários EPUB obrigatórios (6.3) estão cobertos pelas suítes existentes (npm test)",
+      "status": "PASS",
+      "detail": "nãoCobertos=[] (cross-reference integ/regression/production)"
+    },
+    {
+      "id": "D-9",
+      "title": "Fluxo de salvamento: zip.ok=true -> status não falhou e validação confirma",
+      "status": "PASS",
+      "detail": "ok=true status=concluído valid=true"
+    },
+    {
+      "id": "D-8",
+      "title": "ZIP real criado e validado antes da confirmação; botão revelar usa o caminho salvo",
+      "status": "PASS",
+      "detail": "zipOk=true valid=true entries=2 matches=true uiReveal=true"
+    }
+  ]
+}

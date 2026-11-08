@@ -1,11 +1,11 @@
 {
-  "ts": "2026-11-08T05:21:26.153Z",
+  "ts": "2026-11-08T22:53:46.653Z",
   "results": [
     {
       "id": "D-1",
-      "title": "A2: parseCoursesFromHtml identifica disciplinas, codigo, URL e disponibilidade",
+      "title": "B: materias encerradas/concluidas seguem acessiveis; so evidencia concreta desabilita",
       "status": "PASS",
-      "detail": "[{\"id\":\"101\",\"title\":\"Empreendedorismo e Inovacao\",\"code\":\"ADM270\",\"status\":\"ativa\",\"available\":true},{\"id\":\"102\",\"title\":\"Gestao de Operacoes\",\"code\":null,\"status\":\"ativa\",\"available\":true},{\"id\":\"103\",\"title\":\"Estatistica encerrada\",\"code\":\"EST310\",\"status\":\"indisponivel\",\"available\":false},{\"id\":\"104\",\"title\":\"Curso indisponivel para voce\",\"code\":null,\"status\":\"indisponivel\",\"available\":false}]"
+      "detail": "[{\"id\":\"101\",\"title\":\"Empreendedorismo e Inovacao\",\"code\":\"ADM270\",\"situacao\":\"ativa\",\"status\":\"ativa\",\"available\":true},{\"id\":\"102\",\"title\":\"Gestao de Operacoes\",\"code\":null,\"situacao\":\"ativa\",\"status\":\"ativa\",\"available\":true},{\"id\":\"103\",\"title\":\"Estatistica encerrada\",\"code\":\"EST310\",\"situacao\":\"encerrada\",\"status\":\"encerrada\",\"available\":true},{\"id\":\"104\",\"title\":\"Curso indisponivel para voce\",\"code\":null,\"situacao\":\"indisponivel\",\"status\":\"indisponivel\",\"available\":false}]"
     },
     {
       "id": "D-2",

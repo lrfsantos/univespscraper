@@ -73,7 +73,7 @@ const COURSE_HTML = [
 ].join('\n');
 
 (async () => {
-  // --- A2: descoberta de disciplinas ---
+  // --- A2: descoberta de disciplinas (correção B: situação ≠ disponibilidade) ---
   {
     const courses = parseCoursesFromHtml(COURSES_HTML);
     const byId = (id) => courses.find((c) => c.id === String(id));
@@ -83,13 +83,16 @@ const COURSE_HTML = [
       byId(101).code === 'ADM270' &&
       byId(101).available === true &&
       byId(101).url === 'https://ava.univesp.br/course/view.php?id=101' &&
-      byId(103).status === 'indisponivel' &&
-      byId(103).available === false &&
+      // Encerrada/concluída permanece ACESSÍVEL (situação separada de acesso).
+      byId(103).situacao === 'encerrada' &&
+      byId(103).available === true &&
       byId(103).code === 'EST310' &&
+      // "indisponível para você" = evidência concreta de inacessibilidade.
       byId(104).available === false &&
+      byId(104).situacao === 'indisponivel' &&
       byId(102).title === 'Gestao de Operacoes' &&
       byId(102).code === null;
-    record({ id: 'D-1', title: 'A2: parseCoursesFromHtml identifica disciplinas, codigo, URL e disponibilidade', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(courses.map((c) => ({ id: c.id, title: c.title, code: c.code, status: c.status, available: c.available }))) });
+    record({ id: 'D-1', title: 'B: materias encerradas/concluidas seguem acessiveis; so evidencia concreta desabilita', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(courses.map((c) => ({ id: c.id, title: c.title, code: c.code, situacao: c.situacao, status: c.status, available: c.available }))) });
   }
 
   // --- A3: descoberta de semanas ---

@@ -17,6 +17,7 @@ const suites = [
   'poc/test-c-fidelity-m3.js',
   'poc/test-electron-flow-m3.js',
   'poc/test-product-m3.js',
+  'poc/test-correcoes-m3.js',
 ];
 
 let failed = 0;
