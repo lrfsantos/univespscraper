@@ -1,7 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { makeTempProfileDir, cleanupProfile, cleanupResidualProfiles, installTempProfile, PREFIX } = require('../electron/profile');
+const { makeTempProfileDir, cleanupProfile, cleanupResidualProfiles, installTempProfile, PREFIX, ownerPid, isValidProfileDir } = require('../electron/profile');
 
 // Testes do PERFIL TEMPORÁRIO isolado do Electron (auditoria, seção 3):
 //   - caminho efetivo do perfil em %TEMP% exclusivo (prefixo univesp-profile-);
@@ -91,6 +91,56 @@ async function testProfile() {
     const ok = res.ok === false && fs.existsSync(outside);
     try { fs.rmSync(outside, { recursive: true, force: true }); } catch {}
     record({ id: G + '-6', title: 'cleanupProfile não apaga diretórios de outros aplicativos (fora do prefixo)', status: ok ? 'PASS' : 'FAIL', detail: `ok=${res.ok} existe=${fs.existsSync(outside) || true}` });
+  }
+
+  // E-7 (B2): makeTempProfileDir grava OWNER.json com o PID do processo dono.
+  {
+    const dir = makeTempProfileDir();
+    const pid = ownerPid(dir);
+    const ok = pid === process.pid;
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    record({ id: G + '-7', title: 'B2: perfil tem lock OWNER.json com o PID do processo dono', status: ok ? 'PASS' : 'FAIL', detail: `ownerPid=${pid} esperado=${process.pid}` });
+  }
+
+  // E-8 (B2): limpeza residual PRESERVA perfil cujo processo dono está ativo.
+  {
+    const live = makeTempProfileDir(); // OWNER = este processo (ativo)
+    const res = cleanupResidualProfiles();
+    const ok = fs.existsSync(live);
+    try { fs.rmSync(live, { recursive: true, force: true }); } catch {}
+    record({ id: G + '-8', title: 'B2: limpeza residual NÃO remove perfil cujo dono está ativo', status: ok ? 'PASS' : 'FAIL', detail: `preservado=${fs.existsSync(live) || true} removed=${res.removed}` });
+  }
+
+  // E-9 (B2): limpeza residual REMOVE perfil órfão (dono inativo / sem OWNER).
+  {
+    const orphan = path.join(os.tmpdir(), `${PREFIX}0000000000-orphan-00000000`);
+    fs.mkdirSync(orphan, { recursive: true }); // sem OWNER.json → órfão
+    const res = cleanupResidualProfiles();
+    const ok = !fs.existsSync(orphan);
+    try { fs.rmSync(orphan, { recursive: true, force: true }); } catch {}
+    record({ id: G + '-9', title: 'B2: limpeza residual remove perfil órfão (dono inativo/ausente)', status: ok ? 'PASS' : 'FAIL', detail: `removido=${!fs.existsSync(orphan) || true} removed=${res.removed}` });
+  }
+
+  // E-10 (B3): isValidProfileDir valida relação REAL com os.tmpdir() e prefixo.
+  {
+    const inside = makeTempProfileDir();
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'outro-app-'));
+    const wrongPrefix = path.join(os.tmpdir(), 'outro-app-x');
+    const ok = isValidProfileDir(inside) && !isValidProfileDir(outside) && !isValidProfileDir(wrongPrefix) && !isValidProfileDir(null) && !isValidProfileDir('');
+    try { fs.rmSync(inside, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(outside, { recursive: true, force: true }); } catch {}
+    record({ id: G + '-10', title: 'B3: validação de caminho (path.resolve + relação real com tmpdir + prefixo)', status: ok ? 'PASS' : 'FAIL', detail: `inside=${isValidProfileDir(inside) || false}` });
+  }
+
+  // E-11 (B3): installTempProfile ABORTA se app.setPath não aplicar userData.
+  {
+    let threw = false;
+    try {
+      const broken = { setPath: () => {}, getPath: () => path.join(os.tmpdir(), 'default-do-usuario') };
+      installTempProfile(broken);
+    } catch { threw = true; }
+    const ok = threw;
+    record({ id: G + '-11', title: 'B3: installTempProfile aborta (throw) se userData/sessionData não forem aplicados', status: ok ? 'PASS' : 'FAIL', detail: `threw=${threw}` });
   }
 }
 

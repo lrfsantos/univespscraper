@@ -8,6 +8,7 @@
   "scripts": {
     "app": "electron .",
     "test": "node scripts/test-all.js",
+    "test:live": "node poc/test-module1.js && node poc/test-module2.js && node poc/test-module3.js",
     "build:portable": "electron-builder --win portable",
     "build:dir": "electron-builder --dir"
   },
