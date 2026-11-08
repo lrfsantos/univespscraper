@@ -19,6 +19,7 @@ const {
   parseSectionsFromHtml,
   parseResourcesFromSectionHtml,
   classifyResource,
+  parseExpectedFromResource,
 } = require('./discovery');
 const { createLogger } = require('./log');
 
@@ -81,14 +82,19 @@ function discoverResourcesFromSection(section, baseUrl = BASE) {
     n++;
     const cls = classifyResource(l);
     const id = resourceId(l, cls, n);
-    resources.push({ ...l, id, classification: cls });
+    // Correção E: preserva a identificação esperada (livro/capítulo) que o AVA
+    // declara no texto do âncora — nunca inventa. Para livros, é propagada à
+    // extração/validação; para os demais, registrada como ausência explícita.
+    const expected = parseExpectedFromResource(l);
+    resources.push({ ...l, id, classification: cls, expected });
   }
   for (const fr of iframes) {
     n++;
     const r = { text: '', url: fr, type: 'iframe' };
     const cls = classifyResource(r);
     const id = resourceId(r, cls, n);
-    resources.push({ ...r, id, classification: cls });
+    const expected = parseExpectedFromResource(r);
+    resources.push({ ...r, id, classification: cls, expected });
   }
   return resources;
 }
@@ -148,12 +154,17 @@ async function extractResource({ app, win, resource, weekDir, logger }) {
       entry.pdfFile = `${entry.id}.pdf`;
     }
   } else if (cls.kind === 'book') {
-    const expected = {};
+    // Correção E: o capítulo/página que o AVA declara no âncora (ex.: "Leia o
+    // Capítulo 1") é passado a extractBook para navegação e validação estrutural
+    // conservadora. Quando ausente, `expected` representa a ausência explícita
+    // (hasChapter:false) — nada é inventado e o status nunca sobe por omissão.
+    const expected = resource.expected || parseExpectedFromResource(resource);
     const b = await extractBook({ app, win, launchUrl: resource.url, expected });
     entry.status = b.status || (b.ok ? 'integral' : 'inaccessible');
     entry.failureType = b.failureType;
     entry.reason = b.reason || b.error;
     entry.chars = b.text ? b.text.length : 0;
+    entry.expected = { chapter: expected.chapter, hasChapter: expected.hasChapter, book: expected.book, pageRange: expected.pageRange, hasPageRange: expected.hasPageRange };
     if (b.text && b.text.trim().length > 100) {
       fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), b.text, 'utf8');
       entry.savedTextFile = `${entry.id}.txt`;
