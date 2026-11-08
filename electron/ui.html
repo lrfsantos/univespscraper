@@ -45,6 +45,7 @@
     .item .code { color: var(--muted); font-size: 13px; margin-left: 6px; }
     .item .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
     .item .status.ativa { background: #eafaf0; color: var(--ok); }
+    .item .status.concluida { background: #eef4fb; color: var(--primary); }
     .item .status.indisponivel { background: #fdeeee; color: var(--err); }
     .item .desc { color: var(--muted); font-size: 13px; }
     .group-title { font-weight: 600; margin: 16px 0 6px; }
@@ -201,7 +202,11 @@
     let cancelled = false;
 
     window.api.onStatus((s) => {
-      if (s.step === 'extracao') {
+      // Contrato de eventos (correção C): o envelope sempre usa step='extracao'
+      // durante a extração e o sub-tipo vem em `event` ('recurso', 'progresso',
+      // 'cancelado', 'concluida', 'sem-recursos'). Aceita também 'progresso' no
+      // campo `step` por compatibilidade com versões anteriores.
+      if (s.step === 'extracao' || s.step === 'progresso') {
         if (s.event === 'recurso') {
           $('current').textContent = `Matéria ${s.course} — ${s.week}: processando material...`;
         }
@@ -261,19 +266,31 @@
       $('btn-check-session').disabled = false;
     });
 
+    // Rótulos de situação acadêmica (correção B): "concluída", "encerrada" e
+    // "inativa" NÃO tornam a matéria indisponível — o estudante ainda pode
+    // selecioná-la e tentar o acesso. Somente evidência concreta de
+    // indisponibilidade desabilita o item.
+    const SITUACAO_LABEL = {
+      ativa: { cls: 'ativa', txt: 'ativa' },
+      concluida: { cls: 'concluida', txt: 'concluída' },
+      encerrada: { cls: 'concluida', txt: 'encerrada' },
+      inativa: { cls: 'concluida', txt: 'inativa' },
+      indisponivel: { cls: 'indisponivel', txt: 'indisponível' },
+    };
     function renderCourses() {
       const box = $('courseList');
       box.innerHTML = '';
       courses.forEach((c) => {
-        const st = c.available === false ? 'indisponivel' : 'ativa';
-        const stTxt = c.available === false ? 'indisponível' : 'ativa';
+        const real = c.available !== false;
+        const situ = c.situacao || 'ativa';
+        const s = SITUACAO_LABEL[situ] || SITUACAO_LABEL.ativa;
         const div = document.createElement('div');
         div.className = 'item';
         const label = document.createElement('label');
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.checked = c.available !== false;
-        cb.disabled = c.available === false;
+        cb.checked = real;
+        cb.disabled = !real;
         cb.dataset.id = String(c.id);
         cb.addEventListener('change', updateCourseCounter);
         const span = document.createElement('span');
@@ -282,7 +299,7 @@
         name.className = 'name';
         name.textContent = c.title;
         const code = c.code ? '<span class="code">' + c.code + '</span>' : '';
-        const status = '<span class="status ' + st + '">' + stTxt + '</span>';
+        const status = '<span class="status ' + s.cls + '">' + s.txt + '</span>';
         label.appendChild(cb);
         const txt = document.createElement('span');
         txt.innerHTML = code + ' ' + status;
@@ -419,9 +436,11 @@
     });
 
     function showResult(r) {
-      const res = r.result || {};
+      // Contrato de resposta (correção D): status/título/mensagem/counts no nível
+      // externo. Fallback para o objeto aninhado r.result por compatibilidade.
+      const res = r.result && !r.title && !r.counts ? r.result : r;
       const counts = res.counts || {};
-      const status = r.statusLabel || '';
+      const status = res.statusLabel || '';
       $('rIntegral').textContent = counts.integral || 0;
       $('rPartial').textContent = counts.partial || 0;
       $('rInacc').textContent = counts.inaccessible || 0;
@@ -429,8 +448,8 @@
       $('rVideo').textContent = counts.video || 0;
       const st = $('resultStatus');
       st.className = 'statusline ' + (status === 'concluído' ? 'ok' : status === 'falhou' ? 'err' : 'warn');
-      st.textContent = r.title || '';
-      $('resultMsg').textContent = r.message || '';
+      st.textContent = res.title || '';
+      $('resultMsg').textContent = res.message || '';
       $('zipInfo').classList.add('hidden');
       show('screen-result');
     }

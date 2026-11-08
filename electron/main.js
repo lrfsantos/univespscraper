@@ -164,9 +164,12 @@ async function handleRunExtraction(selection) {
 
   let doneCount = 0;
   let pendingCount = 0;
+  // Contrato de progresso: envelope step='extracao' + event='progresso'.
+  // (Correção C: antes usava step='progresso', o que sobrescrevia o envelope e
+  // fazia a interface descartar o evento — a barra nunca avançava.)
   const emitProgress = () => {
     sendStatus('extracao', {
-      step: 'progresso',
+      event: 'progresso',
       done: doneCount,
       pending: pendingCount,
       total: totalResources,
@@ -222,8 +225,16 @@ async function handleRunExtraction(selection) {
     const counts = summarizeCounts(resources);
     const statusLabel = zipOkLabel(counts);
     sendStatus('extracao', { event: 'concluida', done: doneCount, pending: pendingCount, total: totalResources });
+    // Contrato padrão (correção D): status/título/mensagem/counts no NÍVEL EXTERNO
+    // da resposta. `result` aninhado é mantido apenas por compatibilidade.
     return {
-      ok: true, status: 'pronto-para-zip', resourceCount: resources.length,
+      ok: true,
+      status: 'pronto-para-zip',
+      statusLabel: statusLabel.label,
+      title: statusLabel.title,
+      message: statusLabel.message,
+      resourceCount: resources.length,
+      counts,
       result: { counts, statusLabel: statusLabel.label, title: statusLabel.title, message: statusLabel.message },
     };
   } catch (e) {
