@@ -272,3 +272,116 @@ testada), extração (hierarquia EPUB3 sem duplicação; identidade PAGEID valid
 antes/depois com descarte de corrida), build/testes (legado fora do pacote; npm
 test funcional; 125/125; critérios de integral preservados). Histórico NÃO
 reescrito; nenhuma força de push. Hashes completos na resposta final.
+
+---
+
+# Rodada INTEGRAÇÃO — app integrado (missão de implementação, 2026-11-07/08)
+
+## 21. Resumo da rodada
+
+Saiu da PoC fixa para um aplicativo integrado: login MANUAL, descoberta dinâmica
+de disciplinas/semanas/recursos, extração com os Módulos 1-3 existentes e ZIP
+validado no destino escolhido via `dialog.showSaveDialog`. Nenhuma credencial é
+usada no app final; env explícito para o processo auxiliar; perfil temporário com
+lock de propriedade (OWNER.json + PID); logs sanitizados.
+
+## 22. O que foi implementado
+
+- **`electron/flow.js` (novo)**: orquestração do fluxo — login manual aguardado,
+  descoberta de disciplinas/semanas/recursos (parsers puros de
+  `electron/discovery.js`), extração delegada aos Módulos 1-3, status honesto
+  (`concluído` / `concluído com pendências` / `falhou`), estrutura acadêmica do
+  ZIP (INDEX/AI_STUDY_INSTRUCTIONS/EXTRACTION_REPORT/SOURCES + semanas) e ZIP com
+  validação (existe, >0, abre como ZIP, nº de entradas == nº de arquivos).
+- **`electron/main.js` (reescrito)**: instância única (B1, apenas principal;
+  `browser.js` auxiliar não é bloqueado), login manual (A1), IPC do fluxo,
+  `dialog.showSaveDialog` para o destino do ZIP (A6), log sanitizado (B4),
+  `will-quit` com limpeza do perfil.
+- **`electron/env.js` (novo)**: `buildAuxEnv()` — env EXPLÍCITO para o processo
+  auxiliar (nunca `process.env` inteiro).
+- **`electron/browser.js`**: janela VISÍVEL do AVA; login manual; sem credenciais.
+- **`electron/discovery.js` (novo)**: parsers puros de disciplinas/semanas/recursos
+  + classificação (A2/A3/A4/A5), com id curto/estável por recurso.
+- **`electron/log.js` (novo)**: log sanitizado (query strings removidas,
+  retenção/rotação, sem credenciais/cookies/conteúdo).
+- **`electron/profile.js`**: já possuía lock de propriedade (OWNER.json + PID),
+  validação de caminho e abort se `setPath` falhar (B2/B3) — coberto por testes.
+- **`src/extract/books.js`**: C1 (navigateEpubNextDoc captura identidade ANTES do
+  clique), C2 (readEpubActiveDocument vincula ao documento ativo/ambíguo), C3
+  (syncCaptureFrame aceita `pages/N/content` com pageid null), C4 (limite
+  maxDocAdvances registrado e nunca tratado como fim natural).
+- **`package.json`**: script `test:live` (harnesses autorizados fora do `npm test`).
+- **`poc/`**: novas suítes determinísticas (discovery, módulos 1/2, fidelidade C,
+  fluxo Electron) + testes ampliados do perfil.
+- **`README.md`, `LICENSE`, `.github/workflows/ci.yml`** (D4).
+
+## 23. Tabela de validação
+
+| Item | Teste automatizado | Electron real | AVA real | Evidência |
+|---|---|---|---|---|
+| A1 login manual (sem credenciais no app) | ✔ (isLoggedIn/waitForManualLogin) | ✔ (fluxo implementado) | — (não executado live) | test-electron-flow-m3.js |
+| A2 descoberta de disciplinas | ✔ (D-1) | ✔ (parsers puros usados no fluxo) | — | test-discovery-m3.js |
+| A3 descoberta de semanas | ✔ (D-2) | ✔ | — | test-discovery-m3.js |
+| A4 integração dos módulos | ✔ (fluxo delega a pages/pdfs/books) | ✔ (implementado) | — | flow.js + testes |
+| A5 vídeos (link/metadados/transcrição) | ✔ (D-3 classificação video) | ✔ | — | test-discovery-m3.js |
+| A6 ZIP destino escolhido + validação + estados | ✔ (D-4/D-5) | ✔ (dialog no main) | — | test-discovery-m3.js |
+| A7 estrutura do ZIP | ✔ (D-5) | ✔ | — | test-discovery-m3.js |
+| B1 instância única (principal vs auxiliar) | ✔ (main.js; aux não bloqueado) | ✔ | — | main.js |
+| B2 propriedade/lock do perfil | ✔ (E-7/8/9) | ✔ | — | test-electron-profile-m3.js |
+| B3 validação de caminho + abort setPath | ✔ (E-10/11) | ✔ | — | test-electron-profile-m3.js |
+| B4 logs sanitizados | ✔ (log.js; rotação/retenção) | ✔ | — | electron/log.js |
+| C1 corrida EPUB | ✔ (C-1/C-1b) | — | — | test-c-fidelity-m3.js |
+| C2 documento ativo EPUB | ✔ (C-2/C-2b) | — | — | test-c-fidelity-m3.js |
+| C3 PAGEID pages/N/content | ✔ (C-3) | — | — | test-c-fidelity-m3.js |
+| C4 limites configuráveis | ✔ (C-4/C-4b) | — | — | test-c-fidelity-m3.js |
+| C5 presença x integridade (pages/pdfs) | ✔ (M1-*/M2-*) | — | — | test-modules12-m3.js |
+| D1 testes determinísticos M1/M2 | ✔ | — | — | test-modules12-m3.js |
+| D2 fluxo Electron/IPC | ✔ (mocks; Electron real não executado) | — | — | test-electron-flow-m3.js |
+| D3 npm test | ✔ (11 suítes; falha se qualquer falhar) | — | — | scripts/test-all.js |
+| D4 README/LICENSE/CI | ✔ | — | — | README/LICENSE/ci.yml |
+
+Nota: itens marcados "Electron real: —" foram validados por fixture/mocks
+determinísticos; a validação com Electron real e AVA real NÃO foi executada nesta
+rodada (não bloquear os testes determinísticos).
+
+## 24. Testes
+
+- Comando: `npm test` (equivalente: `node scripts/test-all.js`).
+- Suítes executadas: **11**.
+- Resultado: **157/157 PASS** (0 falhas), saída com contagens por suíte.
+- Suítes: regression 29, integration 14, production 19, adapters 40,
+  orchestration 8, http-security 15, electron-profile 11, discovery 5,
+  modules12 4, c-fidelity 7, electron-flow 5.
+- Não executados: testes live (`npm run test:live`) — exigem AVA/VitalSource reais.
+- Limitação do ambiente: validação com Electron real e AVA real não executada.
+
+## 25. Segurança
+
+- Aplicativo final sem credenciais (nenhum `UNIVESP_USERNAME/PASSWORD` em
+  `electron/*` do fluxo final; existem apenas nos harnesses `poc/test-module*.js`).
+- Env explícito para o processo auxiliar (nunca `process.env` inteiro).
+- Sem conteúdo acadêmico protegido em arquivos novos versionados (fixtures
+  sintéticas; resultados sanitizados com `<TEMP>`).
+- Sem cópias persistentes automáticas fora do destino escolhido pelo estudante.
+- Perfis temporários com lock de propriedade (OWNER.json + PID), validação de
+  caminho real com `os.tmpdir()` e abort se `app.setPath` falhar.
+- Logs sanitizados (query strings removidas, retenção/rotação).
+- Histórico Git NÃO reescrito; nenhuma força de push; visibilidade inalterada.
+
+## 26. Pendências (fora de escopo desta rodada)
+
+- Módulo 4 (transcrição/extração de vídeo): registra links/metadados; não extrai.
+- Melhorias adicionais do cliente HTTP legado `src/lib/http.js` (fora do pacote).
+- Purga/reescrita do histórico Git (depende do proprietário).
+- Validação live do VitalSource e do AVA real (executar com `npm run test:live`).
+- Validação do executável portátil em Windows 10/11 (não declarada nesta rodada).
+
+## 27. Conclusão
+
+Aplicativo integrado implementado (A1-A7, B1-B4, C1-C5, D1-D4). O app não exige
+credenciais por variável de ambiente, espera o login manual, descobre
+disciplinas/semanas dinamicamente, permite seleção, chama os módulos existentes e
+gera ZIP validado no destino escolhido com status honesto. Testes determinísticos:
+**157/157**. Projeto **parcialmente concluído** quanto à validação real (AVA e
+VitalSource e executável portátil não validados nesta rodada) — conforme
+documentado; nenhum item foi declarado validado em ambiente real sem ter sido.

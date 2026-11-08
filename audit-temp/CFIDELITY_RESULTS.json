@@ -1,0 +1,52 @@
+{
+  "ts": "2026-11-08T00:42:17.366Z",
+  "results": [
+    {
+      "id": "C-1",
+      "title": "C1: navigateEpubNextDoc captura identidade ANTES do clique e só aceita mudança verificável",
+      "status": "PASS",
+      "detail": "{\"changed\":true,\"beforeUrl\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml?favre=brett\",\"doc\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch02.xhtml?favre=brett\"}"
+    },
+    {
+      "id": "C-1b",
+      "title": "C1: clique sem mudança de documento NÃO é aceito como novo documento (corrida)",
+      "status": "PASS",
+      "detail": "{\"changed\":false}"
+    },
+    {
+      "id": "C-2",
+      "title": "C2: readEpubActiveDocument vincula ao documento ATIVO da janela (não só ao mais texto)",
+      "status": "PASS",
+      "detail": "{\"url\":\"https://jigsaw.minhabiblioteca.com.br/books/B/epub/OEBPS/Text/ch01.xhtml?favre=brett\",\"doc\":\"ch01\",\"reliable\":true,\"chars\":3232}"
+    },
+    {
+      "id": "C-2b",
+      "title": "C2: múltiplos documentos sem casar com a janela -> ambíguo (reliable:false, nunca integral)",
+      "status": "PASS",
+      "detail": "{\"ambiguous\":true,\"reliable\":false}"
+    },
+    {
+      "id": "C-3",
+      "title": "C3: syncCaptureFrame aceita identidade pages/N/content (pageid null) quando pages casa com a página esperada",
+      "status": "PASS",
+      "detail": "{\"status\":\"captured\",\"frameId\":7,\"chars\":400,\"reason\":null}"
+    },
+    {
+      "id": "C-4",
+      "title": "C4: limite configurável registrado; sem confirmação de fim -> não integral",
+      "status": "PASS",
+      "detail": "{\"status\":\"not_found\",\"attempts\":[\"espera-inicial\",\"navegacao-capitulo-sem-mudanca-de-documento\",\"navegacao-limite-sem-mudanca-de-documento\"]}"
+    },
+    {
+      "id": "C-4b",
+      "title": "C4: maxPages configurável; limite atingido registrado -> não integral",
+      "status": "PASS",
+      "detail": "{\"maxPagesHit\":true,\"status\":\"partial\",\"steps\":[\"sem-mudanca-de-pagina\",\"limite-de-paginas\"]}"
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0
+  }
+}

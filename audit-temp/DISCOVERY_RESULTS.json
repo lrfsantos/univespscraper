@@ -1,0 +1,40 @@
+{
+  "ts": "2026-11-08T00:41:27.776Z",
+  "results": [
+    {
+      "id": "D-1",
+      "title": "A2: parseCoursesFromHtml identifica disciplinas, codigo, URL e disponibilidade",
+      "status": "PASS",
+      "detail": "[{\"id\":\"101\",\"title\":\"Empreendedorismo e Inovacao\",\"code\":\"ADM270\",\"status\":\"ativa\",\"available\":true},{\"id\":\"102\",\"title\":\"Gestao de Operacoes\",\"code\":null,\"status\":\"ativa\",\"available\":true},{\"id\":\"103\",\"title\":\"Estatistica encerrada\",\"code\":\"EST310\",\"status\":\"indisponivel\",\"available\":false},{\"id\":\"104\",\"title\":\"Curso indisponivel para voce\",\"code\":null,\"status\":\"indisponivel\",\"available\":false}]"
+    },
+    {
+      "id": "D-2",
+      "title": "A3: parseSectionsFromHtml identifica semanas dinamicamente e preserva bloco HTML",
+      "status": "PASS",
+      "detail": "[{\"id\":\"0\",\"name\":\"Geral\",\"relevant\":false,\"order\":0,\"blockLen\":30},{\"id\":\"1\",\"name\":\"Semana 1\",\"relevant\":true,\"order\":1,\"blockLen\":663},{\"id\":\"2\",\"name\":\"Semana 2\",\"relevant\":true,\"order\":2,\"blockLen\":170}]"
+    },
+    {
+      "id": "D-3",
+      "title": "A4/A5: recursos da secao extraidos e classificados (page/pdf/book/video); javascript ignorado",
+      "status": "PASS",
+      "detail": "{\"links\":[\"https://ava.univesp.br/mod/page/view.php?id=11\",\"https://ava.univesp.br/mod/page/view.php?id=12\",\"https://ava.univesp.br/mod/lti/launch.php?id=13&triggerview=0\",\"https://ava.univesp.br/mod/url/view.php?id=14\",\"https://assets.univesp.br/ADM270/s1_slides.pdf\"],\"iframes\":[\"https://www.youtube.com/embed/abc123\"]}"
+    },
+    {
+      "id": "D-4",
+      "title": "A6: overallStatus distingue concluido / concluido com pendencias / falhou",
+      "status": "PASS",
+      "detail": "{\"c1\":\"concluído\",\"c2\":\"concluído com pendências\",\"c3\":\"falhou\"}"
+    },
+    {
+      "id": "D-5",
+      "title": "A7: estrutura academica + ZIP valido no destino (validacao abre como ZIP)",
+      "status": "PASS",
+      "detail": "{\"files\":[\"AI_STUDY_INSTRUCTIONS.md\",\"EXTRACTION_REPORT.md\",\"INDEX.md\",\"SOURCES.md\"],\"zipOk\":true,\"zipBytes\":1300,\"valid\":true,\"entries\":5,\"filesCounted\":5}"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  }
+}

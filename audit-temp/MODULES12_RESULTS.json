@@ -1,0 +1,34 @@
+{
+  "ts": "2026-11-08T00:41:27.993Z",
+  "results": [
+    {
+      "id": "M1-1",
+      "title": "C5: pages.statusFor distingue presenca (integral) x incompleto (partial) x erro (inaccessible) x 404 (not_found)",
+      "status": "PASS",
+      "detail": "{\"integral\":\"integral\",\"semEscopo\":\"partial\",\"carregando\":\"partial\",\"erro\":\"inaccessible\",\"notFound\":\"not_found\"}"
+    },
+    {
+      "id": "M1-2",
+      "title": "C5: pages.basicChecks reporta verificacoes separadas (nao provam integral)",
+      "status": "PASS",
+      "detail": "{\"httpOk\":true,\"hasScope\":true,\"hasText\":true,\"textMinLen\":true}"
+    },
+    {
+      "id": "M2-1",
+      "title": "C5: pdfs.statusFor — todas as paginas extraidas = integral; faltando = partial; falha = inaccessible/partial",
+      "status": "PASS",
+      "detail": "{\"integral\":\"integral\",\"partial\":\"partial\",\"inaccessible\":\"inaccessible\",\"analyzeErr\":\"partial\"}"
+    },
+    {
+      "id": "M2-2",
+      "title": "C5: pdfs.detectPrintedPagination distingue ausencia de numeracao (none) de parcial",
+      "status": "PASS",
+      "detail": "{\"noPagination\":{\"detected\":[null,null],\"reliable\":\"none\"},\"withNum\":{\"detected\":[23,24],\"reliable\":\"partial\"}}"
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  }
+}

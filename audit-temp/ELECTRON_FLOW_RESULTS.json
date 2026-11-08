@@ -1,0 +1,40 @@
+{
+  "ts": "2026-11-08T00:42:17.963Z",
+  "results": [
+    {
+      "id": "D-2a",
+      "title": "D2: isLoggedIn não considera a página aberta como login (formulário de login presente)",
+      "status": "PASS",
+      "detail": "loggedIn=false (esperado false)"
+    },
+    {
+      "id": "D-2b",
+      "title": "D2: waitForManualLogin retorna true quando a autenticação é detectada (não só a página)",
+      "status": "PASS",
+      "detail": "detected=true"
+    },
+    {
+      "id": "D-2c",
+      "title": "D2: descoberta de semanas dinâmica via parser (DOM fake)",
+      "status": "PASS",
+      "detail": "[{\"id\":\"1\",\"name\":\"Semana 1\",\"order\":1}]"
+    },
+    {
+      "id": "D-2d",
+      "title": "D2: ZIP inválido/ausente ⇒ status falhou (nunca concluído)",
+      "status": "PASS",
+      "detail": "status=falhou"
+    },
+    {
+      "id": "D-2e",
+      "title": "D2: limpeza do diretório temporário de trabalho em melhor esforço",
+      "status": "PASS",
+      "detail": "removed=true"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  }
+}

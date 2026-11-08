@@ -1,23 +1,23 @@
 {
-  "ts": "2026-11-07T19:22:57.812Z",
+  "ts": "2026-11-08T00:41:26.527Z",
   "results": [
     {
       "id": "E-1",
       "title": "Perfil criado em %TEMP% exclusivo (prefixo univesp-profile-)",
       "status": "PASS",
-      "detail": "dir=<TEMP>\\univesp-profile-1794079377802-ffcd8a7c tmp=<TEMP>"
+      "detail": "dir=<TEMP>\\univesp-profile-1794098486164-659c6b8c tmp=<TEMP>"
     },
     {
       "id": "E-2",
       "title": "installTempProfile configura userData/sessionData no diretório temporário exclusivo",
       "status": "PASS",
-      "detail": "userData=<TEMP>\\univesp-profile-1794079377805-9521e759"
+      "detail": "userData=<TEMP>\\univesp-profile-1794098486170-3b19863b"
     },
     {
       "id": "E-3",
       "title": "Isolamento: cada execução usa um diretório de perfil DISTINTO",
       "status": "PASS",
-      "detail": "a=<TEMP>\\univesp-profile-1794079377807-a36ec844 b=<TEMP>\\univesp-profile-1794079377808-f0f33c3e"
+      "detail": "a=<TEMP>\\univesp-profile-1794098486174-ec2c3ff0 b=<TEMP>\\univesp-profile-1794098486175-14411167"
     },
     {
       "id": "E-4",
@@ -36,11 +36,41 @@
       "title": "cleanupProfile não apaga diretórios de outros aplicativos (fora do prefixo)",
       "status": "PASS",
       "detail": "ok=false existe=true"
+    },
+    {
+      "id": "E-7",
+      "title": "B2: perfil tem lock OWNER.json com o PID do processo dono",
+      "status": "PASS",
+      "detail": "ownerPid=31612 esperado=31612"
+    },
+    {
+      "id": "E-8",
+      "title": "B2: limpeza residual NÃO remove perfil cujo dono está ativo",
+      "status": "PASS",
+      "detail": "preservado=true removed=0"
+    },
+    {
+      "id": "E-9",
+      "title": "B2: limpeza residual remove perfil órfão (dono inativo/ausente)",
+      "status": "PASS",
+      "detail": "removido=true removed=1"
+    },
+    {
+      "id": "E-10",
+      "title": "B3: validação de caminho (path.resolve + relação real com tmpdir + prefixo)",
+      "status": "PASS",
+      "detail": "inside=true"
+    },
+    {
+      "id": "E-11",
+      "title": "B3: installTempProfile aborta (throw) se userData/sessionData não forem aplicados",
+      "status": "PASS",
+      "detail": "threw=true"
     }
   ],
   "summary": {
-    "total": 6,
-    "passed": 6,
+    "total": 11,
+    "passed": 11,
     "failed": 0
   }
 }
