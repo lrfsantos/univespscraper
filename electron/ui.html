@@ -1,193 +1,461 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>UNIVESP Study Tool</title>
+  <title>UNIVESP Scraper</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 24px; background: #f5f6f8; color: #1a1a2e; }
-    h1 { font-size: 22px; }
-    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-top: 12px; }
-    button { padding: 10px 18px; font-size: 15px; border: none; border-radius: 6px; background: #2b6cb0; color: #fff; cursor: pointer; margin-top: 8px; }
-    button:disabled { background: #a0aec0; cursor: not-allowed; }
-    button.primary { background: #2f9e44; }
-    label { display: block; padding: 4px 0; cursor: pointer; }
-    #log { font-family: Consolas, monospace; font-size: 12px; background: #111; color: #7dff9b; padding: 12px; border-radius: 6px; min-height: 120px; max-height: 240px; overflow-y: auto; white-space: pre-wrap; }
-    .step { margin: 2px 0; }
-    .ok { color: #2f9e44; } .fail { color: #e03131; }
-    .hidden { display: none; }
-    .badge { background: #edf2f7; border-radius: 4px; padding: 2px 6px; font-size: 12px; margin-left: 6px; }
-    #status { font-weight: 600; margin-top: 8px; }
+    :root {
+      --primary: #1d5fa8; --primary-dark: #164a85; --bg: #f4f6f9;
+      --card: #ffffff; --text: #1c2430; --muted: #5c6b7a; --border: #dde3ea;
+      --ok: #2f9e44; --warn: #e8a33d; --err: #d64545;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+    header { background: var(--primary); color: #fff; padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
+    header .logo { font-size: 20px; font-weight: 600; }
+    header .sub { font-size: 13px; opacity: .85; }
+    main { max-width: 860px; margin: 28px auto; padding: 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    h2 { font-size: 20px; margin: 0 0 12px; }
+    p { line-height: 1.5; color: var(--text); }
+    .muted { color: var(--muted); }
+    .lead { font-size: 15px; }
+    .notice { background: #eef4fb; border-left: 4px solid var(--primary); padding: 12px 14px; border-radius: 6px; font-size: 14px; margin: 12px 0; }
+    .notice.warn { background: #fdf4e5; border-left-color: var(--warn); }
+    .notice.err { background: #fdeeee; border-left-color: var(--err); }
+    .notice.ok { background: #eafaf0; border-left-color: var(--ok); }
+    .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { font-size: 15px; padding: 11px 20px; border: none; border-radius: 7px; cursor: pointer; background: var(--primary); color: #fff; font-weight: 500; }
+    button:hover { background: var(--primary-dark); }
+    button:disabled { background: #b7c3d2; cursor: not-allowed; }
+    button.secondary { background: #eef2f7; color: var(--primary); border: 1px solid var(--border); }
+    button.secondary:hover { background: #e2e9f2; }
+    button.danger { background: #fdeeee; color: var(--err); border: 1px solid #f3c4c4; }
+    button.danger:hover { background: #fadcdc; }
+    button.success { background: var(--ok); }
+    button.success:hover { background: #278c39; }
+    .list { margin-top: 8px; }
+    .item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px; border-bottom: 1px solid #eef1f5; }
+    .item label { flex: 1; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .item input[type=checkbox] { margin-top: 3px; width: 17px; height: 17px; }
+    .item .name { font-weight: 500; }
+    .item .code { color: var(--muted); font-size: 13px; margin-left: 6px; }
+    .item .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
+    .item .status.ativa { background: #eafaf0; color: var(--ok); }
+    .item .status.indisponivel { background: #fdeeee; color: var(--err); }
+    .item .desc { color: var(--muted); font-size: 13px; }
+    .group-title { font-weight: 600; margin: 16px 0 6px; }
+    .counter { font-size: 14px; color: var(--muted); margin-top: 10px; }
+    .progressbar { background: #eef1f5; border-radius: 8px; height: 12px; overflow: hidden; margin-top: 8px; }
+    .progressbar > div { background: var(--primary); height: 100%; transition: width .3s ease; }
+    .progressline { margin: 14px 0; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+    .stat { background: #f7f9fc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+    .stat .num { font-size: 24px; font-weight: 600; }
+    .stat .lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .stat.ok .num { color: var(--ok); } .stat.warn .num { color: var(--warn); } .stat.err .num { color: var(--err); }
+    .statusline { font-weight: 600; font-size: 16px; margin: 10px 0; }
+    .statusline.ok { color: var(--ok); } .statusline.warn { color: var(--warn); } .statusline.err { color: var(--err); }
+    .path { background: #f4f6f9; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-family: Consolas, monospace; font-size: 13px; word-break: break-all; margin: 8px 0; }
+    .hidden { display: none !important; }
+    #liveStatus { margin-top: 12px; font-size: 14px; min-height: 20px; }
+    .tiny { font-size: 12px; color: var(--muted); margin-top: 14px; }
   </style>
 </head>
 <body>
-  <h1>UNIVESP Study Tool</h1>
-  <div class="card">
-    <p id="env">Carregando...</p>
-    <button id="start">Abrir navegador e fazer login manual</button>
-    <p><small>Uma janela do navegador será aberta. Conclua o login manualmente no AVA.</small></p>
-  </div>
+  <header>
+    <div class="logo">UNIVESP Scraper</div>
+    <div class="sub">Extraia e organize os materiais das suas disciplinas</div>
+  </header>
+  <main>
+    <!-- Tela 1: Boas-vindas e acesso -->
+    <section id="screen-welcome" class="screen active">
+      <div class="card">
+        <h1>Bem-vindo ao UNIVESP Scraper</h1>
+        <p class="lead">Este aplicativo localiza as suas disciplinas no AVA, encontra as semanas e os materiais disponíveis e organiza tudo em um arquivo ZIP para você estudar depois.</p>
+        <p class="muted">Nenhuma senha é solicitada ou armazenada por este aplicativo. O acesso à sua conta é feito por você, diretamente no site da UNIVESP, em uma janela do navegador que será aberta.</p>
+        <div class="actions">
+          <button id="btn-enter" class="success">Entrar no AVA</button>
+        </div>
+        <div id="liveStatus"></div>
+        <p class="tiny">Versão <span id="ver"></span></p>
+      </div>
+    </section>
 
-  <div class="card hidden" id="courseCard">
-    <h2>Disciplinas encontradas</h2>
-    <div id="courses"></div>
-    <button id="nextWeeks">Avançar para semanas</button>
-  </div>
+    <!-- Tela 2: Identificação da sessão -->
+    <section id="screen-session" class="screen">
+      <div class="card">
+        <h2>Acessar suas matérias</h2>
+        <div id="sessionMsg" class="notice">Abrindo o navegador do AVA...</div>
+        <div class="actions">
+          <button id="btn-check-session" class="secondary">Já concluí o login</button>
+        </div>
+        <div id="liveStatus"></div>
+        <p class="tiny">Conclua o login na janela do navegador que foi aberta e, em seguida, clique em "Já concluí o login".</p>
+      </div>
+    </section>
 
-  <div class="card hidden" id="weekCard">
-    <h2>Seleção de semanas</h2>
-    <div id="weeks"></div>
-    <p><small>Todas as semanas selecionadas por padrão; desmarque as que não deseja.</small></p>
-    <button id="run" class="primary">Extrair materiais</button>
-  </div>
+    <!-- Tela 3: Seleção de matérias -->
+    <section id="screen-courses" class="screen">
+      <div class="card">
+        <h2>Suas matérias</h2>
+        <p class="muted">Encontramos <span id="courseCount">0</span> matéria(s). Selecione as que deseja extrair.</p>
+        <div class="actions">
+          <button id="btn-all-courses" class="secondary">Selecionar todas</button>
+          <button id="btn-none-courses" class="secondary">Desmarcar todas</button>
+        </div>
+        <div id="courseList" class="list"></div>
+        <div class="counter" id="courseCounter">0 selecionada(s)</div>
+        <div class="actions">
+          <button id="btn-to-weeks" class="success">Continuar</button>
+        </div>
+        <div id="liveStatus"></div>
+      </div>
+    </section>
 
-  <div class="card hidden" id="resultCard">
-    <h2>Resultado</h2>
-    <div id="status"></div>
-    <div id="summary"></div>
-    <button id="saveZip">Escolher destino e gerar ZIP</button>
-    <button id="reveal" class="hidden">Abrir pasta do ZIP</button>
-    <div id="zipInfo"></div>
-  </div>
+    <!-- Tela 4: Seleção de semanas -->
+    <section id="screen-weeks" class="screen">
+      <div class="card">
+        <h2>Escolha as semanas</h2>
+        <p class="muted">Todas as semanas encontradas vêm marcadas. Desmarque as que não deseja extrair.</p>
+        <div class="actions">
+          <button id="btn-all-weeks" class="secondary">Selecionar todas</button>
+          <button id="btn-none-weeks" class="secondary">Desmarcar todas</button>
+        </div>
+        <div id="weekList"></div>
+        <div class="counter" id="weekCounter"></div>
+        <div class="actions">
+          <button id="btn-extract" class="success">Iniciar extração</button>
+        </div>
+        <div id="liveStatus"></div>
+      </div>
+    </section>
 
-  <div class="card"><div id="log"></div></div>
+    <!-- Tela 5: Extração em andamento -->
+    <section id="screen-progress" class="screen">
+      <div class="card">
+        <h2>Extraindo seus materiais</h2>
+        <div id="progressStatus" class="notice">Preparando a extração...</div>
+        <div id="current" class="muted"></div>
+        <div class="progressline">
+          <div class="muted">Progresso geral</div>
+          <div class="progressbar"><div id="barGeneral" style="width:0%"></div></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat ok"><div class="num" id="nDone">0</div><div class="lbl">materiais prontos</div></div>
+          <div class="stat warn"><div class="num" id="nPending">0</div><div class="lbl">com pendências</div></div>
+          <div class="stat"><div class="num" id="nTotal">0</div><div class="lbl">total encontrado</div></div>
+        </div>
+        <div class="actions">
+          <button id="btn-cancel" class="danger">Cancelar extração</button>
+        </div>
+        <div id="liveStatus"></div>
+      </div>
+    </section>
+
+    <!-- Tela 6: Resultado -->
+    <section id="screen-result" class="screen">
+      <div class="card">
+        <h2>Extração concluída</h2>
+        <div id="resultStatus" class="statusline ok"></div>
+        <div id="resultMsg" class="muted"></div>
+        <div class="stat-grid">
+          <div class="stat ok"><div class="num" id="rIntegral">0</div><div class="lbl">integral</div></div>
+          <div class="stat warn"><div class="num" id="rPartial">0</div><div class="lbl">parcial</div></div>
+          <div class="stat err"><div class="num" id="rInacc">0</div><div class="lbl">inacessível</div></div>
+          <div class="stat"><div class="num" id="rNotFound">0</div><div class="lbl">não encontrado</div></div>
+          <div class="stat"><div class="num" id="rVideo">0</div><div class="lbl">vídeos registrados</div></div>
+        </div>
+        <div class="actions">
+          <button id="btn-save-zip" class="success">Salvar ZIP</button>
+        </div>
+        <div id="zipInfo" class="hidden">
+          <div class="notice ok">O arquivo ZIP foi criado e verificado com sucesso.</div>
+          <div class="path" id="zipPath"></div>
+          <div class="actions">
+            <button id="btn-reveal" class="secondary">Abrir pasta do arquivo</button>
+          </div>
+        </div>
+        <div id="liveStatus"></div>
+      </div>
+    </section>
+  </main>
 
   <script>
-    const logEl = document.getElementById('log');
     const $ = (id) => document.getElementById(id);
-    function addLine(text, cls) {
-      const d = document.createElement('div');
-      d.className = 'step ' + (cls || '');
-      d.textContent = text;
-      logEl.appendChild(d);
-      logEl.scrollTop = logEl.scrollHeight;
+    const screens = ['screen-welcome', 'screen-session', 'screen-courses', 'screen-weeks', 'screen-progress', 'screen-result'];
+    function show(screen) {
+      screens.forEach((x) => $(x).classList.remove('active'));
+      $(screen).classList.add('active');
     }
-
+    function setLive(msg, cls) {
+      const el = $('liveStatus');
+      el.textContent = msg || '';
+      el.className = cls || '';
+    }
     let courses = [];
     let weeksByCourse = {};
-    let selectedCourses = new Set();
+    let cancelled = false;
+
+    window.api.onStatus((s) => {
+      if (s.step === 'extracao') {
+        if (s.event === 'recurso') {
+          $('current').textContent = `Matéria ${s.course} — ${s.week}: processando material...`;
+        }
+        if (typeof s.done === 'number') {
+          $('nDone').textContent = s.done;
+          $('nPending').textContent = s.pending;
+          $('nTotal').textContent = s.total;
+          const pct = s.total ? Math.round(((s.done + s.pending) / s.total) * 100) : 0;
+          $('barGeneral').style.width = pct + '%';
+          if (s.done + s.pending >= s.total) $('progressStatus').textContent = 'Finalizando...';
+        }
+        if (s.event === 'cancelado') { setLive('Extração cancelada.'); }
+      }
+    });
 
     async function init() {
       const env = await window.api.getEnv();
-      $('env').textContent = `Versão: ${env.appVersion} | Empacotado: ${env.packaged}`;
-      window.api.onStatus((s) => {
-        let txt = JSON.stringify(s);
-        if (s.step === 'aguardando-login') txt = 'Aguardando login manual...';
-        if (s.step === 'disciplinas-descobertas') txt = 'Disciplinas descobertas: ' + s.count;
-        addLine(txt, s.ok === false ? 'fail' : (s.ok ? 'ok' : ''));
-      });
+      $('ver').textContent = env.appVersion;
     }
 
-    async function start() {
-      $('start').disabled = true;
-      addLine('Abrindo navegador...');
+    $('btn-enter').addEventListener('click', async () => {
+      $('btn-enter').disabled = true;
+      setLive('Abrindo o navegador do AVA...');
       await window.api.launchBrowser();
-      addLine('Navegador aberto. Aguardando login manual no AVA...');
+      show('screen-session');
+      $('sessionMsg').textContent = 'O navegador do AVA foi aberto. Conclua o seu login lá e volte aqui.';
+      $('btn-enter').disabled = false;
+    });
+
+    $('btn-check-session').addEventListener('click', async () => {
+      $('btn-check-session').disabled = true;
+      setLive('Verificando sua sessão...');
+      const auth = await window.api.checkAuth();
+      if (!auth.loggedIn) {
+        $('sessionMsg').className = 'notice warn';
+        $('sessionMsg').textContent = 'Ainda não identificamos sua sessão. Se você já fez login no navegador, clique novamente. Se a sessão expirou, refaça o login.';
+        $('btn-check-session').disabled = false;
+        return;
+      }
+      setLive('Localizando suas matérias...');
       const r = await window.api.discoverCourses();
       if (r.error) {
-        addLine(r.message || r.error, 'fail');
-        $('start').disabled = false;
+        $('sessionMsg').className = 'notice err';
+        $('sessionMsg').textContent = r.message || 'Não foi possível localizar suas matérias. Tente novamente.';
+        $('btn-check-session').disabled = false;
         return;
       }
       courses = r.courses || [];
-      if (!courses.length) { addLine('Nenhuma disciplina encontrada.', 'fail'); $('start').disabled = false; return; }
+      if (!courses.length) {
+        $('sessionMsg').className = 'notice warn';
+        $('sessionMsg').textContent = 'Nenhuma matéria foi encontrada na sua conta. Verifique sua sessão e tente novamente.';
+        $('btn-check-session').disabled = false;
+        return;
+      }
       renderCourses();
-      $('courseCard').classList.remove('hidden');
-      addLine('Disciplinas: ' + courses.map((c) => c.code || c.id).join(', '));
-    }
+      show('screen-courses');
+      $('btn-check-session').disabled = false;
+    });
 
     function renderCourses() {
-      const box = $('courses');
+      const box = $('courseList');
       box.innerHTML = '';
-      for (const c of courses) {
-        const l = document.createElement('label');
+      courses.forEach((c) => {
+        const st = c.available === false ? 'indisponivel' : 'ativa';
+        const stTxt = c.available === false ? 'indisponível' : 'ativa';
+        const div = document.createElement('div');
+        div.className = 'item';
+        const label = document.createElement('label');
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = c.available !== false;
         cb.disabled = c.available === false;
         cb.dataset.id = String(c.id);
-        const title = (c.available === false ? ' (indisponível)' : '');
-        l.appendChild(cb);
-        l.appendChild(document.createTextNode(` ${c.code || ''} — ${c.title}${title}`));
-        box.appendChild(l);
-      }
+        cb.addEventListener('change', updateCourseCounter);
+        const span = document.createElement('span');
+        span.innerHTML = '';
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = c.title;
+        const code = c.code ? '<span class="code">' + c.code + '</span>' : '';
+        const status = '<span class="status ' + st + '">' + stTxt + '</span>';
+        label.appendChild(cb);
+        const txt = document.createElement('span');
+        txt.innerHTML = code + ' ' + status;
+        label.appendChild(name);
+        label.appendChild(txt);
+        div.appendChild(label);
+        box.appendChild(div);
+      });
+      updateCourseCounter();
+      $('courseCount').textContent = courses.length;
     }
 
-    async function nextWeeks() {
-      selectedCourses = new Set();
-      document.querySelectorAll('#courses input:checked').forEach((cb) => selectedCourses.add(cb.dataset.id));
-      if (!selectedCourses.size) { addLine('Selecione ao menos uma disciplina.', 'fail'); return; }
-      addLine('Descobrindo semanas...');
-      const r = await window.api.discoverWeeks([...selectedCourses]);
-      if (r.error) { addLine(r.error, 'fail'); return; }
+    function updateCourseCounter() {
+      const n = document.querySelectorAll('#courseList input:checked').length;
+      $('courseCounter').textContent = n + ' selecionada(s)';
+    }
+
+    $('btn-all-courses').addEventListener('click', () => {
+      document.querySelectorAll('#courseList input:not(:disabled)').forEach((cb) => { cb.checked = true; });
+      updateCourseCounter();
+    });
+    $('btn-none-courses').addEventListener('click', () => {
+      document.querySelectorAll('#courseList input:not(:disabled)').forEach((cb) => { cb.checked = false; });
+      updateCourseCounter();
+    });
+
+    $('btn-to-weeks').addEventListener('click', async () => {
+      const selected = [];
+      document.querySelectorAll('#courseList input:checked').forEach((cb) => selected.push(cb.dataset.id));
+      if (!selected.length) { setLive('Selecione ao menos uma matéria para continuar.', 'notice warn'); return; }
+      setLive('Localizando as semanas...');
+      const r = await window.api.discoverWeeks(selected);
+      if (r.error) { setLive(r.error, 'notice err'); return; }
       weeksByCourse = r.weeksByCourse || {};
       renderWeeks();
-      $('courseCard').classList.add('hidden');
-      $('weekCard').classList.remove('hidden');
-    }
+      show('screen-weeks');
+      setLive('');
+    });
 
     function renderWeeks() {
-      const box = $('weeks');
+      const box = $('weekList');
       box.innerHTML = '';
+      let totalWeeks = 0;
       for (const id of Object.keys(weeksByCourse)) {
         const { course, weeks } = weeksByCourse[id];
-        const h = document.createElement('h3');
-        h.textContent = `${course.code || course.id} — ${course.title}`;
-        box.appendChild(h);
-        if (!weeks.length) { box.appendChild(document.createTextNode('Nenhuma semana detectada.')); continue; }
-        for (const w of weeks) {
-          const l = document.createElement('label');
+        const g = document.createElement('div');
+        g.className = 'group-title';
+        g.textContent = (course.code ? course.code + ' — ' : '') + course.title;
+        box.appendChild(g);
+        if (!weeks.length) {
+          const p = document.createElement('p');
+          p.className = 'muted';
+          p.textContent = 'Nenhuma semana detectada nesta matéria.';
+          box.appendChild(p);
+          continue;
+        }
+        weeks.forEach((w) => {
+          const div = document.createElement('div');
+          div.className = 'item';
+          const label = document.createElement('label');
           const cb = document.createElement('input');
           cb.type = 'checkbox';
           cb.checked = true;
           cb.dataset.course = id;
           cb.dataset.week = String(w.id);
-          l.appendChild(cb);
-          l.appendChild(document.createTextNode(` ${w.name}`));
-          box.appendChild(l);
-        }
+          cb.addEventListener('change', updateWeekCounter);
+          label.appendChild(cb);
+          const span = document.createElement('span');
+          span.className = 'name';
+          span.textContent = w.name;
+          label.appendChild(span);
+          div.appendChild(label);
+          box.appendChild(div);
+          totalWeeks++;
+        });
       }
+      $('weekCounter').textContent = totalWeeks + ' semana(s) encontrada(s), todas selecionadas.';
     }
 
-    async function runExtraction() {
+    function updateWeekCounter() {
+      const n = document.querySelectorAll('#weekList input:checked').length;
+      const total = document.querySelectorAll('#weekList input').length;
+      $('weekCounter').textContent = n + ' de ' + total + ' semana(s) selecionada(s).';
+    }
+
+    $('btn-all-weeks').addEventListener('click', () => {
+      document.querySelectorAll('#weekList input').forEach((cb) => { cb.checked = true; });
+      updateWeekCounter();
+    });
+    $('btn-none-weeks').addEventListener('click', () => {
+      document.querySelectorAll('#weekList input').forEach((cb) => { cb.checked = false; });
+      updateWeekCounter();
+    });
+
+    $('btn-extract').addEventListener('click', async () => {
       const selection = [];
       for (const courseId of Object.keys(weeksByCourse)) {
         const weekIds = [];
-        document.querySelectorAll(`#weeks input[data-course="${courseId}"]:checked`).forEach((cb) => weekIds.push(cb.dataset.week));
+        document.querySelectorAll('#weekList input[data-course="' + courseId + '"]:checked').forEach((cb) => weekIds.push(cb.dataset.week));
         selection.push({ courseId, weekIds });
       }
-      $('run').disabled = true;
-      addLine('Extraindo materiais (Módulos 1–3)... isso pode levar alguns minutos.');
+      const anyChecked = selection.some((s) => s.weekIds.length);
+      if (!anyChecked) { setLive('Selecione ao menos uma semana para extrair.', 'notice warn'); return; }
+      cancelled = false;
+      $('btn-extract').disabled = true;
+      $('btn-cancel').disabled = false;
+      $('current').textContent = '';
+      $('nDone').textContent = '0'; $('nPending').textContent = '0'; $('nTotal').textContent = '...';
+      $('barGeneral').style.width = '0%';
+      $('progressStatus').textContent = 'Extraindo seus materiais. Isso pode levar alguns minutos.';
+      show('screen-progress');
       const r = await window.api.runExtraction(selection);
-      if (!r.ok) { addLine('Extração falhou: ' + (r.error || ''), 'fail'); $('run').disabled = false; return; }
-      addLine('Extração concluída. ' + r.resourceCount + ' recurso(s) processados.');
-      $('resultCard').classList.remove('hidden');
-      $('weekCard').classList.add('hidden');
-      $('status').textContent = 'Pronto para gerar o ZIP.';
-    }
-
-    async function saveZip() {
-      $('saveZip').disabled = true;
-      addLine('Escolha o destino do ZIP...');
-      const r = await window.api.saveZip();
-      if (!r.ok) {
-        if (r.canceled) { addLine('Cancelado pelo usuário.', 'fail'); }
-        else addLine('Falha ao gerar ZIP: ' + (r.error || ''), 'fail');
-        $('saveZip').disabled = false;
+      if (r.cancelled) {
+        $('progressStatus').textContent = 'Extração cancelada. Os materiais já processados foram mantidos.';
+        $('btn-cancel').disabled = true;
+        $('btn-extract').disabled = false;
+        setLive('Você pode iniciar uma nova extração ou fechar o aplicativo.', 'notice warn');
         return;
       }
-      const v = r.validation || {};
-      const okTxt = v.valid ? 'ZIP válido' : 'ZIP inválido';
-      $('status').textContent = `Status: ${r.status} — ${okTxt}`;
-      $('summary').textContent = `Arquivo: ${r.zip.path}\nTamanho: ${r.zip.bytes} bytes | Entradas: ${v.entries}`;
-      addLine(`ZIP criado: ${r.zip.path} (${r.zip.bytes} bytes)`, 'ok');
-      $('reveal').classList.remove('hidden');
-      $('reveal').onclick = () => window.api.revealZip(r.zip.path);
+      if (!r.ok) {
+        $('progressStatus').textContent = r.error || 'Houve um problema durante a extração.';
+        $('btn-cancel').disabled = true;
+        $('btn-extract').disabled = false;
+        return;
+      }
+      showResult(r);
+    });
+
+    $('btn-cancel').addEventListener('click', () => {
+      cancelled = true;
+      window.api.cancelExtraction();
+      $('progressStatus').textContent = 'Cancelando... aguarde a conclusão do material atual.';
+      $('btn-cancel').disabled = true;
+    });
+
+    function showResult(r) {
+      const res = r.result || {};
+      const counts = res.counts || {};
+      const status = r.statusLabel || '';
+      $('rIntegral').textContent = counts.integral || 0;
+      $('rPartial').textContent = counts.partial || 0;
+      $('rInacc').textContent = counts.inaccessible || 0;
+      $('rNotFound').textContent = counts.not_found || 0;
+      $('rVideo').textContent = counts.video || 0;
+      const st = $('resultStatus');
+      st.className = 'statusline ' + (status === 'concluído' ? 'ok' : status === 'falhou' ? 'err' : 'warn');
+      st.textContent = r.title || '';
+      $('resultMsg').textContent = r.message || '';
+      $('zipInfo').classList.add('hidden');
+      show('screen-result');
     }
 
-    $('start').addEventListener('click', start);
-    $('nextWeeks').addEventListener('click', nextWeeks);
-    $('run').addEventListener('click', runExtraction);
-    $('saveZip').addEventListener('click', saveZip);
+    $('btn-save-zip').addEventListener('click', async () => {
+      $('btn-save-zip').disabled = true;
+      setLive('Aguardando a escolha do destino...');
+      const r = await window.api.saveZip();
+      if (!r.ok) {
+        if (r.canceled) { setLive('Salvamento cancelado. Você pode tentar novamente.', 'notice warn'); }
+        else { setLive('Não foi possível criar o ZIP: ' + (r.error || 'erro inesperado'), 'notice err'); }
+        $('btn-save-zip').disabled = false;
+        return;
+      }
+      $('zipPath').textContent = r.zip.path;
+      $('zipInfo').classList.remove('hidden');
+      setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
+      $('btn-save-zip').disabled = false;
+    });
+
+    $('btn-reveal').addEventListener('click', () => {
+      const p = $('zipPath').textContent;
+      if (p) window.api.revealZip(p);
+    });
+
     init();
   </script>
 </body>

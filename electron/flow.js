@@ -13,6 +13,7 @@ const os = require('os');
 const { extractPage } = require('../src/extract/pages');
 const { extractPdf } = require('../src/extract/pdfs');
 const { extractBook } = require('../src/extract/books');
+const { extractVideo } = require('../src/extract/videos');
 const {
   parseCoursesFromHtml,
   parseSectionsFromHtml,
@@ -102,12 +103,15 @@ function resourceId(r, cls, n) {
 
 // --- Classificação de status honesto do fluxo (A6) ---
 // concluído | concluído com pendências | falhou
+// - 'concluído': ZIP válido e TODOS os recursos integral (sem pendências).
+// - 'concluído com pendências': ZIP válido, mas há recursos parcial/inacessível/
+//   não encontrado/não suportado — a pendência consta no relatório.
+// - 'falhou': ZIP não criado/inválido ou houve erro que impediu a conclusão.
 function overallStatus({ resources, zip }) {
   if (!zip || !zip.ok) return 'falhou';
-  const pendings = resources.filter((r) => r.status === 'partial' || r.status === 'inaccessible' || r.status === 'not_found' || r.status === 'unsupported');
-  const failures = resources.filter((r) => r.status === 'inaccessible' || r.status === 'not_found' || r.status === 'unsupported');
-  if (failures.length === 0 && resources.every((r) => r.status === 'integral')) return 'concluído';
-  if (failures.length === 0) return 'concluído com pendências';
+  if (!resources.length) return 'concluído';
+  const pendings = resources.filter((r) => r.status !== 'integral' && r.status !== 'video-registrado' && r.status !== 'video-com-transcricao');
+  if (pendings.length === 0) return 'concluído';
   return 'concluído com pendências';
 }
 
@@ -155,10 +159,18 @@ async function extractResource({ app, win, resource, weekDir, logger }) {
       entry.savedTextFile = `${entry.id}.txt`;
     }
   } else if (cls.kind === 'video') {
-    // A5: preserva link, título e disponibilidade de transcrição (sem resumo).
-    entry.status = 'video-registrado';
-    entry.transcriptAvailable = false;
-    entry.transcriptNote = 'transcrição não extraída nesta versão (Módulo 4 fora de escopo)';
+    // A5/5.4: captura transcrição quando efetivamente disponível (sem inventar).
+    const v = await extractVideo({ url: resource.url, title: resource.text });
+    entry.status = v.status;
+    entry.videoId = v.videoId;
+    entry.transcriptAvailable = v.transcriptAvailable;
+    entry.transcriptLang = v.transcriptLang;
+    entry.transcriptNote = v.transcriptNote || (v.transcriptAvailable ? 'transcrição capturada' : 'transcrição não disponível');
+    if (v.transcriptAvailable && v.transcript) {
+      fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), v.transcript, 'utf8');
+      entry.savedTextFile = `${entry.id}.txt`;
+      entry.transcriptChars = v.transcript.length;
+    }
   } else {
     entry.status = 'unsupported';
     entry.note = 'recurso desconhecido registrado (não ignorado silenciosamente)';
@@ -170,6 +182,29 @@ async function extractResource({ app, win, resource, weekDir, logger }) {
 
 // --- Renderização da estrutura do ZIP (A7) ---
 function safeName(s) { return String(s || '').replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_').slice(0, 80) || 'recurso'; }
+
+// Nome padrão do ZIP: UNIVESP_<DATA>.zip (a matéria principal, quando única, é
+// incluída; com várias matérias, usa-se "materiais").
+function zipBaseName(courses) {
+  const list = Array.isArray(courses) ? courses.filter(Boolean) : [];
+  const codes = list.map((c) => safeName(c.code || c.title || '')).filter(Boolean);
+  const label = codes.length === 1 ? codes[0] : (codes.length > 1 ? 'materiais' : 'materiais');
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  return `UNIVESP_${label}_${date}`;
+}
+
+// Documentos no nível raiz do ZIP (INDEX.md global, SOURCES.md, etc.) que
+// navegam pelas matérias/semanas. Cada matéria já tem os seus dentro da pasta.
+function buildTopLevelDocs({ courses, outputDir }) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  const links = courses.map((c) => {
+    const folder = safeName(c.code || c.id);
+    return `- [${c.title}${c.code ? ` (${c.code})` : ''}](./${folder}/INDEX.md)`;
+  }).join('\n');
+  fs.writeFileSync(path.join(outputDir, 'INDEX.md'), `# UNIVESP — Materiais extraídos\n\nMatérias incluídas:\n\n${links}\n`);
+  fs.writeFileSync(path.join(outputDir, 'AI_STUDY_INSTRUCTIONS.md'), renderAiInstructions());
+  fs.writeFileSync(path.join(outputDir, 'SOURCES.md'), `# Fontes\n\n${courses.map((c) => `- ${c.title}${c.code ? ` (${c.code})` : ''}: ${c.url}`).join('\n')}\n`);
+}
 
 function buildCourseStructure({ course, weeks, outputDir }) {
   const courseDir = path.join(outputDir, safeName(course.code || course.id));
@@ -266,7 +301,7 @@ function validateZip(zip) {
   if (!st.isFile() || st.size <= 0) return { valid: false, reason: 'arquivo-vazio' };
   try {
     const { execFileSync } = require('child_process');
-    const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('${zip.path.replace(/'/g, "''")}'); try { $z.Entries.Count } finally { $z.Dispose() }`;
+    const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('${zip.path.replace(/'/g, "''")}'); try { ($z.Entries | Where-Object { -not $_.FullName.EndsWith('/') -and -not $_.FullName.EndsWith('\\') }).Count } finally { $z.Dispose() }`;
     const count = parseInt(execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 30000, stdio: 'pipe' }).toString().trim(), 10);
     if (!Number.isInteger(count) || count < 0) return { valid: false, reason: 'nao-e-zip' };
     return { valid: true, entries: count, matches: count === zip.files };
@@ -289,6 +324,8 @@ module.exports = {
   extractResource,
   overallStatus,
   buildCourseStructure,
+  buildTopLevelDocs,
+  zipBaseName,
   createZip,
   validateZip,
   safeName,

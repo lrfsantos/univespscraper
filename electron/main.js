@@ -5,7 +5,7 @@ const os = require('os');
 const { _electron } = require('playwright-core');
 const { installTempProfile } = require('./profile');
 const { buildAuxEnv } = require('./env');
-const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildCourseStructure, createZip, validateZip, overallStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
+const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, overallStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
 // Fluxo: o estudante abre o app, uma janela de navegador VISÍVEL é aberta no AVA,
@@ -123,6 +123,8 @@ async function handleDiscoverWeeks(courseIds) {
 }
 
 let currentCourses = [];
+let currentWorkResult = null;
+let cancelRequested = false;
 
 async function handleRunExtraction(selection) {
   if (!auxWin || !auxApp) return { error: 'navegador-nao-iniciado' };
@@ -134,15 +136,49 @@ async function handleRunExtraction(selection) {
   fs.mkdirSync(outputDir, { recursive: true });
   const resources = [];
   const reportByCourse = [];
+  cancelRequested = false;
 
+  // Pré-calcula o total de recursos para o progresso real (sem porcentagens inventadas).
+  let totalResources = 0;
+  const planned = [];
   try {
     for (const sel of selectedCourses) {
       const course = courses.find((c) => String(c.id) === String(sel.courseId));
       if (!course) continue;
       const { weeks, sections } = await discoverWeeks(auxWin, course);
       const selWeeks = sel.weekIds && sel.weekIds.length ? weeks.filter((w) => sel.weekIds.includes(String(w.id))) : weeks;
+      planned.push({ course, weeks: selWeeks, sections });
+      for (const w of selWeeks) {
+        const section = sections.find((s) => s.id === String(w.id));
+        totalResources += discoverResourcesFromSection(section || { block: '' }).length;
+      }
+    }
+  } catch (e) {
+    logger.error('planejamento falhou: ' + e.message);
+    return { ok: false, error: 'Não foi possível preparar a extração. Verifique sua conexão e tente novamente.' };
+  }
+  if (totalResources === 0) {
+    sendStatus('extracao', { step: 'sem-recursos', message: 'Nenhum material encontrado nas semanas selecionadas.' });
+    return { ok: false, error: 'Nenhum material encontrado nas semanas selecionadas.' };
+  }
+
+  let doneCount = 0;
+  let pendingCount = 0;
+  const emitProgress = () => {
+    sendStatus('extracao', {
+      step: 'progresso',
+      done: doneCount,
+      pending: pendingCount,
+      total: totalResources,
+    });
+  };
+
+  try {
+    for (const { course, weeks: selWeeks, sections } of planned) {
+      if (cancelRequested) break;
       const courseWeeks = [];
       for (const w of selWeeks) {
+        if (cancelRequested) break;
         const section = sections.find((s) => s.id === String(w.id));
         const weekResources = discoverResourcesFromSection(section || { block: '' });
         const weekName = safeName(w.name || 'semana-' + w.id);
@@ -152,7 +188,8 @@ async function handleRunExtraction(selection) {
         fs.mkdirSync(path.join(weekDir, 'supplementary'), { recursive: true });
         const extracted = [];
         for (const r of weekResources) {
-          sendStatus('recurso', { course: course.code || course.id, week: w.name, url: r.url, kind: r.classification.kind });
+          if (cancelRequested) break;
+          sendStatus('extracao', { event: 'recurso', course: course.code || course.id, week: w.name, url: r.url, kind: r.classification.kind, done: doneCount, pending: pendingCount, total: totalResources });
           const subDir = r.classification.kind === 'video' ? 'videos' : (r.classification.kind === 'page' ? '' : (r.classification.kind === 'pdf' ? 'supplementary' : (r.classification.kind === 'book' ? 'readings' : 'supplementary')));
           const targetDir = subDir ? path.join(weekDir, subDir) : weekDir;
           fs.mkdirSync(targetDir, { recursive: true });
@@ -161,6 +198,9 @@ async function handleRunExtraction(selection) {
           e.week = w.name;
           extracted.push(e);
           resources.push(e);
+          if (e.status === 'integral' || e.status === 'video-registrado' || e.status === 'video-com-transcricao') doneCount++;
+          else pendingCount++;
+          emitProgress();
         }
         const weekMd = renderWeekMarkdown({ course, week: w, resources: extracted });
         fs.writeFileSync(path.join(weekDir, `${weekName}.md`), weekMd);
@@ -170,17 +210,52 @@ async function handleRunExtraction(selection) {
       buildCourseStructure({ course, weeks: courseWeeks, outputDir });
       reportByCourse.push({ course, weeks: courseWeeks });
     }
+    // Documentos no nível raiz do ZIP.
+    buildTopLevelDocs({ courses: reportByCourse.map((r) => r.course), outputDir });
 
-    const result = { resources, reportByCourse, workDir, outputDir };
+    const result = { resources, reportByCourse, workDir, outputDir, cancelled: cancelRequested };
     currentWorkResult = result;
-    return { ok: true, status: 'pronto-para-zip', resourceCount: resources.length };
+    if (cancelRequested) {
+      sendStatus('extracao', { event: 'cancelado', done: doneCount, pending: pendingCount, total: totalResources });
+      return { ok: true, status: 'cancelado', cancelled: true, resourceCount: resources.length };
+    }
+    const counts = summarizeCounts(resources);
+    const statusLabel = zipOkLabel(counts);
+    sendStatus('extracao', { event: 'concluida', done: doneCount, pending: pendingCount, total: totalResources });
+    return {
+      ok: true, status: 'pronto-para-zip', resourceCount: resources.length,
+      result: { counts, statusLabel: statusLabel.label, title: statusLabel.title, message: statusLabel.message },
+    };
   } catch (e) {
     logger.error('run-extraction falhou: ' + e.message);
-    return { ok: false, error: e.message };
+    return { ok: false, error: 'Ocorreu um erro durante a extração. Nenhum resultado foi apresentado como concluído.' };
   }
 }
 
-let currentWorkResult = null;
+// Resumo honesto dos resultados para a tela final.
+function summarizeCounts(resources) {
+  const counts = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  for (const r of resources) {
+    if (r.status === 'integral') counts.integral++;
+    else if (r.status === 'partial') counts.partial++;
+    else if (r.status === 'inaccessible') counts.inaccessible++;
+    else if (r.status === 'not_found') counts.not_found++;
+    else if (r.status === 'unsupported') counts.unsupported++;
+    else if (r.status === 'video-registrado' || r.status === 'video-com-transcricao') counts.video++;
+  }
+  return counts;
+}
+
+function zipOkLabel(counts) {
+  const pending = counts.partial + counts.inaccessible + counts.not_found + counts.unsupported;
+  if (pending === 0) {
+    return { label: 'concluído', title: 'Extração concluída', message: 'Todos os materiais foram extraídos integralmente. Pronto para salvar o ZIP.' };
+  }
+  if (counts.inaccessible + counts.not_found === 0) {
+    return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Alguns materiais foram extraídos parcialmente. Eles constam no relatório do ZIP.' };
+  }
+  return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Alguns materiais ficaram inacessíveis ou não foram encontrados. Eles constam no relatório do ZIP, que ainda pode ser salvo.' };
+}
 
 function renderWeekMarkdown({ course, week, resources }) {
   const lines = [`# ${week.name} — ${course.title}${course.code ? ` (${course.code})` : ''}`, ''];
@@ -211,7 +286,7 @@ function renderWeekMarkdown({ course, week, resources }) {
 async function handleSaveZip() {
   const res = currentWorkResult;
   if (!res || !res.outputDir) return { ok: false, error: 'sem-trabalho-para-zipar' };
-  const defaultName = 'UNIVESP_study_material.zip';
+  const defaultName = zipBaseName(res.reportByCourse.map((r) => r.course)) + '.zip';
   const picked = await dialog.showSaveDialog(mainWindow, {
     title: 'Salvar material extraído (ZIP)',
     defaultPath: path.join(app.getPath('documents'), defaultName),
@@ -232,6 +307,11 @@ async function handleRevealZip(zipPath) {
   catch { return { ok: false }; }
 }
 
+function handleCancelExtraction() {
+  cancelRequested = true;
+  return { ok: true };
+}
+
 app.whenReady().then(() => {
   createMainWindow();
   ipcMain.handle('get-env', () => ({ appVersion: app.getVersion(), packaged: app.isPackaged }));
@@ -244,6 +324,7 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('discover-weeks', (e, ids) => handleDiscoverWeeks(ids));
   ipcMain.handle('run-extraction', (e, selection) => handleRunExtraction(selection));
+  ipcMain.handle('cancel-extraction', () => handleCancelExtraction());
   ipcMain.handle('save-zip', () => handleSaveZip());
   ipcMain.handle('reveal-zip', (e, p) => handleRevealZip(p));
 });

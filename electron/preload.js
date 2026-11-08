@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   discoverCourses: () => ipcRenderer.invoke('discover-courses'),
   discoverWeeks: (ids) => ipcRenderer.invoke('discover-weeks', ids),
   runExtraction: (selection) => ipcRenderer.invoke('run-extraction', selection),
+  cancelExtraction: () => ipcRenderer.invoke('cancel-extraction'),
   saveZip: () => ipcRenderer.invoke('save-zip'),
   revealZip: (p) => ipcRenderer.invoke('reveal-zip', p),
   onStatus: (cb) => ipcRenderer.on('status', (_e, data) => cb(data)),

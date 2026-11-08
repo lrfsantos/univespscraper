@@ -15,26 +15,52 @@ const path = require('path');
 const { PDFParse } = require('pdf-parse');
 
 // Baixa o PDF via net do Electron (processo principal) — contorna CORS e
-// preserva os bytes originais. Retorna { ok, bytes, buffer }.
-async function downloadViaElectronNet(url) {
+// preserva os bytes originais. Limita tamanho e tempo (5.2): nunca carrega
+// arquivo de tamanho ilimitado em memória.
+const DEFAULT_MAX_BYTES = 200 * 1024 * 1024; // 200 MB
+const DEFAULT_TIMEOUT_MS = 120000;           // 120 s
+
+async function downloadViaElectronNet(url, opts = {}) {
+  const maxBytes = opts.maxBytes != null ? opts.maxBytes : DEFAULT_MAX_BYTES;
+  const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
   const { net } = require('electron');
   return new Promise((resolve, reject) => {
     const req = net.request(url);
     const chunks = [];
+    let size = 0;
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      try { req.abort(); } catch {}
+      reject(new Error('timeout-download'));
+    }, timeoutMs);
     req.on('response', (resp) => {
-      if (resp.statusCode !== 200) { reject(new Error('HTTP ' + resp.statusCode)); return; }
-      resp.on('data', (c) => chunks.push(c));
-      resp.on('end', () => resolve({ ok: true, bytes: Buffer.concat(chunks).length, buffer: Buffer.concat(chunks) }));
+      if (resp.statusCode !== 200) { clearTimeout(timer); reject(new Error('HTTP ' + resp.statusCode)); return; }
+      resp.on('data', (c) => {
+        if (done) return;
+        size += c.length;
+        if (size > maxBytes) { done = true; clearTimeout(timer); try { req.abort(); } catch {} reject(new Error('tamanho-maximo-excedido')); return; }
+        chunks.push(c);
+      });
+      resp.on('end', () => {
+        if (done) return;
+        done = true; clearTimeout(timer);
+        resolve({ ok: true, bytes: Buffer.concat(chunks).length, buffer: Buffer.concat(chunks) });
+      });
     });
-    req.on('error', reject);
+    req.on('error', (e) => { if (!done) { done = true; clearTimeout(timer); } reject(e); });
     req.end();
   });
 }
 
 // Baixa o PDF via HttpClient (Node puro) — usa cookie jar em memória.
-async function downloadViaHttpClient(client, url) {
+// Também respeita limites de tamanho e tempo.
+async function downloadViaHttpClient(client, url, opts = {}) {
+  const maxBytes = opts.maxBytes != null ? opts.maxBytes : DEFAULT_MAX_BYTES;
   const r = await client.fetch(url);
   if (r.status !== 200 || !r.body.length) throw new Error('PDF HTTP ' + r.status);
+  if (r.body.length > maxBytes) throw new Error('tamanho-maximo-excedido');
   return { ok: true, bytes: r.body.length, buffer: r.body };
 }
 
@@ -97,7 +123,7 @@ function statusFor({ ok, bytes, analyze, pages }) {
 // Função principal do Módulo 2.
 // Parâmetros: { url, filePath (destino p/ preservar original), client (opcional),
 //              useElectronNet (bool) }
-async function extractPdf({ url, filePath, client, useElectronNet = true }) {
+async function extractPdf({ url, filePath, client, useElectronNet = true, maxBytes, timeoutMs }) {
   const result = {
     url,
     filePath: filePath || null,
@@ -114,11 +140,11 @@ async function extractPdf({ url, filePath, client, useElectronNet = true }) {
   let buffer = null;
   try {
     if (useElectronNet) {
-      const dl = await downloadViaElectronNet(url);
+      const dl = await downloadViaElectronNet(url, { maxBytes, timeoutMs });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
     } else if (client) {
-      const dl = await downloadViaHttpClient(client, url);
+      const dl = await downloadViaHttpClient(client, url, { maxBytes });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
     } else {
