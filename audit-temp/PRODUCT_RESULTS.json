@@ -1,0 +1,58 @@
+{
+  "ts": "2026-11-08T04:53:18.606Z",
+  "results": [
+    {
+      "id": "P-A",
+      "title": "A: descoberta dinamica de materias (12, sem limite fixo; sem duplicar; ignora links auxiliares)",
+      "status": "PASS",
+      "detail": "{\"count\":12,\"codes\":\"MAT100,POR200,FIS300,QUI400,BIO500,HIS600,GEO700,SOC800,FIL900,ING1000,ART1100,EDF1200\"}"
+    },
+    {
+      "id": "P-B",
+      "title": "B: semanas dinamicas (3 e 15; secao Geral nao e semana)",
+      "status": "PASS",
+      "detail": "{\"tres\":3,\"quinze\":15}"
+    },
+    {
+      "id": "P-C",
+      "title": "C: extracao respeita exatamente as semanas selecionadas",
+      "status": "PASS",
+      "detail": "[\"1\",\"3\"]"
+    },
+    {
+      "id": "P-D",
+      "title": "D: modulos pages/pdfs produzem status que o fluxo consome (integral honesto)",
+      "status": "PASS",
+      "detail": "{\"page\":\"integral\",\"pdf\":\"integral\"}"
+    },
+    {
+      "id": "P-E",
+      "title": "E: ZIP com docs de topo + estrutura por materia; validado; nome UNIVESP_<MATERIA>_<DATA>",
+      "status": "PASS",
+      "detail": "{\"top\":[\"AI_STUDY_INSTRUCTIONS.md\",\"INDEX.md\",\"MAT100\",\"SOURCES.md\"],\"hasTop\":true,\"hasCourse\":true,\"zipOk\":true,\"entries\":7,\"matches\":true,\"name\":\"UNIVESP_MAT100_20261108\"}"
+    },
+    {
+      "id": "P-F",
+      "title": "F: status honestos (concluido / com pendencias / falhou) - sem sucesso falso",
+      "status": "PASS",
+      "detail": "{\"c\":\"concluído\",\"p\":\"concluído com pendências\",\"f\":\"falhou\",\"pp\":\"concluído com pendências\"}"
+    },
+    {
+      "id": "P-G",
+      "title": "G: interface permite selecionar todas / desmarcar todas / parcial (contagem refletida)",
+      "status": "PASS",
+      "detail": "{\"total\":12,\"selected\":7}"
+    },
+    {
+      "id": "P-H",
+      "title": "H: video identificado sem rede; transcricao real NAO executada (limitacao)",
+      "status": "PASS",
+      "detail": "{\"yt\":true,\"id\":\"xyz\",\"nonYt\":false}"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  }
+}
