@@ -1,9 +1,10 @@
 const { app, BrowserWindow } = require('electron');
 const { installTempProfile } = require('./profile');
 
-// Instância "browser" de automação (Etapa 2 — um único Chromium).
-// É lançada via playwright-core._electron e conduzida pelo processo principal.
-// Carrega o AVA na janela, onde o estudante faz o login manual.
+// Instância "browser" auxiliar de automação (Fases A1-A7).
+// É lançada via playwright-core._electron pelo processo principal (main.js).
+// Mostra o AVA numa janela VISÍVEL onde o estudante faz o login MANUAL.
+// NUNCA usa credenciais por variável de ambiente, nunca preenche senha.
 
 // Perfil temporário isolado por execução (nunca %APPDATA%\Electron nem o perfil
 // pessoal). Deve ser instalado ANTES do app ficar pronto.
@@ -16,11 +17,13 @@ const CHROME_UA =
 
 app.userAgentFallback = CHROME_UA;
 
+// B1: o auxiliar nunca pede o single-instance-lock (só a instância principal);
+// a proteção de instância única não bloqueia este processo.
 function createBrowserWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 860,
-    title: 'UNIVESP Study Tool — Navegador de extração',
+    title: 'UNIVESP Study Tool — Navegador (login manual)',
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
   win.loadURL('https://ava.univesp.br/');

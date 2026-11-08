@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { _electron } = require('playwright-core');
+const { buildAuxEnv } = require('./env');
 
 const DEBUG_LOG = path.join(os.tmpdir(), 'univesp-debug.log');
 function dbg(msg) {
@@ -33,7 +34,7 @@ async function runPoc({ workDir, outputDir, sendStatus, evDir }) {
     const browserEntry = path.join(__dirname, 'browser.js');
     const executablePath = process.execPath;
     dbg('launch _electron executablePath=' + executablePath + ' browserEntry=' + browserEntry);
-    app = await _electron.launch({ args: [browserEntry], executablePath, env: { ...process.env, UNIVESP_POC: '1' } });
+    app = await _electron.launch({ args: [browserEntry], executablePath, env: buildAuxEnv() });
     dbg('_electron launched ok');
     results.phases.push({ name: 'launch-browser', ok: true });
     sendStatus('launch-browser', { ok: true });
