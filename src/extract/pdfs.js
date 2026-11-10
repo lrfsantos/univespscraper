@@ -64,6 +64,28 @@ async function downloadViaHttpClient(client, url, opts = {}) {
   return { ok: true, bytes: r.body.length, buffer: r.body };
 }
 
+// P0 2.2: baixa o PDF usando a SESSÃO AUTENTICADA do navegador auxiliar via
+// APIRequestContext do Playwright (page.request / context.request), que compartilha
+// o armazenamento de cookies com o contexto do navegador onde o estudante fez o
+// login manual. Não copia cookies para logs/arquivos e não cria armazenamento
+// permanente. Redirecionamento para login / 403/404 / resposta HTML no lugar do
+// PDF são tratados; valida-se que o arquivo baixado realmente é PDF (magic bytes).
+async function downloadViaPageRequest(request, url, opts = {}) {
+  const maxBytes = opts.maxBytes != null ? opts.maxBytes : DEFAULT_MAX_BYTES;
+  const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
+  const resp = await request.get(url, { timeout: timeoutMs, maxRedirects: 5 });
+  const status = resp.status();
+  if (status === 401 || status === 403 || status === 404) throw new Error('HTTP ' + status + ' (sessao-negada/inexistente)');
+  if (!resp.ok()) throw new Error('HTTP ' + status);
+  const ct = String((resp.headers()['content-type'] || '') + ' ' + (resp.headers()['Content-Type'] || '')).toLowerCase();
+  if (/\btext\/html\b/.test(ct)) throw new Error('html-em-vez-de-pdf');
+  const buffer = await resp.body();
+  if (buffer.length > maxBytes) throw new Error('tamanho-maximo-excedido');
+  const isPdf = buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+  if (!isPdf) throw new Error('nao-e-pdf');
+  return { ok: true, bytes: buffer.length, buffer };
+}
+
 // Extrai texto por página e metadados do PDF.
 // Nesta versão do pdf-parse, getPageText recebe o objeto de página (não índice).
 async function analyzePdf(buffer) {
@@ -121,9 +143,10 @@ function statusFor({ ok, bytes, analyze, pages }) {
 }
 
 // Função principal do Módulo 2.
-// Parâmetros: { url, filePath (destino p/ preservar original), client (opcional),
-//              useElectronNet (bool) }
-async function extractPdf({ url, filePath, client, useElectronNet = true, maxBytes, timeoutMs }) {
+// Parâmetros: { url, filePath (destino p/ preservar original), request (opcional,
+//              APIRequestContext do Playwright — sessão autenticada), client
+//              (opcional), useElectronNet (bool, fallback) }
+async function extractPdf({ url, filePath, request, client, useElectronNet = true, maxBytes, timeoutMs }) {
   const result = {
     url,
     filePath: filePath || null,
@@ -139,7 +162,11 @@ async function extractPdf({ url, filePath, client, useElectronNet = true, maxByt
 
   let buffer = null;
   try {
-    if (useElectronNet) {
+    if (request) {
+      const dl = await downloadViaPageRequest(request, url, { maxBytes, timeoutMs });
+      buffer = dl.buffer;
+      result.bytes = dl.bytes;
+    } else if (useElectronNet) {
       const dl = await downloadViaElectronNet(url, { maxBytes, timeoutMs });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
@@ -173,4 +200,4 @@ async function extractPdf({ url, filePath, client, useElectronNet = true, maxByt
   return result;
 }
 
-module.exports = { extractPdf, analyzePdf, detectPrintedPagination, statusFor };
+module.exports = { extractPdf, analyzePdf, detectPrintedPagination, statusFor, downloadViaPageRequest };
