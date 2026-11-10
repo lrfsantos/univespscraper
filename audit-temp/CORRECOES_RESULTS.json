@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-08T23:30:14.668Z",
-  "total": 33,
+  "generatedAt": "2026-11-10T01:37:50.828Z",
+  "total": 42,
   "failed": 0,
   "results": [
     {
@@ -190,6 +190,36 @@
       "detail": "nãoCobertos=[] (cross-reference integ/regression/production)"
     },
     {
+      "id": "H-1",
+      "title": "P0 2.5: página Moodle com 3 videoaulas + 2 PDFs -> 5 recursos independentes, classificados, com página de origem",
+      "status": "PASS",
+      "detail": "[\"video\",\"video\",\"pdf\",\"video\",\"pdf\"]"
+    },
+    {
+      "id": "H-2",
+      "title": "P0 2.5: dedup por URL normalizada (mesmo vídeo em link/iframe/fragmento) — extrai uma vez",
+      "status": "PASS",
+      "detail": "recursos=1"
+    },
+    {
+      "id": "H-3",
+      "title": "P0 2.5: links externos desconhecidos/forums/navegação não viram downloads automáticos",
+      "status": "PASS",
+      "detail": "descobertos=0"
+    },
+    {
+      "id": "H-4",
+      "title": "P0 2.5: página interna (mod/page) preservada como recurso; vídeo incorporado descoberto",
+      "status": "PASS",
+      "detail": "[\"page\",\"video\"]"
+    },
+    {
+      "id": "H-5",
+      "title": "P0 2.5: main.js compartilha dedup e flattens incorporados; flow.js registra origem/profundidade (inspeção)",
+      "status": "PASS",
+      "detail": "seen=true flatten=true flowEmbed=true"
+    },
+    {
       "id": "D-9",
       "title": "Fluxo de salvamento: zip.ok=true -> status não falhou e validação confirma",
       "status": "PASS",
@@ -200,6 +230,30 @@
       "title": "ZIP real criado e validado antes da confirmação; botão revelar usa o caminho salvo",
       "status": "PASS",
       "detail": "zipOk=true valid=true entries=2 matches=true uiReveal=true"
+    },
+    {
+      "id": "F-1",
+      "title": "P0 2.6: falha de descoberta de uma matéria registrada e não bloqueia as demais",
+      "status": "PASS",
+      "detail": "[{\"id\":\"1\",\"weeks\":0,\"error\":\"HTTP 500 — matéria sem acesso\"},{\"id\":\"2\",\"weeks\":1,\"error\":null}]"
+    },
+    {
+      "id": "F-2",
+      "title": "P0 2.6: matéria válida depois de uma inacessível é planejada na ordem (sem abortar o lote)",
+      "status": "PASS",
+      "detail": "ordem=1,2"
+    },
+    {
+      "id": "F-3",
+      "title": "P0 2.6: sessão expirada no meio da extração -> inacessível (autenticação), nunca integral",
+      "status": "PASS",
+      "detail": "[{\"status\":\"inaccessible\",\"kind\":\"page\",\"reason\":\"sessao-expirada: faça login novamente no AVA e refaça a extração\"},{\"status\":\"inaccessible\",\"kind\":\"book\",\"reason\":\"sessao-expirada: faça login novamente no AVA e refaça a extração\"}]"
+    },
+    {
+      "id": "F-4",
+      "title": "P0 2.6/seção 3: main.js tem descarte explícito, limpeza pós-ZIP e recuperação de resíduos (inspeção)",
+      "status": "PASS",
+      "detail": "discard=true limpezaZip=true residuos=true"
     }
   ]
 }

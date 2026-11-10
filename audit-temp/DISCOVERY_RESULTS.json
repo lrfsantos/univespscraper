@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-08T23:29:21.680Z",
+  "ts": "2026-11-10T01:36:54.777Z",
   "results": [
     {
       "id": "D-1",
@@ -20,6 +20,18 @@
       "detail": "{\"links\":[\"https://ava.univesp.br/mod/page/view.php?id=11\",\"https://ava.univesp.br/mod/page/view.php?id=12\",\"https://ava.univesp.br/mod/lti/launch.php?id=13&triggerview=0\",\"https://ava.univesp.br/mod/url/view.php?id=14\",\"https://assets.univesp.br/ADM270/s1_slides.pdf\"],\"iframes\":[\"https://www.youtube.com/embed/abc123\"]}"
     },
     {
+      "id": "D-6",
+      "title": "P0 2.4: iframe classificado por evidência (vídeo só com plataforma reconhecida; leitor=book; pdf=pdf; html=page; sem URL=unknown)",
+      "status": "PASS",
+      "detail": "{\"youtubeIframe\":true,\"youtubeLink\":true,\"vimeoIframe\":true,\"vimeoLink\":true,\"readerIframe\":true,\"readerLink\":true,\"pdfIframe\":true,\"pdfViewerIframe\":true,\"htmlIframe\":true,\"htmlIframeNotVideo\":true,\"noUrlIframe\":true,\"unknownLink\":true}"
+    },
+    {
+      "id": "D-7",
+      "title": "P0 2.4: múltiplos recursos distintos na mesma semana (vídeo/leitor/pdf/html por iframe) classificados sem colapso em vídeo",
+      "status": "PASS",
+      "detail": "{\"links\":[\"https://ava.univesp.br/mod/page/view.php?id=21\"],\"iframes\":[\"https://www.youtube.com/embed/AAA111\",\"https://player.vimeo.com/video/222\",\"https://reader.vitalsource.com/reader/books/978Z/pageid/1\",\"https://assets.univesp.br/ADM270/s2_extra.pdf\",\"https://ava.univesp.br/mod/url/view.php?id=23\"],\"iframeKinds\":[\"video\",\"video\",\"book\",\"pdf\",\"page\"]}"
+    },
+    {
       "id": "D-4",
       "title": "A6: overallStatus distingue concluido / concluido com pendencias / falhou",
       "status": "PASS",
@@ -33,8 +45,8 @@
     }
   ],
   "summary": {
-    "total": 5,
-    "passed": 5,
+    "total": 7,
+    "passed": 7,
     "failed": 0
   }
 }
