@@ -14,6 +14,7 @@ const { extractPage } = require('../src/extract/pages');
 const { extractPdf } = require('../src/extract/pdfs');
 const { extractBook } = require('../src/extract/books');
 const { extractVideo } = require('../src/extract/videos');
+const { renderResourceMarkdown } = require('../src/extract/markdown');
 const {
   parseCoursesFromHtml,
   parseSectionsFromHtml,
@@ -123,9 +124,13 @@ function overallStatus({ resources, zip }) {
 
 // Extrai um recurso usando o módulo adequado (A4/A5). Recebe o contexto do
 // Electron (app, win) e o diretório da semana (para PDFs/organização).
-async function extractResource({ app, win, resource, weekDir, logger, seen }) {
+// Seção 4: gera também o documento Markdown INDIVIDUAL do recurso (`.md`) com
+// metadados, rastreabilidade e conteúdo original (nunca resumido).
+async function extractResource({ app, win, resource, weekDir, logger, seen, course, week }) {
   const cls = resource.classification || classifyResource(resource);
   const entry = { id: resource.id || resource.url, text: resource.text, url: resource.url, kind: cls.kind, subKind: cls.subKind, status: 'inaccessible' };
+  const courseLabel = course && (course.title || course.code || course.id);
+  const weekLabel = week && (week.name || week.id);
 
   if (cls.kind === 'page') {
     const p = await extractPage(win, resource.url);
@@ -135,6 +140,7 @@ async function extractResource({ app, win, resource, weekDir, logger, seen }) {
     entry.hasScope = p.hasScope;
     entry.httpStatus = p.httpStatus;
     entry.loadWarnings = p.loadWarnings || [];
+    entry.pageContent = p.text;
     if (p.pageStatus === 'integral' && p.text) {
       fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), p.text, 'utf8');
       entry.savedTextFile = `${entry.id}.txt`;
@@ -144,7 +150,7 @@ async function extractResource({ app, win, resource, weekDir, logger, seen }) {
     // a página como fonte independente e registrando sourcePage. `seen` compartilhado
     // (padrão: isolado por chamada) evita reextrair o mesmo recurso em várias páginas.
     if (p.pageStatus === 'integral' || p.pageStatus === 'partial') {
-      const embedded = await extractEmbeddedFromPage({ win, page: p, sourceUrl: resource.url, weekDir, app, logger, seen });
+      const embedded = await extractEmbeddedFromPage({ win, page: p, sourceUrl: resource.url, weekDir, app, logger, seen, course, week });
       if (embedded.length) entry.embedded = embedded;
     }
   } else if (cls.kind === 'pdf') {
@@ -155,9 +161,12 @@ async function extractResource({ app, win, resource, weekDir, logger, seen }) {
     const pdf = await extractPdf({ url: resource.url, filePath, request: win.request });
     entry.status = pdf.status;
     entry.bytes = pdf.bytes;
+    entry.sha256 = pdf.sha256;
     entry.totalPagesArquivo = pdf.totalPagesArquivo;
     entry.pagesExtracted = pdf.pagesExtracted;
     entry.printedPagination = pdf.printedPagination;
+    entry.pages = pdf.pages;
+    entry.info = pdf.info;
     entry.error = pdf.error;
     if (pdf.status === 'integral' || pdf.status === 'partial') {
       const text = pdf.pages.map((p) => p.text).join('\n\n');
@@ -175,19 +184,29 @@ async function extractResource({ app, win, resource, weekDir, logger, seen }) {
     entry.failureType = b.failureType;
     entry.reason = b.reason || b.error;
     entry.chars = b.text ? b.text.length : 0;
+    entry.bookText = b.text || '';
+    entry.format = b.format;
     entry.expected = { chapter: expected.chapter, hasChapter: expected.hasChapter, book: expected.book, pageRange: expected.pageRange, hasPageRange: expected.hasPageRange };
+    entry.evidenceNotes = b.evidenceNotes || null;
+    entry.endOk = b.validation ? b.validation.endOk : null;
+    entry.identifiedPages = b.validation && b.validation.identifiedPages != null ? b.validation.identifiedPages : null;
+    entry.xhtmlDocs = b.xhtmlDocs != null ? b.xhtmlDocs : null;
+    entry.syncNotes = b.syncNotes || null;
     if (b.text && b.text.trim().length > 100) {
       fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), b.text, 'utf8');
       entry.savedTextFile = `${entry.id}.txt`;
     }
   } else if (cls.kind === 'video') {
     // A5/5.4: captura transcrição quando efetivamente disponível (sem inventar).
+    // Seção 4.4: segmentos com timestamps preservados na ordem original.
     const v = await extractVideo({ url: resource.url, title: resource.text });
     entry.status = v.status;
     entry.videoId = v.videoId;
+    entry.isYoutube = v.isYoutube;
     entry.transcriptAvailable = v.transcriptAvailable;
     entry.transcriptLang = v.transcriptLang;
     entry.transcriptNote = v.transcriptNote || (v.transcriptAvailable ? 'transcrição capturada' : 'transcrição não disponível');
+    entry.segments = v.segments || [];
     if (v.transcriptAvailable && v.transcript) {
       fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), v.transcript, 'utf8');
       entry.savedTextFile = `${entry.id}.txt`;
@@ -196,6 +215,15 @@ async function extractResource({ app, win, resource, weekDir, logger, seen }) {
   } else {
     entry.status = 'unsupported';
     entry.note = 'recurso desconhecido registrado (não ignorado silenciosamente)';
+  }
+
+  // Seção 4: documento Markdown individual do recurso (conteúdo original + metadados).
+  try {
+    const md = renderResourceMarkdown({ entry, course, week: week || { name: weekLabel, id: weekLabel }, meta: {} });
+    fs.writeFileSync(path.join(weekDir, `${entry.id}.md`), md, 'utf8');
+    entry.savedMarkdownFile = `${entry.id}.md`;
+  } catch (e) {
+    if (logger) logger.error('falha ao gerar markdown [' + entry.id + ']: ' + e.message);
   }
 
   if (logger) logger.log('recurso ' + entry.id + ' kind=' + entry.kind + ' status=' + entry.status);
@@ -327,7 +355,7 @@ function discoverEmbeddedResources({ links = [], iframes = [], sourceUrl = '', d
 // extraído pelo fluxo NORMAL (status próprio); a página original permanece fonte
 // independente; `sourcePage` registra a origem; `seen` compartilhado evita reextrair
 // o mesmo recurso em múltiplas páginas.
-async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, logger, seen = new Set() }) {
+async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, logger, seen = new Set(), course, week }) {
   const discovered = discoverEmbeddedResources({ links: page && page.links, iframes: page && page.iframes, sourceUrl, depth: 0, seen });
   const out = [];
   for (const r of discovered) {
@@ -336,7 +364,7 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
     try { fs.mkdirSync(targetDir, { recursive: true }); } catch {}
     let e;
     try {
-      e = await extractResource({ app, win, resource: r, weekDir: targetDir, logger, seen });
+      e = await extractResource({ app, win, resource: r, weekDir: targetDir, logger, seen, course, week });
     } catch (err) {
       e = { id: r.id || r.url, text: r.text, url: r.url, kind: r.classification.kind, subKind: r.classification.subKind, status: 'inaccessible', reason: 'falha-durante-extracao: ' + sanitizeReason(err) };
     }
@@ -348,7 +376,7 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
     if (r.classification.kind === 'page' && r.depth < MAX_EMBED_DEPTH) {
       const sub = await extractPage(win, r.url).catch(() => null);
       if (sub && (sub.pageStatus === 'integral' || sub.pageStatus === 'partial')) {
-        const nested = await extractEmbeddedFromPage({ win, page: sub, sourceUrl: r.url, weekDir, app, logger, seen });
+        const nested = await extractEmbeddedFromPage({ win, page: sub, sourceUrl: r.url, weekDir, app, logger, seen, course, week });
         out.push(...nested);
       } else if (sub) {
         out.push({ id: r.id || r.url, text: r.text, url: r.url, kind: 'page', status: sub.pageStatus || 'inaccessible', reason: 'pagina-vinculada-inacessivel', sourcePage: sourceUrl, isEmbedded: true, embedDepth: r.depth + 1 });
@@ -373,7 +401,9 @@ function zipBaseName(courses) {
 
 // Documentos no nível raiz do ZIP (INDEX.md global, SOURCES.md, etc.) que
 // navegam pelas matérias/semanas. Cada matéria já tem os seus dentro da pasta.
-function buildTopLevelDocs({ courses, outputDir }) {
+// Seção 4.6: quando `resources` é informado, gera também EXTRACTION_REPORT.md
+// (resumo agregado honesto) e EXTRACTION_QA.md (nota de qualidade) na raiz.
+function buildTopLevelDocs({ courses, outputDir, resources }) {
   fs.mkdirSync(outputDir, { recursive: true });
   const links = courses.map((c) => {
     const folder = safeName(c.code || c.id);
@@ -382,6 +412,34 @@ function buildTopLevelDocs({ courses, outputDir }) {
   fs.writeFileSync(path.join(outputDir, 'INDEX.md'), `# UNIVESP — Materiais extraídos\n\nMatérias incluídas:\n\n${links}\n`);
   fs.writeFileSync(path.join(outputDir, 'AI_STUDY_INSTRUCTIONS.md'), renderAiInstructions());
   fs.writeFileSync(path.join(outputDir, 'SOURCES.md'), `# Fontes\n\n${courses.map((c) => `- ${c.title}${c.code ? ` (${c.code})` : ''}: ${c.url}`).join('\n')}\n`);
+  if (Array.isArray(resources)) {
+    fs.writeFileSync(path.join(outputDir, 'EXTRACTION_REPORT.md'), renderTopLevelReport({ courses, resources }));
+    fs.writeFileSync(path.join(outputDir, 'EXTRACTION_QA.md'), '# Qualidade das extrações\n\nConfira o relatório EXTRACTION_REPORT.md e os documentos individuais de cada recurso (status e pendências por item). Nenhum documento é apresentado como integral sem evidência.\n');
+  }
+}
+
+// Relatório agregado honesto na raiz do ZIP (contagem por status).
+function renderTopLevelReport({ courses, resources }) {
+  const totals = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  for (const r of resources || []) {
+    if (r.status === 'integral') totals.integral++;
+    else if (r.status === 'partial') totals.partial++;
+    else if (r.status === 'inaccessible') totals.inaccessible++;
+    else if (r.status === 'not_found') totals.not_found++;
+    else if (r.status === 'unsupported') totals.unsupported++;
+    else if (r.status === 'video-registrado' || r.status === 'video-com-transcricao') totals.video++;
+  }
+  const lines = [
+    '# Relatório de Extração (resumo geral)',
+    '',
+    `- Matérias: ${courses.map((c) => `${c.title}${c.code ? ` (${c.code})` : ''}`).join('; ')}`,
+    '',
+    `## Resumo: ${totals.integral} integral, ${totals.partial} parcial, ${totals.inaccessible} inacessível, ${totals.not_found} não encontrado, ${totals.unsupported} não suportado, ${totals.video} vídeo registrado.`,
+    '',
+    'Cada recurso tem documento individual com status e motivo. Este relatório não esconde pendências.',
+    '',
+  ];
+  return lines.join('\n');
 }
 
 function buildCourseStructure({ course, weeks, outputDir }) {

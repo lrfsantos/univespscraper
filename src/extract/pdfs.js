@@ -11,6 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const { PDFParse } = require('pdf-parse');
 
@@ -152,6 +153,7 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
     filePath: filePath || null,
     status: 'inaccessible',
     bytes: 0,
+    sha256: null,
     totalPagesArquivo: null,
     printedPagination: { detected: [], reliable: 'none' },
     pagesExtracted: 0,
@@ -177,6 +179,9 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
     } else {
       throw new Error('sem-metodo-download');
     }
+
+    // SHA-256 do PDF baixado (rastreabilidade; calculado só quando o download ocorreu).
+    if (buffer) result.sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
 
     // Preserva o PDF original
     if (filePath && buffer) {

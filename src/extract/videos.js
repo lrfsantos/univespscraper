@@ -29,14 +29,19 @@ function isYoutube(url) {
 }
 
 // Busca a transcrição de um vídeo (melhor esforço; nunca inventa).
+// Preserva a ORDEM e os TIMESTAMPS dos segmentos (offset em ms) — não apenas o
+// texto concatenado — para o documento Markdown da videoaula (seção 4.4).
 async function fetchTranscript(videoId) {
   const langs = ['pt', 'pt-BR', 'en'];
   let lastErr = null;
   for (const lang of langs) {
     try {
       const tr = await YoutubeTranscript.fetchTranscript(videoId, lang === 'en' ? undefined : { lang });
-      const text = (tr || []).map((s) => (s && s.text) || '').join(' ').replace(/\s+/g, ' ').trim();
-      if (text.length > 0) return { ok: true, lang, transcript: text };
+      const segments = (tr || [])
+        .filter((s) => s && typeof s.text === 'string' && s.text.trim().length > 0)
+        .map((s) => ({ offset: typeof s.offset === 'number' ? s.offset : null, text: s.text.replace(/\s+/g, ' ').trim() }));
+      const text = segments.map((s) => s.text).join(' ').replace(/\s+/g, ' ').trim();
+      if (text.length > 0) return { ok: true, lang, transcript: text, segments };
     } catch (e) {
       lastErr = e && e.message ? e.message : String(e);
     }
@@ -71,6 +76,7 @@ async function extractVideo({ url, title = '' }) {
     result.transcriptAvailable = true;
     result.transcriptLang = tr.lang;
     result.transcript = tr.transcript;
+    result.segments = tr.segments || [];
   } else {
     result.transcriptNote = 'transcrição não disponível para este vídeo';
   }

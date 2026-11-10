@@ -266,7 +266,7 @@ async function handleRunExtraction(selection) {
             fs.mkdirSync(targetDir, { recursive: true });
             let e;
             try {
-              e = await extractResource({ app: auxApp, win: auxWin, resource: r, weekDir: targetDir, logger, seen: seenResourceKeys });
+              e = await extractResource({ app: auxApp, win: auxWin, resource: r, weekDir: targetDir, logger, seen: seenResourceKeys, course, week: w });
             } catch (err) {
               // P0 2.6: falha num recurso NÃO interrompe os outros — registra e segue.
               const reason = sanitizeReason(err);
@@ -315,7 +315,7 @@ async function handleRunExtraction(selection) {
       reportByCourse.push({ course, weeks: courseWeeks });
     }
     // Documentos no nível raiz do ZIP.
-    buildTopLevelDocs({ courses: reportByCourse.map((r) => r.course), outputDir });
+    buildTopLevelDocs({ courses: reportByCourse.map((r) => r.course), outputDir, resources });
 
     const result = { resources, reportByCourse, workDir, outputDir, cancelled: cancelRequested, sessionExpired };
     currentWorkResult = result;
