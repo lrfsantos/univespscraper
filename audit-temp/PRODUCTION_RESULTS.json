@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-10T01:36:10.269Z",
+  "ts": "2026-11-10T19:12:39.216Z",
   "results": [
     {
       "id": "S-ncx",
@@ -11,13 +11,13 @@
       "id": "S-nav3",
       "title": "EPUB 3 (nav.xhtml): só toc, hierarquia, fragmento removido, landmarks ignorados",
       "status": "PASS",
-      "detail": "nav=[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"<TEMP>\\\\epubp-AevCiu\\\\Text\\\\ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"<TEMP>\\\\epubp-AevCiu\\\\Text\\\\ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"<TEMP>\\\\epubp-AevCiu\\\\Text\\\\ch02.xhtml\"}]"
+      "detail": "nav=[{\"l\":\"Capítulo 1\",\"d\":0,\"h\":\"<TEMP>\\\\epubp-NKEZHO\\\\Text\\\\ch01.xhtml\"},{\"l\":\"1.1 Subcapítulo\",\"d\":1,\"h\":\"<TEMP>\\\\epubp-NKEZHO\\\\Text\\\\ch01.xhtml\"},{\"l\":\"Capítulo 2\",\"d\":0,\"h\":\"<TEMP>\\\\epubp-NKEZHO\\\\Text\\\\ch02.xhtml\"}]"
     },
     {
       "id": "S-sub",
       "title": "Caminhos relativos em subdiretórios resolvidos corretamente",
       "status": "PASS",
-      "detail": "nav0.href=<TEMP>\\epubp-JndbjM\\chapters\\part1\\c01.xhtml"
+      "detail": "nav0.href=<TEMP>\\epubp-GZwtuw\\chapters\\part1\\c01.xhtml"
     },
     {
       "id": "S-bad",
