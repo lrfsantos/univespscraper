@@ -1,0 +1,64 @@
+{
+  "ts": "2026-11-10T19:13:22.590Z",
+  "results": [
+    {
+      "id": "QA-FID-1",
+      "title": "Página: conteúdo, headings, listas e recursos incorporados preservados (não resumido)",
+      "status": "PASS",
+      "detail": "fidPage=true"
+    },
+    {
+      "id": "QA-FID-2",
+      "title": "PDF: separação por página + distinção página do arquivo × impressa × não identificada",
+      "status": "PASS",
+      "detail": "fidPdf=true"
+    },
+    {
+      "id": "QA-FID-3",
+      "title": "Vídeo: transcrição integral com timestamps e ordem dos segmentos preservados",
+      "status": "PASS",
+      "detail": "fidVid=true ts=00:01"
+    },
+    {
+      "id": "QA-FID-4",
+      "title": "Livro: conteúdo acadêmico + capítulo e intervalo de páginas declarados preservados",
+      "status": "PASS",
+      "detail": "fidRead=true"
+    },
+    {
+      "id": "QA-FID-5",
+      "title": "Não suportado: registrado com motivo e orientação de acesso manual (sem fingir extração)",
+      "status": "PASS",
+      "detail": "fidUnk=true"
+    },
+    {
+      "id": "QA-HON-1",
+      "title": "PDF parcial (página sem texto) declara partial, nunca integral",
+      "status": "PASS",
+      "detail": "partialDeclarado=true"
+    },
+    {
+      "id": "QA-HON-2",
+      "title": "Vídeo sem transcrição: registrado como tal, sem inventar transcrição",
+      "status": "PASS",
+      "detail": "honesto=true"
+    },
+    {
+      "id": "QA-SAMPLE-1",
+      "title": "Documentos de exemplo existem e foram commitados (produzidos pelos escritores reais)",
+      "status": "PASS",
+      "detail": "SAMPLE_PAGE.md, SAMPLE_PDF.md, SAMPLE_READING.md, SAMPLE_VIDEO.md, SAMPLE_UNSUPPORTED.md, INDEX.md, SOURCES.md, EXTRACTION_REPORT.md"
+    },
+    {
+      "id": "QA-SAMPLE-2",
+      "title": "Conteúdo dos exemplos: fidelidade, separação por página, timestamps, metadados e status honesto",
+      "status": "PASS",
+      "detail": "{\"pageOk\":true,\"pdfOk\":true,\"videoOk\":true,\"readingOk\":true,\"unkOk\":true,\"indexOk\":true,\"reportOk\":true}"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  }
+}
