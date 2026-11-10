@@ -152,6 +152,8 @@
         </div>
         <div class="actions">
           <button id="btn-cancel" class="danger">Cancelar extração</button>
+          <button id="btn-save-partial-zip" class="success hidden">Salvar o que já foi processado (ZIP)</button>
+          <button id="btn-discard" class="danger hidden">Descartar extração</button>
         </div>
         <div id="liveStatus"></div>
       </div>
@@ -416,7 +418,9 @@
         $('progressStatus').textContent = 'Extração cancelada. Os materiais já processados foram mantidos.';
         $('btn-cancel').disabled = true;
         $('btn-extract').disabled = false;
-        setLive('Você pode iniciar uma nova extração ou fechar o aplicativo.', 'notice warn');
+        $('btn-save-partial-zip').classList.remove('hidden');
+        $('btn-discard').classList.remove('hidden');
+        setLive('Você pode salvar o que já foi processado, descartar esta extração ou iniciar uma nova.', 'notice warn');
         return;
       }
       if (!r.ok) {
@@ -468,6 +472,34 @@
       $('zipInfo').classList.remove('hidden');
       setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
       $('btn-save-zip').disabled = false;
+    });
+
+    // Seção 3.5: após cancelamento, salvar o que já foi processado ou descartar
+    // explicitamente (a pasta de trabalho é removida pelo backend em ambos os casos).
+    $('btn-save-partial-zip').addEventListener('click', async () => {
+      $('btn-save-partial-zip').disabled = true;
+      setLive('Aguardando a escolha do destino...');
+      const r = await window.api.saveZip();
+      if (!r.ok) {
+        if (r.canceled) { setLive('Salvamento cancelado. Você pode tentar novamente.', 'notice warn'); }
+        else { setLive('Não foi possível criar o ZIP: ' + (r.error || 'erro inesperado'), 'notice err'); }
+        $('btn-save-partial-zip').disabled = false;
+        return;
+      }
+      $('zipPath').textContent = r.zip.path;
+      $('zipInfo').classList.remove('hidden');
+      setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
+      $('btn-save-partial-zip').disabled = false;
+      $('btn-save-partial-zip').classList.add('hidden');
+      $('btn-discard').classList.add('hidden');
+    });
+
+    $('btn-discard').addEventListener('click', async () => {
+      await window.api.discardExtraction();
+      $('btn-save-partial-zip').classList.add('hidden');
+      $('btn-discard').classList.add('hidden');
+      setLive('Extração descartada. Os dados temporários foram removidos.', 'notice warn');
+      show('screen-weeks');
     });
 
     $('btn-reveal').addEventListener('click', () => {

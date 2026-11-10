@@ -234,16 +234,40 @@ function parseResourcesFromSectionHtml(html, baseUrl = 'https://ava.univesp.br')
 
 // ---- Classificação de recurso (A4/A5) ----
 // page (HTML do AVA) | pdf | book (LTI/leitor) | video | unknown
+//
+// Correção P0 2.4: NÃO classifica todo iframe como vídeo. Vídeo exige evidência
+// de plataforma de vídeo reconhecida (YouTube/Vimeo, ou outra explicitamente
+// suportada). iframe de leitor digital -> book (com evidência de plataforma de
+// leitura); iframe de PDF -> pdf (extensão .pdf ou visualizador de PDF conhecido);
+// iframe HTML comum -> page (iframe incorpora documento HTML por definição, sem
+// inventar formato específico); iframe/URL sem evidência -> unknown (registrado
+// como unsupported no fluxo, nunca ignorado silenciosamente). URL e texto de
+// origem são preservados pelo chamador.
+const VIDEO_PLATFORM_RE = /youtube\.com|youtu\.be|youtube-nocookie|vimeo\.com/i;
+const PDF_VIEWER_RE = /google\.com\/viewer|pdf\.js|mozilla\.github\.io\/pdf|pluginfile\.php[^"']*\.pdf/i;
+const READER_PLATFORM_RE = /vitalsource|bookshelf|minhabiblioteca|bibliotecavirtual|bvirtual|exlibris|leganto|\/reader\/|read\.unp/i;
+
 function classifyResource({ url, text = '', type = 'link' }) {
   const u = String(url || '').toLowerCase();
-  if (type === 'iframe' || /youtube\.com|youtu\.be|youtube-nocookie|vimeo\.com/.test(u)) {
-    return { kind: 'video', subKind: 'embed' };
-  }
+  const isIframe = type === 'iframe';
+  // Vídeo: somente com evidência de plataforma de vídeo reconhecida (link ou iframe).
+  if (VIDEO_PLATFORM_RE.test(u)) return { kind: 'video', subKind: 'embed' };
+  // PDF: URL com extensão .pdf (link ou iframe).
   if (/\.pdf($|[?#])/i.test(u)) return { kind: 'pdf' };
+  // PDF: visualizador de PDF conhecido (iframe/link que embute PDF).
+  if (PDF_VIEWER_RE.test(u)) return { kind: 'pdf', subKind: 'viewer' };
+  // Leitor digital (VitalSource, Minha Biblioteca, etc.) com evidência de plataforma.
+  if (READER_PLATFORM_RE.test(u)) return { kind: 'book', subKind: 'reader' };
+  // Módulos do Moodle (link ou iframe dentro do AVA).
   if (/\/mod\/lti\//.test(u)) return { kind: 'book', subKind: 'lti' };
   if (/\/mod\/page\//.test(u)) return { kind: 'page', subKind: 'page' };
   if (/\/mod\/url\//.test(u) || /\/mod\/resource\//.test(u)) return { kind: 'page', subKind: 'url' };
   if (/\/mod\/book\//.test(u)) return { kind: 'book', subKind: 'moodle-book' };
+  // iframe HTML comum: incorpora um documento HTML por definição — não é vídeo,
+  // PDF nem leitor; é uma página embutida (formato não inventado).
+  if (isIframe && u) return { kind: 'page', subKind: 'iframe' };
+  // Sem evidência suficiente (link ou iframe sem URL reconhecível): unknown,
+  // registrado como unsupported no fluxo — nunca classificado como vídeo por padrão.
   return { kind: 'unknown' };
 }
 

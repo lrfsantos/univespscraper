@@ -12,6 +12,7 @@ const suites = [
   'poc/test-orchestration-m3.js',
   'poc/test-http-security-m3.js',
   'poc/test-electron-profile-m3.js',
+  'poc/test-workdir-m3.js',
   'poc/test-discovery-m3.js',
   'poc/test-modules12-m3.js',
   'poc/test-c-fidelity-m3.js',

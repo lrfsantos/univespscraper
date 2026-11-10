@@ -123,7 +123,7 @@ function overallStatus({ resources, zip }) {
 
 // Extrai um recurso usando o módulo adequado (A4/A5). Recebe o contexto do
 // Electron (app, win) e o diretório da semana (para PDFs/organização).
-async function extractResource({ app, win, resource, weekDir, logger }) {
+async function extractResource({ app, win, resource, weekDir, logger, seen }) {
   const cls = resource.classification || classifyResource(resource);
   const entry = { id: resource.id || resource.url, text: resource.text, url: resource.url, kind: cls.kind, subKind: cls.subKind, status: 'inaccessible' };
 
@@ -139,9 +139,20 @@ async function extractResource({ app, win, resource, weekDir, logger }) {
       fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), p.text, 'utf8');
       entry.savedTextFile = `${entry.id}.txt`;
     }
+    // P0 2.5: a página pode revelar recursos incorporados (vídeos/PDFs/livros/
+    // páginas). Eles são descobertos e extraídos de acordo com o tipo, preservando
+    // a página como fonte independente e registrando sourcePage. `seen` compartilhado
+    // (padrão: isolado por chamada) evita reextrair o mesmo recurso em várias páginas.
+    if (p.pageStatus === 'integral' || p.pageStatus === 'partial') {
+      const embedded = await extractEmbeddedFromPage({ win, page: p, sourceUrl: resource.url, weekDir, app, logger, seen });
+      if (embedded.length) entry.embedded = embedded;
+    }
   } else if (cls.kind === 'pdf') {
     const filePath = path.join(weekDir, `${entry.id}.pdf`);
-    const pdf = await extractPdf({ url: resource.url, filePath, useElectronNet: true });
+    // P0 2.2: baixa pela SESSÃO AUTENTICADA do navegador auxiliar (page.request do
+    // Playwright compartilha cookies com o contexto onde o login manual foi feito).
+    // electron.net (processo principal) não é usado porque tem sessão separada.
+    const pdf = await extractPdf({ url: resource.url, filePath, request: win.request });
     entry.status = pdf.status;
     entry.bytes = pdf.bytes;
     entry.totalPagesArquivo = pdf.totalPagesArquivo;
@@ -189,6 +200,162 @@ async function extractResource({ app, win, resource, weekDir, logger }) {
 
   if (logger) logger.log('recurso ' + entry.id + ' kind=' + entry.kind + ' status=' + entry.status);
   return entry;
+}
+
+// P0 2.3: interpretação correta da seleção de semanas consumida pelo backend.
+// Regra:
+//  - weekIds == null/undefined -> TODAS as semanas (contrato: chamada sem seleção
+//    explícita para aquela matéria).
+//  - weekIds array NÃO vazio  -> exatamente os IDs informados.
+//  - weekIds array VAZIO      -> NENHUMA semana daquela matéria (o estudante
+//    desmarcou tudo — nunca significa "todas").
+// `discover(course)` deve retornar { weeks, sections } (injetado nos testes).
+//
+// P0 2.6: falha na descoberta de UMA matéria NÃO impede a descoberta das demais.
+// Cada curso é descoberto num try/catch próprio; em caso de erro, o plano mantém
+// a entrada { course, weeks: [], sections: [], error } (motivo sanitizado) e a
+// chamada `onCourseError(course, reason)` registra a falha — o processamento
+// continua com as próximas matérias.
+async function buildSelectionPlan({ courses, selection, discover, onCourseError }) {
+  const selected = selection && selection.length ? selection : courses.map((c) => ({ courseId: String(c.id), weekIds: null }));
+  const planned = [];
+  for (const sel of selected) {
+    const course = courses.find((c) => String(c.id) === String(sel.courseId));
+    if (!course) continue;
+    try {
+      const { weeks, sections } = await discover(course);
+      const selWeeks = sel.weekIds == null ? weeks : weeks.filter((w) => sel.weekIds.includes(String(w.id)));
+      planned.push({ course, weeks: selWeeks, sections, error: null });
+    } catch (e) {
+      const reason = sanitizeReason(e);
+      if (onCourseError) { try { onCourseError(course, reason); } catch {} }
+      planned.push({ course, weeks: [], sections: [], error: reason });
+    }
+  }
+  return planned;
+}
+
+// Motivo de falha SANITIZADO para registros/relatórios (nunca credenciais,
+// cookies, URLs de dados pessoais nem conteúdo acadêmico bruto).
+function sanitizeReason(e) {
+  const raw = e && e.message ? e.message : e ? String(e) : 'erro-desconhecido';
+  return String(raw).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').slice(0, 200);
+}
+
+// P0 2.6.4: converte uma lista de recursos em entradas de extração marcadas como
+// inacessíveis por AUTENTICAÇÃO (sessão expirada no meio da extração) — NUNCA
+// vira conteúdo integral. Preserva id/texto/URL/kind e registra o motivo.
+function authExpiredEntries(resources, course, week) {
+  const label = course && (course.code || course.id);
+  return (resources || []).map((r) => ({
+    id: r.id || r.url,
+    text: r.text,
+    url: r.url,
+    kind: (r.classification || {}).kind,
+    subKind: (r.classification || {}).subKind,
+    status: 'inaccessible',
+    reason: 'sessao-expirada: faça login novamente no AVA e refaça a extração',
+    course: label,
+    week,
+  }));
+}
+
+// ---------- P0 2.5: descoberta RECURSIVA de materiais incorporados em páginas ----------
+// Quando uma página HTML extraída revela recursos associados (links/iframes), eles
+// são processados DE ACORDO COM O TIPO (vídeo/pdf/livro/página interna), sempre com
+// EVIDÊNCIA — nunca baixando links externos desconhecidos indiscriminadamente.
+// A página original é preservada como fonte independente; cada recurso incorporado
+// registra a página de origem (sourcePage). Dedup por URL normalizada evita
+// reextrair o mesmo recurso em múltiplas páginas; profundidade máxima impede ciclos.
+const MAX_EMBED_DEPTH = 3;
+
+function normalizeUrlKey(url) {
+  try {
+    const u = new URL(String(url || ''), BASE);
+    u.hash = '';
+    return u.href.replace(/\/+$/, '');
+  } catch { return String(url || ''); }
+}
+
+// Identidade do recurso para dedup (P0 2.5: "URL normalizada E identidade").
+// Para plataformas de vídeo reconhecidas, usa o ID do vídeo (watch?v= e /embed/
+// e /shorts/ e youtu.be são o MESMO vídeo); para o restante, a URL normalizada.
+function resourceIdentityKey(url) {
+  try {
+    const raw = String(url || '');
+    const u = new URL(raw, BASE);
+    if (/youtube\.com|youtu\.be|youtube-nocookie/i.test(u.hostname)) {
+      let id = null;
+      if (u.hostname.includes('youtu.be')) id = u.pathname.split('/')[1] || null;
+      else if (u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2] || null;
+      else if (u.pathname.startsWith('/shorts/')) id = u.pathname.split('/')[2] || null;
+      else id = u.searchParams.get('v');
+      if (id) return 'video:youtube:' + id;
+    }
+    if (/vimeo\.com/i.test(u.hostname)) {
+      const m = u.pathname.match(/(\d+)/);
+      if (m) return 'video:vimeo:' + m[1];
+    }
+  } catch {}
+  return 'url:' + normalizeUrlKey(url);
+}
+
+// Puro e testável: classifica candidatos (links + iframes), mantém apenas os com
+// evidência de tipo útil e deduplica por URL normalizada E identidade. `seen` compartilhado.
+function discoverEmbeddedResources({ links = [], iframes = [], sourceUrl = '', depth = 0, seen = new Set() }) {
+  const out = [];
+  const candidates = [
+    ...(links || []).map((l) => ({ text: (l && l.text) || '', url: l && l.url, type: 'link' })),
+    ...(iframes || []).map((f) => ({ text: '', url: f, type: 'iframe' })),
+  ];
+  for (const c of candidates) {
+    const cls = classifyResource(c);
+    if (!cls.kind || cls.kind === 'unknown') continue;
+    // Página vinculada só quando for recurso interno do AVA (evita transformar
+    // qualquer link de navegação em material extraído).
+    if (cls.kind === 'page' && !/\/mod\/(page|url|resource)\//.test(String(c.url || ''))) continue;
+    const key = resourceIdentityKey(c.url);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...c, classification: cls, sourcePage: sourceUrl, depth });
+  }
+  return out;
+}
+
+// Extrai os recursos incorporados de uma página já extraída, com recursão limitada
+// em páginas internas (mod/page) para encontrar materiais aninhados. Cada recurso é
+// extraído pelo fluxo NORMAL (status próprio); a página original permanece fonte
+// independente; `sourcePage` registra a origem; `seen` compartilhado evita reextrair
+// o mesmo recurso em múltiplas páginas.
+async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, logger, seen = new Set() }) {
+  const discovered = discoverEmbeddedResources({ links: page && page.links, iframes: page && page.iframes, sourceUrl, depth: 0, seen });
+  const out = [];
+  for (const r of discovered) {
+    const subDir = r.classification.kind === 'video' ? 'videos' : (r.classification.kind === 'pdf' ? 'supplementary' : (r.classification.kind === 'book' ? 'readings' : ''));
+    const targetDir = subDir ? path.join(weekDir, subDir) : weekDir;
+    try { fs.mkdirSync(targetDir, { recursive: true }); } catch {}
+    let e;
+    try {
+      e = await extractResource({ app, win, resource: r, weekDir: targetDir, logger, seen });
+    } catch (err) {
+      e = { id: r.id || r.url, text: r.text, url: r.url, kind: r.classification.kind, subKind: r.classification.subKind, status: 'inaccessible', reason: 'falha-durante-extracao: ' + sanitizeReason(err) };
+    }
+    e.sourcePage = sourceUrl;
+    e.isEmbedded = true;
+    e.embedDepth = r.depth + 1;
+    out.push(e);
+    // Recursão em páginas internas do AVA (limite de profundidade, sem ciclos).
+    if (r.classification.kind === 'page' && r.depth < MAX_EMBED_DEPTH) {
+      const sub = await extractPage(win, r.url).catch(() => null);
+      if (sub && (sub.pageStatus === 'integral' || sub.pageStatus === 'partial')) {
+        const nested = await extractEmbeddedFromPage({ win, page: sub, sourceUrl: r.url, weekDir, app, logger, seen });
+        out.push(...nested);
+      } else if (sub) {
+        out.push({ id: r.id || r.url, text: r.text, url: r.url, kind: 'page', status: sub.pageStatus || 'inaccessible', reason: 'pagina-vinculada-inacessivel', sourcePage: sourceUrl, isEmbedded: true, embedDepth: r.depth + 1 });
+      }
+    }
+  }
+  return out;
 }
 
 // --- Renderização da estrutura do ZIP (A7) ---
@@ -333,6 +500,14 @@ module.exports = {
   discoverResourcesFromSection,
   classifyResource,
   extractResource,
+  buildSelectionPlan,
+  sanitizeReason,
+  authExpiredEntries,
+  discoverEmbeddedResources,
+  extractEmbeddedFromPage,
+  normalizeUrlKey,
+  resourceIdentityKey,
+  MAX_EMBED_DEPTH,
   overallStatus,
   buildCourseStructure,
   buildTopLevelDocs,

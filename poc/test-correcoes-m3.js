@@ -4,13 +4,14 @@ const path = require('path');
 const discovery = require('../electron/discovery');
 const flow = require('../electron/flow');
 
-// Testes das CORREÇÕES DA REVISÃO FINAL (A-E), determinísticos e honestos:
+// Testes das CORREÇÕES DA REVISÃO FINAL (A-G), determinísticos e honestos:
 //  A) Descoberta de semanas/recursos por parsing ESTRUTURAL (li aninhados).
 //  B) Matérias antigas/concluídas/inativas continuam selecionáveis; só evidência
 //     concreta de indisponibilidade desabilita.
 //  C) Contrato de eventos de progresso (envelope step='extracao' + event).
 //  D) Contrato da tela de resultado + salvamento/validação do ZIP.
 //  E) Propagação do capítulo/páginas declarados pelo AVA (expected) à extração.
+//  F) P0 2.6: isolamento de falhas por matéria e sessão expirada (autenticação).
 // Nenhum navegador/AVA/leitor real é usado (rotulado em cada grupo). A validação
 // com Electron/AVA reais fica pendente por limitação do ambiente.
 
@@ -546,6 +547,157 @@ function groupE() {
   });
 }
 
+// ==================== CORREÇÃO F — P0 2.6 isolamento de falhas ====================
+
+async function groupF() {
+  const G = 'F';
+
+  // F-1: falha na descoberta de UMA matéria não impede a descoberta das demais.
+  {
+    const courses = [
+      { id: '1', code: 'A1', title: 'Inacessível' },
+      { id: '2', code: 'B2', title: 'Válida' },
+    ];
+    let onError = 0;
+    const plan = await flow.buildSelectionPlan({
+      courses,
+      selection: null,
+      discover: async (c) => {
+        if (c.id === '1') throw new Error('HTTP 500 — matéria sem acesso');
+        return { weeks: [{ id: '1', name: 'Semana 1' }], sections: [] };
+      },
+      onCourseError: () => { onError++; },
+    });
+    const a = plan.find((p) => p.course.id === '1');
+    const b = plan.find((p) => p.course.id === '2');
+    const ok = !!a && !!a.error && a.weeks.length === 0 && !!b && !b.error && b.weeks.length === 1 && onError === 1 && plan.length === 2;
+    record({ id: G + '-1', title: 'P0 2.6: falha de descoberta de uma matéria registrada e não bloqueia as demais', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(plan.map((p) => ({ id: p.course.id, weeks: p.weeks.length, error: p.error || null }))) });
+  }
+
+  // F-2: matéria válida DEPOIS de uma matéria inacessível continua sendo planejada.
+  {
+    const courses = [
+      { id: '1', code: 'A1', title: 'Inacessível' },
+      { id: '2', code: 'B2', title: 'Válida depois' },
+    ];
+    const plan = await flow.buildSelectionPlan({
+      courses,
+      selection: null,
+      discover: async (c) => {
+        if (c.id === '1') throw new Error('erro');
+        return { weeks: [{ id: '5', name: 'Semana 5' }], sections: [] };
+      },
+    });
+    const order = plan.map((p) => p.course.id).join(',');
+    const ok = order === '1,2' && plan[1].weeks.length === 1 && !plan[1].error;
+    record({ id: G + '-2', title: 'P0 2.6: matéria válida depois de uma inacessível é planejada na ordem (sem abortar o lote)', status: ok ? 'PASS' : 'FAIL', detail: 'ordem=' + order });
+  }
+
+  // F-3: sessão expirada → recursos restantes viram inacessíveis (autenticação),
+  //      nunca integral.
+  {
+    const resources = [
+      { id: 'r1', url: 'https://ava.univesp.br/mod/page/view.php?id=1', classification: { kind: 'page' } },
+      { id: 'r2', url: 'https://ava.univesp.br/mod/lti/launch.php?id=2', classification: { kind: 'book', subKind: 'lti' } },
+    ];
+    const entries = flow.authExpiredEntries(resources, { id: '9', code: 'A1' }, 'Semana 2');
+    const ok = entries.length === 2 && entries.every((e) => e.status === 'inaccessible') && entries.every((e) => /sessao-expirada/.test(e.reason)) && entries[1].kind === 'book' && entries[0].url.includes('id=1') && !entries.some((e) => e.status === 'integral');
+    record({ id: G + '-3', title: 'P0 2.6: sessão expirada no meio da extração -> inacessível (autenticação), nunca integral', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(entries.map((e) => ({ status: e.status, kind: e.kind, reason: e.reason }))) });
+  }
+
+  // F-4: main.js expõe descarte explícito (discard-extraction) e limpa a pasta de
+  //      trabalho após ZIP validado (inspeção de fonte — comportamento funcional
+  //      coberto por test-workdir-m3).
+  {
+    const hasDiscardIpc = MAIN_SRC.includes("ipcMain.handle('discard-extraction'") && MAIN_SRC.includes('cleanupWorkDir(res.workDir)');
+    const hasWorkCleanupAfterZip = MAIN_SRC.includes('validation.valid && validation.matches === true') && MAIN_SRC.includes('cleanupWorkDir');
+    const hasResidualStartup = MAIN_SRC.includes('cleanupResidualWorkDirs()');
+    const ok = hasDiscardIpc && hasWorkCleanupAfterZip && hasResidualStartup;
+    record({ id: G + '-4', title: 'P0 2.6/seção 3: main.js tem descarte explícito, limpeza pós-ZIP e recuperação de resíduos (inspeção)', status: ok ? 'PASS' : 'FAIL', detail: 'discard=' + hasDiscardIpc + ' limpezaZip=' + hasWorkCleanupAfterZip + ' residuos=' + hasResidualStartup });
+  }
+}
+
+// ==================== CORREÇÃO H — P0 2.5 descoberta recursiva ====================
+
+function groupH() {
+  const G = 'H';
+
+  // H-1: página Moodle simulada com 3 videoaulas e 2 PDFs incorporados → 5 recursos
+  //      independentes, corretamente classificados e associados à página de origem.
+  {
+    const page = {
+      links: [
+        { text: 'Aula 1', url: 'https://www.youtube.com/watch?v=AAA111' },
+        { text: 'Aula 2', url: 'https://www.youtube.com/watch?v=BBB222' },
+        { text: 'Slides', url: 'https://assets.univesp.br/ADM270/s1_slides.pdf' },
+      ],
+      iframes: [
+        'https://player.vimeo.com/video/333',
+        'https://assets.univesp.br/ADM270/s1_material.pdf',
+      ],
+    };
+    const seen = new Set();
+    const found = flow.discoverEmbeddedResources({ links: page.links, iframes: page.iframes, sourceUrl: 'https://ava.univesp.br/mod/page/view.php?id=9', seen });
+    const kinds = found.map((r) => r.classification.kind);
+    const ok = found.length === 5 &&
+      kinds.filter((k) => k === 'video').length === 3 &&
+      kinds.filter((k) => k === 'pdf').length === 2 &&
+      found.every((r) => r.sourcePage === 'https://ava.univesp.br/mod/page/view.php?id=9') &&
+      new Set(found.map((r) => flow.normalizeUrlKey(r.url))).size === 5;
+    record({ id: G + '-1', title: 'P0 2.5: página Moodle com 3 videoaulas + 2 PDFs -> 5 recursos independentes, classificados, com página de origem', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(kinds) });
+  }
+
+  // H-2: dedup por URL normalizada — mesmo vídeo em links e iframe não duplica.
+  {
+    const page = {
+      links: [{ text: 'V1', url: 'https://www.youtube.com/watch?v=XYZ123' }, { text: 'V1b', url: 'https://www.youtube.com/watch?v=XYZ123#t=10' }],
+      iframes: ['https://www.youtube.com/embed/XYZ123'],
+    };
+    const seen = new Set();
+    const found = flow.discoverEmbeddedResources({ links: page.links, iframes: page.iframes, sourceUrl: 'p1', seen });
+    const ok = found.length === 1 && found[0].classification.kind === 'video';
+    record({ id: G + '-2', title: 'P0 2.5: dedup por URL normalizada (mesmo vídeo em link/iframe/fragmento) — extrai uma vez', status: ok ? 'PASS' : 'FAIL', detail: `recursos=${found.length}` });
+  }
+
+  // H-3: links externos desconhecidos NÃO são baixados indiscriminadamente.
+  {
+    const page = {
+      links: [
+        { text: 'Site externo', url: 'https://externo.exemplo/arquivo.bin' },
+        { text: 'Fórum', url: 'https://ava.univesp.br/mod/forum/view.php?id=1' },
+        { text: 'Voltar', url: 'https://ava.univesp.br/course/view.php?id=5' },
+      ],
+      iframes: [],
+    };
+    const seen = new Set();
+    const found = flow.discoverEmbeddedResources({ links: page.links, iframes: page.iframes, sourceUrl: 'p1', seen });
+    const ok = found.length === 0;
+    record({ id: G + '-3', title: 'P0 2.5: links externos desconhecidos/forums/navegação não viram downloads automáticos', status: ok ? 'PASS' : 'FAIL', detail: `descobertos=${found.length}` });
+  }
+
+  // H-4: página interna (mod/page) é mantida como candidata a recursão; sourcePage ok.
+  {
+    const page = {
+      links: [{ text: 'Sub-página', url: 'https://ava.univesp.br/mod/page/view.php?id=77' }],
+      iframes: ['https://www.youtube.com/embed/NNN777'],
+    };
+    const seen = new Set();
+    const found = flow.discoverEmbeddedResources({ links: page.links, iframes: page.iframes, sourceUrl: 'https://ava.univesp.br/mod/page/view.php?id=9', seen });
+    const ok = found.length === 2 && found.some((r) => r.classification.kind === 'page' && r.url.includes('id=77')) && found.some((r) => r.classification.kind === 'video');
+    record({ id: G + '-4', title: 'P0 2.5: página interna (mod/page) preservada como recurso; vídeo incorporado descoberto', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(found.map((r) => r.classification.kind)) });
+  }
+
+  // H-5: main.js compartilha dedup e trata recursos incorporados como independentes;
+  //      flow.js registra isEmbedded/sourcePage e impõe profundidade máxima (inspeção).
+  {
+    const mainHasSeen = MAIN_SRC.includes('seenResourceKeys') && MAIN_SRC.includes('seen: seenResourceKeys');
+    const mainFlattens = MAIN_SRC.includes('e.embedded') && MAIN_SRC.includes('extracted.push(emb)');
+    const flowEmbed = FLOW_SRC.includes('isEmbedded') && FLOW_SRC.includes('sourcePage') && FLOW_SRC.includes('MAX_EMBED_DEPTH') && FLOW_SRC.includes('resourceIdentityKey');
+    const ok = mainHasSeen && mainFlattens && flowEmbed;
+    record({ id: G + '-5', title: 'P0 2.5: main.js compartilha dedup e flattens incorporados; flow.js registra origem/profundidade (inspeção)', status: ok ? 'PASS' : 'FAIL', detail: 'seen=' + mainHasSeen + ' flatten=' + mainFlattens + ' flowEmbed=' + flowEmbed });
+  }
+}
+
 // ==================== Runner ====================
 
 function main() {
@@ -555,13 +707,16 @@ function main() {
   groupC();
   groupD();
   groupE();
-  setTimeout(() => {
-    const failed = results.filter((r) => r.status === 'FAIL');
-    fs.writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), total: results.length, failed: failed.length, results }, null, 2));
-    console.log('\n=== test-correcoes-m3 ===');
-    console.log('casos=' + results.length + ' falhas=' + failed.length + ' duração=' + (Date.now() - start) + 'ms');
-    process.exit(failed.length ? 1 : 0);
-  }, 1500);
+  groupH();
+  groupF().then(() => {
+    setTimeout(() => {
+      const failed = results.filter((r) => r.status === 'FAIL');
+      fs.writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), total: results.length, failed: failed.length, results }, null, 2));
+      console.log('\n=== test-correcoes-m3 ===');
+      console.log('casos=' + results.length + ' falhas=' + failed.length + ' duração=' + (Date.now() - start) + 'ms');
+      process.exit(failed.length ? 1 : 0);
+    }, 1500);
+  });
 }
 
 main();

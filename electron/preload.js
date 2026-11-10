@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('api', {
   cancelExtraction: () => ipcRenderer.invoke('cancel-extraction'),
   saveZip: () => ipcRenderer.invoke('save-zip'),
   revealZip: (p) => ipcRenderer.invoke('reveal-zip', p),
+  discardExtraction: () => ipcRenderer.invoke('discard-extraction'),
   onStatus: (cb) => ipcRenderer.on('status', (_e, data) => cb(data)),
 });

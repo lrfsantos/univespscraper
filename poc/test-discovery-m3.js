@@ -127,6 +127,53 @@ const COURSE_HTML = [
     record({ id: 'D-3', title: 'A4/A5: recursos da secao extraidos e classificados (page/pdf/book/video); javascript ignorado', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ links: links.map((l) => l.url), iframes: resources.iframes }) });
   }
 
+  // --- P0 2.4: classificação de iframes por evidência (não "todo iframe = vídeo") ---
+  {
+    const cls = (u, type) => classifyResource({ url: u, type: type || 'link' });
+    const checks = {
+      youtubeIframe: cls('https://www.youtube.com/embed/abc123', 'iframe').kind === 'video',
+      youtubeLink: cls('https://www.youtube.com/watch?v=abc123').kind === 'video',
+      vimeoIframe: cls('https://player.vimeo.com/video/987654', 'iframe').kind === 'video',
+      vimeoLink: cls('https://vimeo.com/987654').kind === 'video',
+      readerIframe: cls('https://reader.vitalsource.com/reader/books/978X/pageid/3', 'iframe').kind === 'book',
+      readerLink: cls('https://integrada.minhabiblioteca.com.br/reader/books/978Y', 'link').kind === 'book',
+      pdfIframe: cls('https://assets.univesp.br/ADM270/s1_slides.pdf', 'iframe').kind === 'pdf',
+      pdfViewerIframe: cls('https://docs.google.com/viewer?url=https%3A%2F%2Fexemplo.br%2Fa.pdf', 'iframe').kind === 'pdf',
+      htmlIframe: cls('https://ava.univesp.br/pluginfile.php/1/mod_thing/conteudo.html', 'iframe').kind === 'page',
+      htmlIframeNotVideo: cls('https://ava.univesp.br/mod/page/view.php?id=99', 'iframe').kind === 'page',
+      noUrlIframe: cls('', 'iframe').kind === 'unknown',
+      unknownLink: cls('https://externo.exemplo/arquivo.bin').kind === 'unknown',
+    };
+    const ok = Object.values(checks).every(Boolean);
+    record({ id: 'D-6', title: 'P0 2.4: iframe classificado por evidência (vídeo só com plataforma reconhecida; leitor=book; pdf=pdf; html=page; sem URL=unknown)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(checks) });
+  }
+
+  // --- P0 2.4: múltiplos recursos distintos na mesma semana, com iframes mistos ---
+  {
+    const html = [
+      '<div class="activityinstance">',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=21">S2 Inicio</a>',
+      '  <iframe src="https://www.youtube.com/embed/AAA111"></iframe>',
+      '  <iframe src="https://player.vimeo.com/video/222"></iframe>',
+      '  <iframe src="https://reader.vitalsource.com/reader/books/978Z/pageid/1"></iframe>',
+      '  <iframe src="https://assets.univesp.br/ADM270/s2_extra.pdf"></iframe>',
+      '  <iframe src="https://ava.univesp.br/mod/url/view.php?id=23"></iframe>',
+      '</div>',
+    ].join('\n');
+    const rs = parseResourcesFromSectionHtml(html);
+    const cls = (u, type) => classifyResource({ url: u, type: type || 'link' });
+    const iframeKinds = rs.iframes.map((f) => cls(f, 'iframe').kind);
+    const has = (k) => iframeKinds.includes(k);
+    const ok =
+      rs.links.length === 1 &&
+      cls(rs.links[0].url).kind === 'page' &&
+      rs.iframes.length === 5 &&
+      has('video') && has('book') && has('pdf') && has('page') &&
+      iframeKinds.filter((k) => k === 'video').length === 2 &&
+      !iframeKinds.includes('unsupported');
+    record({ id: 'D-7', title: 'P0 2.4: múltiplos recursos distintos na mesma semana (vídeo/leitor/pdf/html por iframe) classificados sem colapso em vídeo', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ links: rs.links.map((l) => l.url), iframes: rs.iframes, iframeKinds }) });
+  }
+
   // --- A6: status geral honesto ---
   {
     const c1 = overallStatus({ resources: [{ status: 'integral' }, { status: 'integral' }], zip: { ok: true } });

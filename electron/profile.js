@@ -19,14 +19,18 @@ const crypto = require('crypto');
 const PREFIX = 'univesp-profile-';
 
 // Verifica se um processo está ativo no Windows/Linux/macOS.
+// Correção P0 (seção 3.1): no Windows, `tasklist` termina com sucesso mesmo quando
+// NENHUM processo corresponde ao filtro (saída "INFO: No tasks are running..."),
+// então confirmamos que o PID EXATO aparece na saída — robusto a idioma/região
+// (não depende de "PID" nem de cabeçalho; /NH remove o cabeçalho).
 function isProcessAlive(pid) {
   const n = parseInt(pid, 10);
   if (!Number.isInteger(n) || n <= 0) return false;
   try {
     if (process.platform === 'win32') {
       const { execFileSync } = require('child_process');
-      execFileSync('tasklist', ['/FI', `PID eq ${n}`, '/NH'], { stdio: 'pipe' });
-      return true;
+      const out = execFileSync('tasklist', ['/FI', `PID eq ${n}`, '/NH'], { stdio: 'pipe', encoding: 'utf8' });
+      return new RegExp('(^|\\s)' + n + '(\\s|$)', 'm').test(out);
     }
     try { process.kill(n, 0); return true; } catch (e) { return e && e.code === 'EPERM'; }
   } catch { return false; }
@@ -60,6 +64,19 @@ function ownerPid(dir) {
   } catch { return null; }
 }
 
+// Retorna true se o diretório tem OWNER.json válido (com PID inteiro > 0).
+// Distingue "órfão" (arquivo AUSENTE) de "OWNER inválido" (arquivo presente, mas
+// ilegível/sem PID) — usado na política conservadora da limpeza residual.
+function hasValidOwner(dir) {
+  try {
+    const p = path.join(path.resolve(dir), 'OWNER.json');
+    if (!fs.existsSync(p)) return false;
+    const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+    const n = parseInt(j && j.pid, 10);
+    return Number.isInteger(n) && n > 0;
+  } catch { return false; }
+}
+
 // Limpeza normal (melhor esforço): apaga só o perfil criado pelo app (após
 // validação de caminho). Nunca alega exclusão segura/irrecuperável.
 function cleanupProfile(dir) {
@@ -70,6 +87,9 @@ function cleanupProfile(dir) {
 
 // Recuperação de resíduos na inicialização: remove apenas perfis temporários do
 // app cujo processo proprietário NÃO está ativo (o lock/OWNER decide, não mtime).
+// Política conservadora (seção 3.1): OWNER.json AUSENTE = órfão → pode remover;
+// OWNER presente porém INVÁLIDO → preserva (não apaga perfil potencialmente ativo
+// por engano); OWNER válido → remove só se o processo dono não estiver ativo.
 function cleanupResidualProfiles(skip) {
   let removed = 0;
   let failed = 0;
@@ -79,6 +99,12 @@ function cleanupResidualProfiles(skip) {
       const p = path.join(os.tmpdir(), name);
       if (p === skip) continue;
       if (!isValidProfileDir(p)) continue;
+      const ownerPath = path.join(path.resolve(p), 'OWNER.json');
+      if (!fs.existsSync(ownerPath)) { // órfão (sem dono) → pode remover
+        try { fs.rmSync(p, { recursive: true, force: true }); removed++; } catch { failed++; }
+        continue;
+      }
+      if (!hasValidOwner(p)) continue; // OWNER presente mas inválido → conservador
       const pid = ownerPid(p);
       if (pid != null && isProcessAlive(pid)) continue; // ainda em uso → preserva
       try { fs.rmSync(p, { recursive: true, force: true }); removed++; } catch { failed++; }
@@ -107,4 +133,4 @@ function installTempProfile(app) {
   return { dir, residual, cleanup: () => cleanupProfile(dir) };
 }
 
-module.exports = { PREFIX, makeTempProfileDir, cleanupProfile, cleanupResidualProfiles, installTempProfile, isValidProfileDir, isProcessAlive, ownerPid };
+module.exports = { PREFIX, makeTempProfileDir, cleanupProfile, cleanupResidualProfiles, installTempProfile, isValidProfileDir, isProcessAlive, ownerPid, hasValidOwner };
