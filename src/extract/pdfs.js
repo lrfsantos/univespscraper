@@ -71,6 +71,13 @@ async function downloadViaHttpClient(client, url, opts = {}) {
 // login manual. Não copia cookies para logs/arquivos e não cria armazenamento
 // permanente. Redirecionamento para login / 403/404 / resposta HTML no lugar do
 // PDF são tratados; valida-se que o arquivo baixado realmente é PDF (magic bytes).
+//
+// Seção 6 — proteção de memória EFETIVA: antes de `resp.body()`, consulta o cabeçalho
+// `Content-Length` e rejeita arquivos maiores que o limite SEM carregá-los. Quando o
+// servidor omite Content-Length, o corpo é carregado e validado logo em seguida.
+// LIMITAÇÃO REGISTRADA: a APIRequestContext do playwright-core não expõe streaming/
+// abort durante body(), então quando Content-Length está ausente o corpo é carregado
+// de uma vez antes da checagem — nunca se afirma proteção estrita de streaming.
 async function downloadViaPageRequest(request, url, opts = {}) {
   const maxBytes = opts.maxBytes != null ? opts.maxBytes : DEFAULT_MAX_BYTES;
   const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
@@ -78,8 +85,15 @@ async function downloadViaPageRequest(request, url, opts = {}) {
   const status = resp.status();
   if (status === 401 || status === 403 || status === 404) throw new Error('HTTP ' + status + ' (sessao-negada/inexistente)');
   if (!resp.ok()) throw new Error('HTTP ' + status);
-  const ct = String((resp.headers()['content-type'] || '') + ' ' + (resp.headers()['Content-Type'] || '')).toLowerCase();
+  const headers = resp.headers() || {};
+  const ct = String((headers['content-type'] || '') + ' ' + (headers['Content-Type'] || '')).toLowerCase();
   if (/\btext\/html\b/.test(ct)) throw new Error('html-em-vez-de-pdf');
+  // Checagem ANTECIPADA de tamanho (Content-Length) — rejeita sem carregar o corpo.
+  const cl = headers['content-length'] != null ? headers['content-length'] : headers['Content-Length'];
+  if (cl != null) {
+    const n = parseInt(cl, 10);
+    if (!isNaN(n) && n > maxBytes) throw new Error('tamanho-maximo-excedido');
+  }
   const buffer = await resp.body();
   if (buffer.length > maxBytes) throw new Error('tamanho-maximo-excedido');
   const isPdf = buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
@@ -131,15 +145,23 @@ function detectPrintedPagination(pages) {
   return { detected: seen, reliable: seen.every((n) => n === null) ? 'none' : 'partial' };
 }
 
-// Calcula status honesto do PDF.
+// Calcula status honesto do PDF (seção 6):
+// - download falhou -> inaccessible
+// - análise falhou -> partial
+// - baixado mas SEM texto extraível -> preserva o original e registra (partial,
+//   com error informativo; nunca integral)
+// - total de páginas DESCONHECIDO -> NUNCA integral (não há como confirmar)
+// - páginas com erro/sem texto -> partial
+// - integral apenas quando o total de páginas é conhecido E todas têm texto
 function statusFor({ ok, bytes, analyze, pages }) {
   if (!ok) return 'inaccessible';
-  if (analyze && analyze.error) return 'partial'; // baixado, mas análise falhou
   if (!bytes) return 'inaccessible';
+  if (analyze && analyze.error) return 'partial'; // baixado, mas análise falhou
   const extracted = (pages || []).filter((p) => p.text && p.text.trim().length > 0).length;
   const total = analyze ? analyze.totalPagesArquivo : 0;
-  if (extracted === 0) return 'inaccessible';
-  if (total && extracted < total) return 'partial';
+  if (extracted === 0) return 'partial'; // baixado, preservado, mas sem texto extraível
+  if (!total) return 'partial';           // total desconhecido -> nunca integral
+  if (extracted < total) return 'partial';
   return 'integral'; // todas as páginas do arquivo tiveram texto extraído
 }
 

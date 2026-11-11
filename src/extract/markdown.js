@@ -82,6 +82,7 @@ function renderPdfDocument({ entry, course, week, meta = {} }) {
     line('Nome do recurso no AVA', entry.text || entry.id),
     line('URL de origem', entry.url),
     line('Nome original do arquivo', entry.pdfFile),
+    (entry.pdfFile ? `- PDF original (relativo): [Abrir o arquivo PDF](${encodeURI(entry.pdfFile)})` : 'PDF original (relativo): não preservado'),
     line('Tamanho (bytes)', entry.bytes),
     line('SHA-256 do PDF baixado', entry.sha256),
     line('Título (metadados do arquivo)', info.Title || info.title),

@@ -181,10 +181,10 @@ async function extractResource({ app, win, resource, weekDir, logger, seen, cour
     entry.pages = pdf.pages;
     entry.info = pdf.info;
     entry.error = pdf.error;
+    if (pdf.filePath) entry.pdfFile = path.basename(pdf.filePath);
     if (pdf.status === 'integral' || pdf.status === 'partial') {
       const text = pdf.pages.map((p) => p.text).join('\n\n');
       if (text.trim()) { fs.writeFileSync(path.join(weekDir, `${entry.id}.txt`), text, 'utf8'); entry.savedTextFile = `${entry.id}.txt`; }
-      entry.pdfFile = `${entry.id}.pdf`;
     }
   } else if (cls.kind === 'book') {
     // Correção E: o capítulo/página que o AVA declara no âncora (ex.: "Leia o

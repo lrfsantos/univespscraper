@@ -1,0 +1,46 @@
+{
+  "ts": "2026-11-11T20:06:10.197Z",
+  "results": [
+    {
+      "id": "P-1",
+      "title": "6: Content-Length > limite rejeita ANTES de carregar o corpo (proteção de memória)",
+      "status": "PASS",
+      "detail": "erro=tamanho-maximo-excedido bodyChamado=false"
+    },
+    {
+      "id": "P-2",
+      "title": "6: corpo maior que o limite (sem Content-Length) -> rejeita por tamanho",
+      "status": "PASS",
+      "detail": "erro=tamanho-maximo-excedido"
+    },
+    {
+      "id": "P-3",
+      "title": "6: %PDF magic, HTML no lugar de PDF e 401/403/404 rejeitados",
+      "status": "PASS",
+      "detail": "naoPdf=nao-e-pdf html=html-em-vez-de-pdf 403=HTTP 403 (sessao-negada/inexistente)"
+    },
+    {
+      "id": "P-4",
+      "title": "6: total de páginas DESCONHECIDO -> partial (nunca integral)",
+      "status": "PASS",
+      "detail": "status=partial"
+    },
+    {
+      "id": "P-5",
+      "title": "6: página sem texto/erro -> partial; baixado sem texto -> parcial; integral só com total conhecido e todas com texto",
+      "status": "PASS",
+      "detail": "semTexto=partial erro=partial completo=integral falhaDownload=inaccessible semTextoExtraido=partial"
+    },
+    {
+      "id": "P-6",
+      "title": "6: doc do PDF tem link relativo ao arquivo original (funciona após extrair ZIP)",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}
