@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const discovery = require('../electron/discovery');
+const flow = require('../electron/flow');
 const {
   parseCoursesFromHtml,
   parseSectionsFromHtml,
@@ -172,6 +174,70 @@ const COURSE_HTML = [
       iframeKinds.filter((k) => k === 'video').length === 2 &&
       !iframeKinds.includes('unsupported');
     record({ id: 'D-7', title: 'P0 2.4: múltiplos recursos distintos na mesma semana (vídeo/leitor/pdf/html por iframe) classificados sem colapso em vídeo', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ links: rs.links.map((l) => l.url), iframes: rs.iframes, iframeKinds }) });
+  }
+
+  // --- P1 (seção 2): regras de descoberta — Geral não é semana; Início/Em síntese ignorados ---
+  {
+    const html = [
+      '<html><body><ul class="sections">',
+      '<li id="section-0" class="section main"><h3>Geral</h3><div class="activityinstance"><a href="https://ava.univesp.br/mod/page/view.php?id=0">Avisos</a></div></li>',
+      '<li id="section-1" class="section main"><h3>Semana 1</h3><div class="activityinstance">',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=1">S1 Início</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=2">S1 Videoaulas</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=3">S1 Material base</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=4">S1 Atividade avaliativa</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=5">S1 Aprofundando o tema</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=6">S1 Fórum temático</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=7">S1 Live com facilitador</a>',
+      '  <a href="https://ava.univesp.br/mod/page/view.php?id=8">S1 Em síntese</a>',
+      '  <a href="https://assets.univesp.br/ADM270/s1_slides.pdf">Slides</a>',
+      '  <iframe src="https://www.youtube.com/embed/zzz999"></iframe>',
+      '</div></li>',
+      '</ul></body></html>',
+    ].join('\n');
+    const sections = discovery.parseSectionsFromHtml(html);
+    const geral = sections.find((s) => s.id === '0');
+    const s1 = sections.find((s) => s.id === '1');
+    const resources = flow.discoverResourcesFromSection({ block: s1.block });
+    const texts = resources.map((r) => r.text);
+    const urls = resources.map((r) => r.url);
+    const ok =
+      geral.relevant === false &&
+      s1.relevant === true &&
+      !texts.some((t) => /in[ií]cio/i.test(t)) &&
+      !texts.some((t) => /em s[ií]ntese/i.test(t)) &&
+      texts.some((t) => /Videoaulas/i.test(t)) &&
+      texts.some((t) => /Material base/i.test(t)) &&
+      texts.some((t) => /Atividade avaliativa/i.test(t)) &&
+      texts.some((t) => /Aprofundando/i.test(t)) &&
+      texts.some((t) => /F[oó]rum/i.test(t)) &&
+      texts.some((t) => /Live com facilitador/i.test(t)) &&
+      texts.some((t) => t === 'Slides') &&
+      resources.some((r) => r.classification.kind === 'video');
+    record({ id: 'D-8', title: 'P1 (2): Geral não é semana; Início e Em síntese ignorados; demais atividades e recursos preservados', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ texts, urls: urls.filter((u) => !u.includes('id=')) }) });
+  }
+
+  // --- P1 (2): variações de acentuação/maiúsculas/espaços/numeração na identificação ---
+  {
+    const samples = {
+      'S1 Início': true,
+      'S2 inicio': true,
+      'início': true,
+      'INICIO': true,
+      'S1  Início ': true,
+      'S1Em Síntese': true, // sem espaço entre S1 e Em -> ainda é o rótulo Em síntese após normalizar numeração
+      'S1 Em Síntese': true,
+      'Em síntese': true,
+      'em síntese': true,
+      'EM SINTESE': true,
+      'S1 Videoaulas': false,
+      'S1 Material base': false,
+      'Aprofundando o tema': false,
+      'Introdução': false, // não é Início — não deve ser descartado
+      'Texto-base - Capítulo 1': false,
+    };
+    const ok = Object.entries(samples).every(([label, expectIgnored]) => discovery.isIgnoredActivity(label) === expectIgnored);
+    record({ id: 'D-9', title: 'P1 (2): isIgnoredActivity normaliza acentos/caixa/espaços/numeração e não descarta "Introdução"', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(samples) });
   }
 
   // --- A6: status geral honesto ---

@@ -7,7 +7,7 @@ const { installTempProfile } = require('./profile');
 const { makeWorkDir, cleanupWorkDir, cleanupResidualWorkDirs } = require('./workdir');
 const { createBrowserWindow: createAuxWindow, applyBrowserDefaults } = require('./browser');
 const { buildAuxEnv } = require('./env');
-const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, overallStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
+const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
 // Fluxo: o estudante abre o app, uma janela de navegador VISÍVEL é aberta no AVA,
@@ -277,7 +277,7 @@ async function handleRunExtraction(selection) {
             e.week = w.name;
             extracted.push(e);
             resources.push(e);
-            if (e.status === 'integral' || e.status === 'video-registrado' || e.status === 'video-com-transcricao') doneCount++;
+            if (isDoneStatus(e.status)) doneCount++;
             else pendingCount++;
             // P0 2.5: recursos incorporados descobertos na página são tratados como
             // recursos independentes (status próprio) — entram no progresso e no relatório.
@@ -287,7 +287,7 @@ async function handleRunExtraction(selection) {
                 emb.week = w.name;
                 extracted.push(emb);
                 resources.push(emb);
-                if (emb.status === 'integral' || emb.status === 'video-registrado' || emb.status === 'video-com-transcricao') doneCount++;
+                if (isDoneStatus(emb.status)) doneCount++;
                 else pendingCount++;
               }
               totalResources += e.embedded.length;
@@ -349,28 +349,34 @@ async function handleRunExtraction(selection) {
 }
 
 // Resumo honesto dos resultados para a tela final.
+// Seção 3: separa vídeo COM transcrição (concluído nessa dimensão) de vídeo SEM
+// transcrição (pendência explícita); `video` é o total (compatibilidade).
 function summarizeCounts(resources) {
-  const counts = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  const counts = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0, videoComTranscricao: 0, videoSemTranscricao: 0 };
   for (const r of resources) {
     if (r.status === 'integral') counts.integral++;
     else if (r.status === 'partial') counts.partial++;
-    else if (r.status === 'inaccessible') counts.inaccessible++;
+    else if (r.status === 'inaccessible' || r.status === 'video-inacessivel') counts.inaccessible++;
     else if (r.status === 'not_found') counts.not_found++;
     else if (r.status === 'unsupported') counts.unsupported++;
-    else if (r.status === 'video-registrado' || r.status === 'video-com-transcricao') counts.video++;
+    else if (r.status === 'video-com-transcricao') { counts.video++; counts.videoComTranscricao++; }
+    else if (r.status === 'video-registrado') { counts.video++; counts.videoSemTranscricao++; }
   }
   return counts;
 }
 
 function zipOkLabel(counts) {
-  const pending = counts.partial + counts.inaccessible + counts.not_found + counts.unsupported;
+  const pending = counts.partial + counts.inaccessible + counts.not_found + counts.unsupported + counts.videoSemTranscricao;
   if (pending === 0) {
-    return { label: 'concluído', title: 'Extração concluída', message: 'Todos os materiais foram extraídos integralmente. Pronto para salvar o ZIP.' };
+    return { label: 'concluído', title: 'Extração concluída', message: 'Todos os materiais foram extraídos integralmente (vídeos com transcrição capturada). Pronto para salvar o ZIP.' };
   }
-  if (counts.inaccessible + counts.not_found === 0) {
+  if (counts.inaccessible + counts.not_found + counts.videoSemTranscricao === 0) {
     return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Alguns materiais foram extraídos parcialmente. Eles constam no relatório do ZIP.' };
   }
-  return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Alguns materiais ficaram inacessíveis ou não foram encontrados. Eles constam no relatório do ZIP, que ainda pode ser salvo.' };
+  if (counts.videoSemTranscricao > 0 && counts.inaccessible + counts.not_found + counts.partial + counts.unsupported === 0) {
+    return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Há videoaulas sem transcrição disponível. Elas constam como limitação no relatório do ZIP.' };
+  }
+  return { label: 'concluído com pendências', title: 'Extração concluída com pendências', message: 'Alguns materiais ficaram inacessíveis, não foram encontrados ou vídeos ficaram sem transcrição. Eles constam no relatório do ZIP, que ainda pode ser salvo.' };
 }
 
 function renderWeekMarkdown({ course, week, resources }) {
@@ -399,30 +405,36 @@ function renderWeekMarkdown({ course, week, resources }) {
 }
 
 // --- A6: destino do ZIP via diálogo + validação ---
+// P0: um ZIP só é sucesso quando `zip.ok && validation.valid && validation.matches`.
+// O fluxo real grava em temporário, valida e só então promove ao destino; a pasta de
+// trabalho é removida APENAS após a validação positiva (onSuccess).
 async function handleSaveZip() {
   const res = currentWorkResult;
-  if (!res || !res.outputDir) return { ok: false, error: 'sem-trabalho-para-zipar' };
+  if (!res || !res.outputDir) return { ok: false, error: 'sem-trabalho-para-zipar', state: 'sem-trabalho' };
   const defaultName = zipBaseName(res.reportByCourse.map((r) => r.course)) + '.zip';
   const picked = await dialog.showSaveDialog(mainWindow, {
     title: 'Salvar material extraído (ZIP)',
     defaultPath: path.join(app.getPath('documents'), defaultName),
     filters: [{ name: 'Arquivo ZIP', extensions: ['zip'] }],
   });
-  if (picked.canceled || !picked.filePath) return { ok: false, error: 'cancelado', canceled: true };
+  if (picked.canceled || !picked.filePath) return { ok: false, error: 'cancelado', canceled: true, state: 'cancelado' };
 
-  // O ZIP é criado DIRETAMENTE no destino escolhido (fora do dir temporário).
-  const zip = await createZip(res.outputDir, picked.filePath);
-  const validation = zip.ok ? validateZip(zip) : { valid: false, reason: zip.reason };
-  const status = zip.ok ? overallStatus({ resources: res.resources, zip }) : 'falhou';
-  sendStatus('zip', { ok: zip.ok, path: picked.filePath, validation });
-  // Seção 3: SÓ depois do ZIP salvo E validado a pasta de trabalho é removida
-  // (melhor esforço). Falha na limpeza NUNCA vira falha do salvamento.
-  if (zip.ok && validation.valid && validation.matches === true) {
-    const c = cleanupWorkDir(res.workDir);
-    logger.log('limpeza da pasta de trabalho após ZIP ok=' + c.ok + (c.ok ? '' : ' motivo=' + c.reason));
-    if (currentWorkResult === res) currentWorkResult = null;
-  }
-  return { ok: zip.ok, zip: { ...zip, path: picked.filePath }, validation, status };
+  const r = await finalizeZip({
+    srcDir: res.outputDir,
+    destPath: picked.filePath,
+    createZip,
+    validateZip,
+    logger,
+    onSuccess: () => {
+      // Só aqui (ZIP validado) a pasta de trabalho é removida — melhor esforço.
+      const c = cleanupWorkDir(res.workDir);
+      logger.log('limpeza da pasta de trabalho após ZIP ok=' + c.ok + (c.ok ? '' : ' motivo=' + c.reason));
+      if (currentWorkResult === res) currentWorkResult = null;
+    },
+  });
+  const status = r.ok ? overallStatus({ resources: res.resources, zip: r.zip }) : 'falhou';
+  sendStatus('zip', { ok: r.ok, state: r.state, path: picked.filePath, validation: r.validation });
+  return { ...r, status };
 }
 
 async function handleRevealZip(zipPath) {

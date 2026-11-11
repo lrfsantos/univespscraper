@@ -170,7 +170,8 @@
           <div class="stat warn"><div class="num" id="rPartial">0</div><div class="lbl">parcial</div></div>
           <div class="stat err"><div class="num" id="rInacc">0</div><div class="lbl">inacessível</div></div>
           <div class="stat"><div class="num" id="rNotFound">0</div><div class="lbl">não encontrado</div></div>
-          <div class="stat"><div class="num" id="rVideo">0</div><div class="lbl">vídeos registrados</div></div>
+          <div class="stat ok"><div class="num" id="rVideoTr">0</div><div class="lbl">vídeos c/ transcrição</div></div>
+          <div class="stat warn"><div class="num" id="rVideoSemTr">0</div><div class="lbl">vídeos s/ transcrição</div></div>
         </div>
         <div class="actions">
           <button id="btn-save-zip" class="success">Salvar ZIP</button>
@@ -449,7 +450,8 @@
       $('rPartial').textContent = counts.partial || 0;
       $('rInacc').textContent = counts.inaccessible || 0;
       $('rNotFound').textContent = counts.not_found || 0;
-      $('rVideo').textContent = counts.video || 0;
+      $('rVideoTr').textContent = counts.videoComTranscricao || 0;
+      $('rVideoSemTr').textContent = counts.videoSemTranscricao || 0;
       const st = $('resultStatus');
       st.className = 'statusline ' + (status === 'concluído' ? 'ok' : status === 'falhou' ? 'err' : 'warn');
       st.textContent = res.title || '';
@@ -458,40 +460,46 @@
       show('screen-result');
     }
 
+    // P0: distingue os estados do salvamento. Só `validado` mostra sucesso; falha de
+    // validação NUNCA exibe "verificado" e reabilita o botão para nova tentativa.
+    function handleSaveZipResult(btn, r) {
+      if (r.ok && r.state === 'validado') {
+        $('zipPath').textContent = r.zip.path;
+        $('zipInfo').classList.remove('hidden');
+        setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
+        return true;
+      }
+      if (r.canceled || r.state === 'cancelado') {
+        setLive('Salvamento cancelado. Você pode tentar novamente.', 'notice warn');
+      } else if (r.state === 'nao-validado') {
+        setLive('O ZIP foi criado, mas a validação falhou (integridade). Nenhum arquivo foi substituído; os materiais foram preservados. Tente novamente.', 'notice err');
+      } else {
+        setLive('Não foi possível criar o ZIP: ' + (r.error || 'erro inesperado'), 'notice err');
+      }
+      return false;
+    }
+
     $('btn-save-zip').addEventListener('click', async () => {
       $('btn-save-zip').disabled = true;
       setLive('Aguardando a escolha do destino...');
       const r = await window.api.saveZip();
-      if (!r.ok) {
-        if (r.canceled) { setLive('Salvamento cancelado. Você pode tentar novamente.', 'notice warn'); }
-        else { setLive('Não foi possível criar o ZIP: ' + (r.error || 'erro inesperado'), 'notice err'); }
-        $('btn-save-zip').disabled = false;
-        return;
-      }
-      $('zipPath').textContent = r.zip.path;
-      $('zipInfo').classList.remove('hidden');
-      setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
+      const ok = handleSaveZipResult($('btn-save-zip'), r);
       $('btn-save-zip').disabled = false;
+      if (ok) $('btn-save-zip').classList.add('hidden');
     });
 
     // Seção 3.5: após cancelamento, salvar o que já foi processado ou descartar
-    // explicitamente (a pasta de trabalho é removida pelo backend em ambos os casos).
+    // explicitamente (a pasta de trabalho é removida pelo backend após validação).
     $('btn-save-partial-zip').addEventListener('click', async () => {
       $('btn-save-partial-zip').disabled = true;
       setLive('Aguardando a escolha do destino...');
       const r = await window.api.saveZip();
-      if (!r.ok) {
-        if (r.canceled) { setLive('Salvamento cancelado. Você pode tentar novamente.', 'notice warn'); }
-        else { setLive('Não foi possível criar o ZIP: ' + (r.error || 'erro inesperado'), 'notice err'); }
-        $('btn-save-partial-zip').disabled = false;
-        return;
-      }
-      $('zipPath').textContent = r.zip.path;
-      $('zipInfo').classList.remove('hidden');
-      setLive('ZIP salvo e verificado com sucesso (' + r.zip.bytes + ' bytes, ' + (r.validation ? r.validation.entries : 0) + ' arquivos).', 'notice ok');
+      const ok = handleSaveZipResult($('btn-save-partial-zip'), r);
       $('btn-save-partial-zip').disabled = false;
-      $('btn-save-partial-zip').classList.add('hidden');
-      $('btn-discard').classList.add('hidden');
+      if (ok) {
+        $('btn-save-partial-zip').classList.add('hidden');
+        $('btn-discard').classList.add('hidden');
+      }
     });
 
     $('btn-discard').addEventListener('click', async () => {

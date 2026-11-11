@@ -21,6 +21,7 @@ const {
   parseResourcesFromSectionHtml,
   classifyResource,
   parseExpectedFromResource,
+  isIgnoredActivity,
 } = require('./discovery');
 const { createLogger } = require('./log');
 
@@ -80,6 +81,9 @@ function discoverResourcesFromSection(section, baseUrl = BASE) {
   const resources = [];
   let n = 0;
   for (const l of links) {
+    // Regra de produto: "Início" (apresentação) e "Em síntese" NÃO são materiais
+    // acadêmicos — não geram documento, não contam como extraídos nem como pendência.
+    if (isIgnoredActivity(l.text)) continue;
     n++;
     const cls = classifyResource(l);
     const id = resourceId(l, cls, n);
@@ -110,14 +114,23 @@ function resourceId(r, cls, n) {
 
 // --- Classificação de status honesto do fluxo (A6) ---
 // concluído | concluído com pendências | falhou
-// - 'concluído': ZIP válido e TODOS os recursos integral (sem pendências).
+// - 'concluído': ZIP válido e TODOS os recursos sem pendência (integral ou vídeo
+//   com transcrição capturada — registrar o link não equivale a extrair).
 // - 'concluído com pendências': ZIP válido, mas há recursos parcial/inacessível/
-//   não encontrado/não suportado — a pendência consta no relatório.
+//   não encontrado/não suportado/vídeo sem transcrição — a pendência consta no relatório.
 // - 'falhou': ZIP não criado/inválido ou houve erro que impediu a conclusão.
+//
+// Seção 3: vídeo SEM transcrição (video-registrado) e vídeo inacessível
+// (video-inacessivel) são PENDÊNCIAS explícitas — nunca contabilizados como
+// concluídos. Apenas video-com-transcricao conta como concluído nessa dimensão.
+function isDoneStatus(status) {
+  return status === 'integral' || status === 'video-com-transcricao';
+}
+
 function overallStatus({ resources, zip }) {
   if (!zip || !zip.ok) return 'falhou';
   if (!resources.length) return 'concluído';
-  const pendings = resources.filter((r) => r.status !== 'integral' && r.status !== 'video-registrado' && r.status !== 'video-com-transcricao');
+  const pendings = resources.filter((r) => !isDoneStatus(r.status));
   if (pendings.length === 0) return 'concluído';
   return 'concluído com pendências';
 }
@@ -422,23 +435,25 @@ function buildTopLevelDocs({ courses, outputDir, resources }) {
 
 // Relatório agregado honesto na raiz do ZIP (contagem por status).
 function renderTopLevelReport({ courses, resources }) {
-  const totals = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  const totals = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, videoComTranscricao: 0, videoSemTranscricao: 0 };
   for (const r of resources || []) {
     if (r.status === 'integral') totals.integral++;
     else if (r.status === 'partial') totals.partial++;
-    else if (r.status === 'inaccessible') totals.inaccessible++;
+    else if (r.status === 'inaccessible' || r.status === 'video-inacessivel') totals.inaccessible++;
     else if (r.status === 'not_found') totals.not_found++;
     else if (r.status === 'unsupported') totals.unsupported++;
-    else if (r.status === 'video-registrado' || r.status === 'video-com-transcricao') totals.video++;
+    else if (r.status === 'video-com-transcricao') totals.videoComTranscricao++;
+    else if (r.status === 'video-registrado') totals.videoSemTranscricao++;
   }
   const lines = [
     '# Relatório de Extração (resumo geral)',
     '',
     `- Matérias: ${courses.map((c) => `${c.title}${c.code ? ` (${c.code})` : ''}`).join('; ')}`,
     '',
-    `## Resumo: ${totals.integral} integral, ${totals.partial} parcial, ${totals.inaccessible} inacessível, ${totals.not_found} não encontrado, ${totals.unsupported} não suportado, ${totals.video} vídeo registrado.`,
+    `## Resumo: ${totals.integral} integral, ${totals.partial} parcial, ${totals.inaccessible} inacessível, ${totals.not_found} não encontrado, ${totals.unsupported} não suportado, ${totals.videoComTranscricao} vídeo com transcrição, ${totals.videoSemTranscricao} vídeo sem transcrição (pendência).`,
     '',
-    'Cada recurso tem documento individual com status e motivo. Este relatório não esconde pendências.',
+    'Cada recurso tem documento individual com status e motivo. Este relatório não esconde pendências;',
+    'vídeos sem transcrição constam como limitação/pendência, nunca como extração integral.',
     '',
   ];
   return lines.join('\n');
@@ -482,23 +497,24 @@ function renderSources({ course, weeks }) {
 
 function renderReport({ course, weeks }) {
   const lines = ['# Relatório de Extração', '', `- Disciplina: ${course.title}${course.code ? ` (${course.code})` : ''}`, ''];
-  const totals = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  const totals = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, videoComTranscricao: 0, videoSemTranscricao: 0 };
   for (const w of weeks) {
     for (const r of w.resources || []) {
       if (r.status === 'integral') totals.integral++;
       else if (r.status === 'partial') totals.partial++;
-      else if (r.status === 'inaccessible') totals.inaccessible++;
+      else if (r.status === 'inaccessible' || r.status === 'video-inacessivel') totals.inaccessible++;
       else if (r.status === 'not_found') totals.not_found++;
       else if (r.status === 'unsupported') totals.unsupported++;
-      else if (r.status === 'video-registrado') totals.video++;
+      else if (r.status === 'video-com-transcricao') totals.videoComTranscricao++;
+      else if (r.status === 'video-registrado') totals.videoSemTranscricao++;
     }
   }
-  lines.push(`## Resumo: ${totals.integral} integral, ${totals.partial} parcial, ${totals.inaccessible} inacessível, ${totals.not_found} não encontrado, ${totals.unsupported} não suportado, ${totals.video} vídeo registrado.`, '');
+  lines.push(`## Resumo: ${totals.integral} integral, ${totals.partial} parcial, ${totals.inaccessible} inacessível, ${totals.not_found} não encontrado, ${totals.unsupported} não suportado, ${totals.videoComTranscricao} vídeo com transcrição, ${totals.videoSemTranscricao} vídeo sem transcrição (pendência).`, '');
   for (const w of weeks) {
     if (!w.name) continue;
     lines.push(`## ${w.name}`);
     for (const r of w.resources || []) {
-      const extra = r.status === 'integral' ? '' : (r.reason ? ` — ${r.reason}` : '');
+      const extra = isDoneStatus(r.status) ? '' : (r.reason ? ` — ${r.reason}` : (r.status === 'video-registrado' ? ' — sem transcrição (pendência)' : ''));
       lines.push(`- [${r.status}] ${r.text || r.id}: ${r.url}${extra}`);
     }
     lines.push('');
@@ -546,6 +562,58 @@ function validateZip(zip) {
   } catch (e) { return { valid: false, reason: 'nao-e-zip' }; }
 }
 
+// P0 ZIP — validação obrigatória do fluxo real de salvamento.
+// Regra: um ZIP só é considerado VERIFICADO quando `zip.ok === true`,
+// `validation.valid === true` e `validation.matches === true`. NUNCA sucesso antes
+// disso.
+//
+// O arquivo é gravado num TEMPORÁRIO no mesmo diretório do destino e só é promovido
+// (move) para o destino depois da validação positiva — um arquivo válido existente
+// no destino não é corrompido/substituído por uma operação que falhou.
+//
+// Estados de retorno (campo `state`):
+//   'cancelado'    — o estudante cancelou o diálogo (tratado pelo chamador).
+//   'nao-criado'   — o ZIP não pôde ser criado.
+//   'nao-validado' — o ZIP foi criado mas a validação falhou (integridade).
+//   'validado'     — ZIP criado, validado e salvo no destino.
+//
+// `createZip`/`validateZip` são INJETÁVEIS para testes determinísticos; no app são
+// as funções de produção. `onSuccess` (ex.: limpeza da pasta de trabalho) só é
+// invocado após a validação positiva.
+async function finalizeZip({ srcDir, destPath, createZip, validateZip, onSuccess, logger }) {
+  const tmpPath = destPath + '.tmp-' + Date.now();
+  let zip = { ok: false, reason: 'nao-iniciado', path: tmpPath, bytes: 0, files: 0 };
+  try {
+    zip = await createZip(srcDir, tmpPath);
+  } catch (e) {
+    zip = { ok: false, reason: e && e.message ? e.message : String(e), path: tmpPath, bytes: 0, files: 0 };
+  }
+  const validation = zip.ok ? validateZip(zip) : { valid: false, reason: zip.reason || 'zip-nao-criado' };
+  const verified = zip.ok === true && validation.valid === true && validation.matches === true;
+
+  if (verified) {
+    try {
+      fs.rmSync(destPath, { force: true });
+      fs.renameSync(tmpPath, destPath);
+      zip.path = destPath;
+    } catch (e) {
+      try { fs.rmSync(tmpPath, { force: true }); } catch {}
+      return { ok: false, state: 'nao-validado', zip: { ...zip, path: destPath }, validation, preserved: true, retryable: true, error: 'Falha ao gravar o ZIP no destino: ' + e.message };
+    }
+    if (onSuccess) { try { onSuccess({ ...zip, path: destPath }); } catch (e) { if (logger) logger.error('onSuccess (limpeza) falhou: ' + e.message); } }
+    return { ok: true, state: 'validado', zip: { ...zip, path: destPath }, validation };
+  }
+
+  // ZIP não validado: remove o temporário, preserva o resultado extraído (workdir
+  // NÃO é apagado) e informa falha — nunca ok:true.
+  try { fs.rmSync(tmpPath, { force: true }); } catch {}
+  const state = zip.ok ? 'nao-validado' : 'nao-criado';
+  const error = state === 'nao-validado'
+    ? 'O ZIP foi criado, mas a validação falhou (integridade). Nenhum arquivo foi substituído; você pode tentar salvar novamente.'
+    : 'Não foi possível criar o ZIP: ' + (zip.reason || 'erro desconhecido');
+  return { ok: false, state, zip: { ...zip, path: destPath }, validation, preserved: true, retryable: true, error };
+}
+
 // Constrói o logger sanitizado do fluxo.
 function makeFlowLogger(filePath) {
   return createLogger(filePath || path.join(os.tmpdir(), 'univesp-app.log'));
@@ -569,11 +637,15 @@ module.exports = {
   resourceIdentityKey,
   MAX_EMBED_DEPTH,
   overallStatus,
+  isDoneStatus,
   buildCourseStructure,
   buildTopLevelDocs,
+  renderReport,
+  renderTopLevelReport,
   zipBaseName,
   createZip,
   validateZip,
+  finalizeZip,
   safeName,
   makeFlowLogger,
 };

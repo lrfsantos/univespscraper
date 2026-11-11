@@ -271,6 +271,22 @@ function classifyResource({ url, text = '', type = 'link' }) {
   return { kind: 'unknown' };
 }
 
+// Atividades NÃO materiais que NÃO devem ser extraídas nem contadas (regras de
+// produto): a atividade "Início" (rótulos como "S1 Início"/"Início") é apenas
+// apresentação da semana; "Em síntese" é ignorada. A identificação é feita pelo
+// RÓTULO específico, normalizando acentos, maiúsculas, espaços e numeração de
+// semana — nunca descartando páginas apenas por conter a palavra "introdução".
+function isIgnoredActivity(text) {
+  const t = String(text || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!t) return false;
+  const stripped = t.replace(/^s\d+\s*/, '').trim();
+  return stripped === 'inicio' || stripped === 'em sintese';
+}
+
 // Correção E: extrai do texto do âncora do AVA a identificação esperada do
 // material (livro e capítulo) QUANDO o AVA a fornece explicitamente — ex.:
 // "Texto-base - X (Leia o Capítulo 1) | Autor". Nunca inventa capítulo/páginas:
@@ -306,4 +322,4 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   return expected;
 }
 
-module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, scanTags, attrsOf, balancedElement, inferSituacao };
+module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, scanTags, attrsOf, balancedElement, inferSituacao };

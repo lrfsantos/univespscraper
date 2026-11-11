@@ -46,7 +46,7 @@ function fixtureA() {
     '<li class="section main" id="section-1">',
     '  <h3>Semana 1</h3>',
     '  <div class="activityinstance">',
-    '    <a\n        href="https://ava.univesp.br/mod/page/view.php?id=101"\n        class="aalink"\n        title="S1 Início">S1 Início</a>',
+    '    <a\n        href="https://ava.univesp.br/mod/page/view.php?id=101"\n        class="aalink"\n        title="S1 Começo">S1 Começo</a>',
     '    <ul class="nested-list">',
     '      <li><a href="https://ava.univesp.br/mod/lti/launch.php?id=102&triggerview=0">Texto-base - Empreendedorismo (Leia o Capítulo 1) | Autor</a></li>',
     '      <li><ul><li><a href="https://ava.univesp.br/mod/page/view.php?id=103">S1 Sub-recurso</a></li></ul></li>',
@@ -58,7 +58,7 @@ function fixtureA() {
     '<li id="section-2" class="section main">',
     '  <h3>Semana 2</h3>',
     '  <div class="activityinstance">',
-    '    <a href="https://ava.univesp.br/mod/page/view.php?id=201">S2 Início</a>',
+    '    <a href="https://ava.univesp.br/mod/page/view.php?id=201">S2 Começo</a>',
     '    <a href="https://assets.univesp.br/ADM270/s2_extra.pdf">Leitura extra</a>',
     '  </div>',
     '</li>',
@@ -253,24 +253,26 @@ function uiProgressReducer(events) {
 
 // Réplica pura do cálculo de contadores do main.js (summarizeCounts), para
 // conferir que o backend não conta o mesmo recurso duas vezes.
+// Seção 3: vídeo sem transcrição é PENDÊNCIA; vídeo com transcrição é concluído.
 function summarizeCountsReplica(resources) {
-  const counts = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0 };
+  const counts = { integral: 0, partial: 0, inaccessible: 0, not_found: 0, unsupported: 0, video: 0, videoComTranscricao: 0, videoSemTranscricao: 0 };
   for (const r of resources) {
     if (r.status === 'integral') counts.integral++;
     else if (r.status === 'partial') counts.partial++;
-    else if (r.status === 'inaccessible') counts.inaccessible++;
+    else if (r.status === 'inaccessible' || r.status === 'video-inacessivel') counts.inaccessible++;
     else if (r.status === 'not_found') counts.not_found++;
     else if (r.status === 'unsupported') counts.unsupported++;
-    else if (r.status === 'video-registrado' || r.status === 'video-com-transcricao') counts.video++;
+    else if (r.status === 'video-com-transcricao') { counts.video++; counts.videoComTranscricao++; }
+    else if (r.status === 'video-registrado') { counts.video++; counts.videoSemTranscricao++; }
   }
   return counts;
 }
 
-// Réplica pura do zipOkLabel do main.js.
+// Réplica pura do zipOkLabel do main.js (vídeo sem transcrição = pendência).
 function zipOkLabelReplica(counts) {
-  const pending = counts.partial + counts.inaccessible + counts.not_found + counts.unsupported;
+  const pending = counts.partial + counts.inaccessible + counts.not_found + counts.unsupported + counts.videoSemTranscricao;
   if (pending === 0) return { label: 'concluído', title: 'Extração concluída' };
-  if (counts.inaccessible + counts.not_found === 0) return { label: 'concluído com pendências', title: 'Extração concluída com pendências' };
+  if (counts.inaccessible + counts.not_found + counts.videoSemTranscricao === 0) return { label: 'concluído com pendências', title: 'Extração concluída com pendências' };
   return { label: 'concluído com pendências', title: 'Extração concluída com pendências' };
 }
 
@@ -353,14 +355,14 @@ function groupD() {
     detail: 'backendFlat=' + backendFlat + ' uiFlat=' + uiFlat + ' (validação por inspeção de main.js/ui.html)',
   });
 
-  const all = [{ status: 'integral' }, { status: 'integral' }, { status: 'video-registrado' }];
+  const all = [{ status: 'integral' }, { status: 'integral' }, { status: 'video-com-transcricao' }];
   const cAll = summarizeCountsReplica(all);
   const lAll = zipOkLabelReplica(cAll);
   const osAll = flow.overallStatus({ resources: all, zip: { ok: true } });
   record({
     id: G + '-2',
-    title: 'Extração integral -> status concluído, ZIP salvável',
-    status: lAll.label === 'concluído' && osAll === 'concluído' && cAll.integral === 2 && cAll.video === 1 ? 'PASS' : 'FAIL',
+    title: 'Extração integral (vídeo com transcrição) -> status concluído, ZIP salvável',
+    status: lAll.label === 'concluído' && osAll === 'concluído' && cAll.integral === 2 && cAll.videoComTranscricao === 1 ? 'PASS' : 'FAIL',
     detail: 'label=' + lAll.label + ' overallStatus=' + osAll + ' counts=' + JSON.stringify(cAll),
   });
 
@@ -454,6 +456,21 @@ function groupD() {
       detail: 'ok=' + zip.ok + ' status=' + st + ' valid=' + v.valid,
     });
   });
+
+  // 10) Seção 3: vídeo SEM transcrição (video-registrado) é PENDÊNCIA — nunca
+  //     'concluído'; a interface não mostra "Todos os materiais extraídos integralmente".
+  const vSem = [{ status: 'integral' }, { status: 'video-registrado' }];
+  const cV = summarizeCountsReplica(vSem);
+  const lV = zipOkLabelReplica(cV);
+  const osV = flow.overallStatus({ resources: vSem, zip: { ok: true } });
+  const backendVideoPend = MAIN_SRC.includes('counts.videoSemTranscricao') && MAIN_SRC.includes('Todos os materiais foram extraídos integralmente');
+  record({
+    id: G + '-10',
+    title: 'Seção 3: vídeo sem transcrição = pendência explícita (nunca concluído; mensagem "integralmente" só quando não há pendência)',
+    status: osV === 'concluído com pendências' && lV.label === 'concluído com pendências' && cV.videoSemTranscricao === 1 && backendVideoPend ? 'PASS' : 'FAIL',
+    detail: 'overallStatus=' + osV + ' label=' + lV.label + ' videoSemTranscricao=' + cV.videoSemTranscricao + ' backendContabiliza=' + backendVideoPend,
+  });
+
   return ok2;
 }
 // ==================== CORREÇÃO E — navegação/extração EPUB e expected ====================
@@ -606,14 +623,14 @@ async function groupF() {
   }
 
   // F-4: main.js expõe descarte explícito (discard-extraction) e limpa a pasta de
-  //      trabalho após ZIP validado (inspeção de fonte — comportamento funcional
-  //      coberto por test-workdir-m3).
+  //      trabalho apenas após ZIP validado (via finalizeZip; gate no flow.js).
   {
     const hasDiscardIpc = MAIN_SRC.includes("ipcMain.handle('discard-extraction'") && MAIN_SRC.includes('cleanupWorkDir(res.workDir)');
-    const hasWorkCleanupAfterZip = MAIN_SRC.includes('validation.valid && validation.matches === true') && MAIN_SRC.includes('cleanupWorkDir');
+    const usesFinalizeZip = MAIN_SRC.includes('finalizeZip') && MAIN_SRC.includes('onSuccess:') && MAIN_SRC.includes('cleanupWorkDir');
+    const gateInFlow = FLOW_SRC.includes('validation.valid === true && validation.matches === true') && FLOW_SRC.includes("state: 'nao-validado'");
     const hasResidualStartup = MAIN_SRC.includes('cleanupResidualWorkDirs()');
-    const ok = hasDiscardIpc && hasWorkCleanupAfterZip && hasResidualStartup;
-    record({ id: G + '-4', title: 'P0 2.6/seção 3: main.js tem descarte explícito, limpeza pós-ZIP e recuperação de resíduos (inspeção)', status: ok ? 'PASS' : 'FAIL', detail: 'discard=' + hasDiscardIpc + ' limpezaZip=' + hasWorkCleanupAfterZip + ' residuos=' + hasResidualStartup });
+    const ok = hasDiscardIpc && usesFinalizeZip && gateInFlow && hasResidualStartup;
+    record({ id: G + '-4', title: 'P0 2.6/seção 3: descarte explícito, limpeza pós-ZIP via finalizeZip e recuperação de resíduos (inspeção)', status: ok ? 'PASS' : 'FAIL', detail: 'discard=' + hasDiscardIpc + ' finalizeZip=' + usesFinalizeZip + ' gate=' + gateInFlow + ' residuos=' + hasResidualStartup });
   }
 }
 
