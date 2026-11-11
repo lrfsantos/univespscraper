@@ -1,0 +1,46 @@
+{
+  "ts": "2026-11-11T19:31:56.263Z",
+  "results": [
+    {
+      "id": "H-1",
+      "title": "4: headings e parágrafos convertidos estruturalmente (H1/H2/negrito/itálico/código/links)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "H-2",
+      "title": "4: listas ordenadas, não ordenadas e ANINHADAS (indentação)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "H-3",
+      "title": "4: blockquote, tabela, code block, br e alt de imagem preservados",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "H-4",
+      "title": "4: UI excluída da conversão (nav/footer/script/style)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "H-5",
+      "title": "4: integral só com estrutura real; fragmento sem estrutura e \"carregando\" = partial",
+      "status": "PASS",
+      "detail": "estrutural=integral fragmento=partial umaLinha=partial carregando=partial"
+    },
+    {
+      "id": "H-6",
+      "title": "4: vazio -> not_found; escopo sem texto (aviso explícito) -> partial",
+      "status": "PASS",
+      "detail": "vazio=not_found escopoSemTexto=partial"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

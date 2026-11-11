@@ -20,8 +20,8 @@ function record(entry) {
 (async () => {
   // M1: separacao presenca x integridade (C5)
   {
-    // presenca minima (hasScope + 20 chars) -> integral conforme criterios atuais
-    const okPage = { title: 'S1 Inicio', text: 'Conteudo academico real da pagina com mais de vinte caracteres para teste.', hasScope: true, httpStatus: 200 };
+    // pagina academica real (escopo + texto substancial/estrutural) -> integral
+    const okPage = { title: 'S1 Inicio', text: 'Conteudo academico real da pagina extraido de forma estrutural com headings e paragrafos. Este texto representa uma pagina completa de material didatico com mais de oitenta caracteres para confirmar integralidade por evidencia.', hasScope: true, httpStatus: 200 };
     const s1 = pageStatusFor(okPage);
     // sem escopo, mesmo com texto -> parcial (nao integral)
     const noScope = { title: 'x', text: 'Texto sem escopo principal confirmado, contudo longo o bastante para o teste', hasScope: false, httpStatus: 200 };
@@ -35,8 +35,11 @@ function record(entry) {
     // 404 -> not_found
     const nf = { title: '', text: '', hasScope: false, httpStatus: 404 };
     const s5 = pageStatusFor(nf);
-    const ok = s1 === 'integral' && s2 === 'partial' && s3 === 'partial' && s4 === 'inaccessible' && s5 === 'not_found';
-    record({ id: 'M1-1', title: 'C5: pages.statusFor distingue presenca (integral) x incompleto (partial) x erro (inaccessible) x 404 (not_found)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ integral: s1, semEscopo: s2, carregando: s3, erro: s4, notFound: s5 }) });
+    // fragmento curto (>=20 chars) sem escopo valido nem estrutura -> partial
+    const frag = { title: 'x', text: 'apenas um fragmento curto de interface', hasScope: false, httpStatus: 200 };
+    const s6 = pageStatusFor(frag);
+    const ok = s1 === 'integral' && s2 === 'partial' && s3 === 'partial' && s4 === 'inaccessible' && s5 === 'not_found' && s6 === 'partial';
+    record({ id: 'M1-1', title: 'C5: pages.statusFor distingue presenca (integral) x incompleto (partial) x erro (inaccessible) x 404 (not_found)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ integral: s1, semEscopo: s2, carregando: s3, erro: s4, notFound: s5, fragmento: s6 }) });
   }
 
   {

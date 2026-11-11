@@ -1,11 +1,11 @@
 {
-  "ts": "2026-11-11T18:26:36.206Z",
+  "ts": "2026-11-11T19:30:57.570Z",
   "results": [
     {
       "id": "M1-1",
       "title": "C5: pages.statusFor distingue presenca (integral) x incompleto (partial) x erro (inaccessible) x 404 (not_found)",
       "status": "PASS",
-      "detail": "{\"integral\":\"integral\",\"semEscopo\":\"partial\",\"carregando\":\"partial\",\"erro\":\"inaccessible\",\"notFound\":\"not_found\"}"
+      "detail": "{\"integral\":\"integral\",\"semEscopo\":\"partial\",\"carregando\":\"partial\",\"erro\":\"inaccessible\",\"notFound\":\"not_found\",\"fragmento\":\"partial\"}"
     },
     {
       "id": "M1-2",

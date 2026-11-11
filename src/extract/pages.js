@@ -10,6 +10,7 @@
 
 const PDF_RE = /\.pdf($|[?#])/i;
 const YT_RE = /youtube\.com|youtu\.be|youtube-nocookie/i;
+const { htmlToMarkdown } = require('./html');
 
 // Textos que NÃO são conteúdo real (erros, incompatibilidade, acesso).
 const ERROR_RE =
@@ -29,19 +30,24 @@ function basicChecks({ title, text, hasScope, httpStatus }) {
   };
 }
 
-function statusFor({ title, text, hasScope, httpStatus }) {
+function statusFor({ title, text, hasScope, httpStatus, loadWarnings }) {
   if (httpStatus === 404) return 'not_found';
   if (httpStatus && httpStatus >= 400) return 'inaccessible';
   if (!title && !text) return 'not_found';
+  // Sinais explícitos registrados pelo extrator (escopo sem texto, carga dinâmica)
+  // têm precedência: conteúdo carregado/truncado/ausente → partial.
+  if (loadWarnings && loadWarnings.length) return 'partial';
   const t = (text || '').trim();
   if (!t) return 'inaccessible';
   if (ERROR_RE.test(t)) return 'inaccessible';
   // Sinais de carregamento incompleto → nunca integral sem ressalvas.
   if (LOAD_WARN_RE.test(t)) return 'partial';
-  // Verificações básicas presentes E escopo principal confirmado:
-  // indica que o texto HTML foi extraído; a completude do conteúdo ainda
-  // depende de validações adicionais (registrado no relatório).
-  if (hasScope && t.length >= 20) return 'integral';
+  // Seção 4.3: NUNCA declarar integral apenas por "20+ caracteres + seletor de
+  // escopo" quando faltam evidências. Exige evidência ESTRUTURAL real de conversão
+  // (múltiplas linhas, heading, lista, tabela, blockquote) OU texto substancial
+  // (>= 80 caracteres, já que parágrafo único legítimo não tem marca estrutural).
+  const structural = /(^|\n)(#{1,6} |[-*] |\d+\. |\| |> )/.test(t) || /\n\n/.test(t);
+  if (hasScope && t.length >= 20 && (structural || t.length >= 80)) return 'integral';
   if (t.length >= 20) return 'partial';
   return 'inaccessible';
 }
@@ -70,7 +76,9 @@ async function extractPage(win, url) {
       const scopeEl = document.querySelector('.ava-scope') || document.querySelector('[role="main"]');
       const hasScope = !!scopeEl;
       const scope = scopeEl || document.body;
-      const text = scope ? scope.innerText : '';
+      // Serializa o HTML REAL do escopo principal (não o innerText) para a
+      // conversão ESTRUTURAL → Markdown em Node (seção 4).
+      const html = scope ? scope.outerHTML : '';
       const title = document.title || '';
       const links = [];
       const seen = new Set();
@@ -83,19 +91,26 @@ async function extractPage(win, url) {
       });
       const iframes = [];
       (scope ? scope.querySelectorAll('iframe') : []).forEach((f) => { if (f.src) iframes.push(f.src); });
-      return { text, title, hasScope, links, iframes };
+      return { html, title, hasScope, links, iframes };
     });
 
-    result.text = data.text || '';
     result.title = data.title || '';
     result.hasScope = data.hasScope;
     result.links = data.links || [];
     result.iframes = data.iframes || [];
+    // Conversão estrutural real do HTML do escopo (headings/listas/tabelas/etc.).
+    result.text = htmlToMarkdown(data.html || '', { baseUrl: url });
+    result.sourceHtml = data.html || '';
 
     // Sinais de carga incompleta no texto extraído
     const t = result.text.trim();
     if (t && LOAD_WARN_RE.test(t)) {
       result.loadWarnings.push('texto contém sinais de carregamento dinâmico não validado');
+    }
+    // Se o escopo existe mas não há conteúdo textual estruturado, há evidência de
+    // falha de conversão/carga — nunca integral (seção 4.3).
+    if (result.hasScope && !t) {
+      result.loadWarnings.push('escopo encontrado sem conteúdo textual estrutural extraído');
     }
 
     for (const l of result.links) {

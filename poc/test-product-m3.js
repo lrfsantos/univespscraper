@@ -63,7 +63,7 @@ function record(entry) {
 
   // D) Integracao: modulos produzem status consumidos pelo fluxo
   {
-    const sPage = pageStatusFor({ title: 't', text: 'Conteudo academico com mais de vinte caracteres de exemplo para teste', hasScope: true, httpStatus: 200 });
+    const sPage = pageStatusFor({ title: 't', text: '# Titulo\n\nParagrafo academico real com evidencia estrutural de conversao e conteudo extenso o bastante para confirmar integralidade.', hasScope: true, httpStatus: 200 });
     const sPdf = pdfStatusFor({ ok: true, bytes: 100, analyze: { totalPagesArquivo: 1, error: null }, pages: [{ pageIndex: 1, text: 'texto', chars: 5 }] });
     const ok = sPage === 'integral' && sPdf === 'integral';
     record({ id: 'P-D', title: 'D: modulos pages/pdfs produzem status que o fluxo consome (integral honesto)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ page: sPage, pdf: sPdf }) });
