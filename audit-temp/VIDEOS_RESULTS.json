@@ -1,0 +1,64 @@
+{
+  "ts": "2026-11-11T18:27:34.885Z",
+  "results": [
+    {
+      "id": "V-1",
+      "title": "3: YouTube com transcrição -> video-com-transcricao; segmentos/ordem/timestamps preservados",
+      "status": "PASS",
+      "detail": "status=video-com-transcricao segs=3 ordem=Ola.|Segundo.|Terceiro."
+    },
+    {
+      "id": "V-2",
+      "title": "3: YouTube sem transcrição -> video-registrado (nunca inventa), pendência explícita",
+      "status": "PASS",
+      "detail": "status=video-registrado note=transcrição não disponível para este vídeo"
+    },
+    {
+      "id": "V-3",
+      "title": "3: URL inválida -> video-inacessivel (não confundido com \"registrado sem transcrição\")",
+      "status": "PASS",
+      "detail": "status=video-inacessivel id=null"
+    },
+    {
+      "id": "V-4",
+      "title": "3: vídeo de outra plataforma -> registrado sem transcrição (motivo claro)",
+      "status": "PASS",
+      "detail": "status=video-registrado yt=false note=vídeo de plataforma sem transcrição acessível nesta versão (apenas link registrado)"
+    },
+    {
+      "id": "V-5",
+      "title": "3: timeout aborta a requisição subjacente (AbortSignal), status video-registrado com motivo",
+      "status": "PASS",
+      "detail": "status=video-registrado note=transcrição não obtida: timeout (a requisição foi abortada) ms=755"
+    },
+    {
+      "id": "V-6",
+      "title": "3: erro de rede -> registrado sem transcrição, sem falsa transcrição",
+      "status": "PASS",
+      "detail": "status=video-registrado available=false"
+    },
+    {
+      "id": "V-7",
+      "title": "3: extractVideoId/isYoutube reconhecem youtu.be/embed/watch; não-YouTube false",
+      "status": "PASS",
+      "detail": "ids=ok"
+    },
+    {
+      "id": "V-8",
+      "title": "3: isDoneStatus: vídeo com transcrição concluído; sem transcrição/inacessível são pendência no overallStatus",
+      "status": "PASS",
+      "detail": "done=true pend=true overall=concluído com pendências"
+    },
+    {
+      "id": "V-9",
+      "title": "3: renderReport lista vídeo sem transcrição como pendência explícita",
+      "status": "PASS",
+      "detail": "contagemPendencia=true"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-11T04:30:39.762Z",
-  "total": 42,
+  "generatedAt": "2026-11-11T18:27:33.775Z",
+  "total": 43,
   "failed": 0,
   "results": [
     {
@@ -97,7 +97,7 @@
       "id": "C-2",
       "title": "Três integral + um parcial + um inacessível -> done=3, pending=2, barra=100, sem dupla contagem",
       "status": "PASS",
-      "detail": "done=3 pending=2 total=5 bar=100 counts={\"integral\":3,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0}"
+      "detail": "done=3 pending=2 total=5 bar=100 counts={\"integral\":3,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0,\"videoComTranscricao\":0,\"videoSemTranscricao\":0}"
     },
     {
       "id": "C-3",
@@ -119,15 +119,15 @@
     },
     {
       "id": "D-2",
-      "title": "Extração integral -> status concluído, ZIP salvável",
+      "title": "Extração integral (vídeo com transcrição) -> status concluído, ZIP salvável",
       "status": "PASS",
-      "detail": "label=concluído overallStatus=concluído counts={\"integral\":2,\"partial\":0,\"inaccessible\":0,\"not_found\":0,\"unsupported\":0,\"video\":1}"
+      "detail": "label=concluído overallStatus=concluído counts={\"integral\":2,\"partial\":0,\"inaccessible\":0,\"not_found\":0,\"unsupported\":0,\"video\":1,\"videoComTranscricao\":1,\"videoSemTranscricao\":0}"
     },
     {
       "id": "D-3",
       "title": "Extração com pendências (parcial/inacessível) -> concluído com pendências, ainda salvável",
       "status": "PASS",
-      "detail": "label=concluído com pendências overallStatus=concluído com pendências counts={\"integral\":1,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0}"
+      "detail": "label=concluído com pendências overallStatus=concluído com pendências counts={\"integral\":1,\"partial\":1,\"inaccessible\":1,\"not_found\":0,\"unsupported\":0,\"video\":0,\"videoComTranscricao\":0,\"videoSemTranscricao\":0}"
     },
     {
       "id": "D-4",
@@ -152,6 +152,12 @@
       "title": "Cancelamento da janela de destino não vira falha; botão reabilitado e mensagem clara",
       "status": "PASS",
       "detail": "backend=true ui=true (inspeção)"
+    },
+    {
+      "id": "D-10",
+      "title": "Seção 3: vídeo sem transcrição = pendência explícita (nunca concluído; mensagem \"integralmente\" só quando não há pendência)",
+      "status": "PASS",
+      "detail": "overallStatus=concluído com pendências label=concluído com pendências videoSemTranscricao=1 backendContabiliza=true"
     },
     {
       "id": "E-1",
@@ -251,9 +257,9 @@
     },
     {
       "id": "F-4",
-      "title": "P0 2.6/seção 3: main.js tem descarte explícito, limpeza pós-ZIP e recuperação de resíduos (inspeção)",
+      "title": "P0 2.6/seção 3: descarte explícito, limpeza pós-ZIP via finalizeZip e recuperação de resíduos (inspeção)",
       "status": "PASS",
-      "detail": "discard=true limpezaZip=true residuos=true"
+      "detail": "discard=true finalizeZip=true gate=true residuos=true"
     }
   ]
 }

@@ -1,0 +1,64 @@
+{
+  "ts": "2026-11-11T18:27:33.984Z",
+  "results": [
+    {
+      "id": "Z-1",
+      "title": "P0 ZIP: válido e validação positiva -> ok:true, state=validado, onSuccess chamado",
+      "status": "PASS",
+      "detail": "ok=true state=validado onSuccess=1 dest=false"
+    },
+    {
+      "id": "Z-2",
+      "title": "P0 ZIP: validation.valid=false -> ok:false (nunca sucesso), destino preservado, onSuccess não chamado",
+      "status": "PASS",
+      "detail": "ok=false state=nao-validado onSuccess=0 destExiste=false"
+    },
+    {
+      "id": "Z-3",
+      "title": "P0 ZIP: validation.matches=false -> ok:false, não promove ao destino",
+      "status": "PASS",
+      "detail": "ok=false state=nao-validado onSuccess=0"
+    },
+    {
+      "id": "Z-4",
+      "title": "P0 ZIP: falha na criação -> ok:false, state=nao-criado, sem onSuccess",
+      "status": "PASS",
+      "detail": "ok=false state=nao-criado"
+    },
+    {
+      "id": "Z-5",
+      "title": "P0 ZIP: falha de validação NÃO corrompe/substitui arquivo válido existente no destino",
+      "status": "PASS",
+      "detail": "ok=false conteudoPreservado=true"
+    },
+    {
+      "id": "Z-6",
+      "title": "P0 ZIP: nova tentativa após falha de validação (validação positiva) -> salvo",
+      "status": "PASS",
+      "detail": "primeira=nao-validado segunda=validado dest=false"
+    },
+    {
+      "id": "Z-7",
+      "title": "P0 ZIP: pasta de trabalho preservada quando o ZIP não foi validado",
+      "status": "PASS",
+      "detail": "onSuccess=0"
+    },
+    {
+      "id": "Z-8",
+      "title": "P0 ZIP: limpeza (onSuccess) só após validação positiva — nunca após falha",
+      "status": "PASS",
+      "detail": "onSuccessAposFalha=0 onSuccessFinal=1"
+    },
+    {
+      "id": "Z-9",
+      "title": "P0 ZIP: UI só exibe \"verificado\" quando state=validado; falha de validação tem mensagem própria (inspeção)",
+      "status": "PASS",
+      "detail": "gate=true mensagemFalha=true"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-11T04:29:45.980Z",
+  "ts": "2026-11-11T18:26:36.056Z",
   "results": [
     {
       "id": "D-1",
@@ -32,6 +32,18 @@
       "detail": "{\"links\":[\"https://ava.univesp.br/mod/page/view.php?id=21\"],\"iframes\":[\"https://www.youtube.com/embed/AAA111\",\"https://player.vimeo.com/video/222\",\"https://reader.vitalsource.com/reader/books/978Z/pageid/1\",\"https://assets.univesp.br/ADM270/s2_extra.pdf\",\"https://ava.univesp.br/mod/url/view.php?id=23\"],\"iframeKinds\":[\"video\",\"video\",\"book\",\"pdf\",\"page\"]}"
     },
     {
+      "id": "D-8",
+      "title": "P1 (2): Geral não é semana; Início e Em síntese ignorados; demais atividades e recursos preservados",
+      "status": "PASS",
+      "detail": "{\"texts\":[\"S1 Videoaulas\",\"S1 Material base\",\"S1 Atividade avaliativa\",\"S1 Aprofundando o tema\",\"S1 Fórum temático\",\"S1 Live com facilitador\",\"Slides\",\"\"],\"urls\":[\"https://assets.univesp.br/ADM270/s1_slides.pdf\",\"https://www.youtube.com/embed/zzz999\"]}"
+    },
+    {
+      "id": "D-9",
+      "title": "P1 (2): isIgnoredActivity normaliza acentos/caixa/espaços/numeração e não descarta \"Introdução\"",
+      "status": "PASS",
+      "detail": "{\"S1 Início\":true,\"S2 inicio\":true,\"início\":true,\"INICIO\":true,\"S1  Início \":true,\"S1Em Síntese\":true,\"S1 Em Síntese\":true,\"Em síntese\":true,\"em síntese\":true,\"EM SINTESE\":true,\"S1 Videoaulas\":false,\"S1 Material base\":false,\"Aprofundando o tema\":false,\"Introdução\":false,\"Texto-base - Capítulo 1\":false}"
+    },
+    {
       "id": "D-4",
       "title": "A6: overallStatus distingue concluido / concluido com pendencias / falhou",
       "status": "PASS",
@@ -41,12 +53,12 @@
       "id": "D-5",
       "title": "A7: estrutura academica + ZIP valido no destino (validacao abre como ZIP)",
       "status": "PASS",
-      "detail": "{\"files\":[\"AI_STUDY_INSTRUCTIONS.md\",\"EXTRACTION_REPORT.md\",\"INDEX.md\",\"SOURCES.md\"],\"zipOk\":true,\"zipBytes\":1300,\"valid\":true,\"entries\":5,\"filesCounted\":5}"
+      "detail": "{\"files\":[\"AI_STUDY_INSTRUCTIONS.md\",\"EXTRACTION_REPORT.md\",\"INDEX.md\",\"SOURCES.md\"],\"zipOk\":true,\"zipBytes\":1321,\"valid\":true,\"entries\":5,\"filesCounted\":5}"
     }
   ],
   "summary": {
-    "total": 7,
-    "passed": 7,
+    "total": 9,
+    "passed": 9,
     "failed": 0
   }
 }
