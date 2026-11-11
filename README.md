@@ -14,7 +14,8 @@ módulos de extração já desenvolvidos e gera um ZIP validado no destino escol
 ## Requisitos (Windows)
 
 - Windows 10/11.
-- Node.js 18+ (somente para desenvolvimento/testes).
+- Node.js 20.16+ / 22.3+ (ou 24 LTS — recomendado; somente para desenvolvimento e
+  testes; exigência do parser de PDF `pdf-parse`).
 - O aplicativo final é um executável portátil (Electron), sem dependências do
   sistema para o usuário final.
 
@@ -56,12 +57,16 @@ harnesses de teste isolados (`npm run test:live`) e nunca no executável distrib
 
 ## Materiais suportados
 
+Cada recurso compatível gera um **documento Markdown individual** com o conteúdo
+original (nunca resumido) e metadados de rastreabilidade (fonte, disciplina,
+semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-output/`.
+
 | Recurso | Tratamento |
 |---|---|
-| Página HTML do AVA | Extração de texto (Módulo 1) |
-| PDF | Download do original + texto por página (Módulo 2) |
-| Livro/leitor LTI compatível (Minha Biblioteca) | Extração EPUB/PAGEID (Módulo 3) |
-| Videoaula | Registro de link, título e disponibilidade de transcrição (Módulo 4 fora de escopo) |
+| Página HTML do AVA | Extração de texto (Módulo 1) + recursos incorporados descobertos (vídeos/PDFs/livros) |
+| PDF | Download do original + texto por página (Módulo 2), SHA-256 e paginação impressa quando identificada |
+| Livro/leitor LTI compatível (Minha Biblioteca) | Extração EPUB/PAGEID (Módulo 3) com capítulo e intervalo de páginas declarados |
+| Videoaula (YouTube) | Registro de link, título, transcrição com timestamps quando disponível (sem inventar) |
 | Recurso desconhecido | Registrado como não suportado (nunca ignorado silenciosamente) |
 
 ## Limitações conhecidas
@@ -83,7 +88,9 @@ harnesses de teste isolados (`npm run test:live`) e nunca no executável distrib
 npm test
 ```
 
-Executa as suítes determinísticas (11 suítes; sem AVA, sem credenciais, sem rede).
+Executa as suítes determinísticas (sem AVA, sem credenciais, sem rede). O número de
+suítes cresce com a cobertura; o resumo final informa `suites=`/`falhas=` e retorna
+código não nulo se qualquer caso falhar.
 Testes **live** (que exigem login real e acesso ao AVA) ficam em comando separado e
 **não** rodam na CI:
 
