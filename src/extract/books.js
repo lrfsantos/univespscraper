@@ -229,6 +229,7 @@ function validateContent({ text, expected, kind }) {
     midOk: false,
     endOk: false,
     chapterOk: null,
+    pageRangeOk: null,
     pageRangeNote: null,
     repetitions: [],
     warnings: [],
@@ -253,7 +254,11 @@ function validateContent({ text, expected, kind }) {
   if (!v.midOk) v.warnings.push('meio-nao-validado');
 
   if (kind === 'pageid') {
-    v.endOk = !!expected && !!expected.reachedChapterEnd;
+    // O fim pode ser confirmado pelo limite do CAPÍTULO (reachedChapterEnd) OU,
+    // quando o AVA declarou um intervalo de páginas (Seção 4.3), pela confirmação
+    // do FIM do intervalo pela paginação impressa (rangeEndConfirmed).
+    const rangeEndSatisfies = !!(expected && expected.rangeEnd != null && expected.rangeEndConfirmed === true);
+    v.endOk = !!(expected && (expected.reachedChapterEnd || rangeEndSatisfies));
     if (!v.endOk) v.warnings.push(expected && expected.maxPagesHit ? 'fim-nao-confirmado-limite-de-paginas' : 'fim-de-capitulo-nao-confirmado');
   } else {
     // Issue A: fim do capítulo EPUB exige evidência ESTRUTURAL (limite alcançado),
@@ -272,7 +277,7 @@ function validateContent({ text, expected, kind }) {
     v.warnings.push(`conteudo-de-outro-capitulo/pagina-incluido (${expected.unexpectedContent.length})`);
   }
 
-  v.repetitions = detectRepetitions(t);
+    v.repetitions = detectRepetitions(t);
   for (const r of v.repetitions) v.warnings.push(`repeticao-suspeita (${r.count}x, ${r.length} chars)`);
 
   if (expected && expected.chapter) {
@@ -291,6 +296,23 @@ function validateContent({ text, expected, kind }) {
       const capRe = new RegExp(`cap[ií]tulo\\s*${expected.chapter}\\b`, 'i');
       v.chapterOk = capRe.test(t);
       if (!v.chapterOk) v.warnings.push(`capitulo-${expected.chapter}-nao-confirmado-no-texto`);
+    }
+  }
+  // Seção 4.3: intervalo de páginas declarado pelo AVA. Só é confirmado quando o
+  // início e o fim foram observados pela paginação impressa, sem páginas ausentes
+  // nem conteúdo além do intervalo. Sem confirmação → nunca integral.
+  if (expected && expected.rangeStart != null) {
+    const startReached = expected.rangeStartConfirmed === true;
+    const endReached = expected.rangeEndConfirmed === true;
+    const missing = Number(expected.rangeMissingPages) > 0;
+    const overshoot = Number(expected.rangeOvershootAfter) > 0;
+    v.pageRangeOk = startReached && endReached && !missing && !overshoot;
+    if (v.pageRangeOk) {
+      v.pageRangeNote = expected.rangeEnd != null ? `${expected.rangeStart}..${expected.rangeEnd}` : `a partir de ${expected.rangeStart}`;
+    } else {
+      v.warnings.push('intervalo-de-paginas-nao-confirmado');
+      if (missing) v.warnings.push(`paginas-ausentes-no-intervalo (${expected.rangeMissingPages})`);
+      if (overshoot) { v.unexpectedContent.push('conteudo-fora-do-intervalo-solicitado'); v.warnings.push('conteudo-fora-do-intervalo-solicitado'); }
     }
   }
   // O título do livro pode aparecer no sumário/cabeçalho sem que o capítulo
@@ -314,6 +336,8 @@ function statusForBook({ format, validation, readerLoaded, chapterNotFound, expe
   if (!validation.noNonsense) return 'inaccessible';
 
   const chapterRequired = !!(expected && expected.chapter);
+  // Seção 4.3: intervalo de páginas declarado pelo AVA exige confirmação própria.
+  const rangeRequired = !!(expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)));
   const integral =
     validation.hasText &&
     validation.noNonsense &&
@@ -321,6 +345,7 @@ function statusForBook({ format, validation, readerLoaded, chapterNotFound, expe
     validation.midOk &&
     validation.endOk &&
     (!chapterRequired || validation.chapterOk === true) &&
+    (!rangeRequired || validation.pageRangeOk === true) &&
     (!validation.ambiguousPages || validation.ambiguousPages === 0) &&
     (!validation.unexpectedContent || validation.unexpectedContent.length === 0) &&
     (!validation.repetitions || validation.repetitions.length === 0) &&
@@ -1160,12 +1185,30 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
   let uniqueCharsTotal = 0;
   let prevHash = null;
 
+  // Seção 4.3: o intervalo de páginas declarado pelo AVA (expected.pageRange)
+  // PARTICIPA da navegação e validação quando presente (mesmo junto do capítulo).
+  // Seleção pela PAGINAÇÃO IMPRESSA (distinta do índice interno pageid); sem
+  // paginação confiável o intervalo NÃO é confirmado (tratamento conservador).
+  const rangeStart = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)) ? Number(expected.pageRange.start) : null;
+  const rangeEnd = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.end)) ? Number(expected.pageRange.end) : null;
+  const rangePrintedSeen = new Set();
+  let rangeStartConfirmed = false;
+  let rangeEndConfirmed = false;
+  let rangeMissingPages = 0;
+  let rangeOvershootAfter = 0;
+
   let prevState = await driver.state();
   for (let i = 0; i < maxPages; i++) {
     const curPage = prevState.printed;
     if (nextChapterPage && curPage != null && curPage >= nextChapterPage) {
       reachedChapterEnd = true; steps.push('pagina-limite-capitulo'); break;
     }
+    // Para ao ULTRAPASSAR o fim do intervalo declarado — confirma o fim do intervalo.
+    if (rangeEnd != null && curPage != null && curPage > rangeEnd) {
+      rangeEndConfirmed = true; steps.push('pagina-limite-intervalo'); break;
+    }
+    // Só captura dentro do intervalo solicitado (nada antes do início).
+    const inRange = rangeStart == null || (curPage != null && curPage >= rangeStart);
 
     const sync = await syncCaptureFrame(driver, prevState, prevHash, 8000);
     audit.push(sync.audit);
@@ -1176,10 +1219,18 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
       ambiguousCount++;
       steps.push('associacao-ambigua');
     } else if (sync.status === 'captured') {
-      collected.push({ page: sync.printed, pageid: sync.pageid, text: sync.text });
-      uniqueCharsTotal += sync.chars;
-      rawCharsTotal += sync.chars;
-      prevHash = sync.hash;
+      if (inRange) {
+        collected.push({ page: sync.printed, pageid: sync.pageid, text: sync.text });
+        uniqueCharsTotal += sync.chars;
+        rawCharsTotal += sync.chars;
+        prevHash = sync.hash;
+      }
+      if (sync.printed != null) {
+        if (rangeStart != null && sync.printed >= rangeStart) rangeStartConfirmed = true;
+        if (rangeEnd != null && sync.printed >= rangeEnd) rangeEndConfirmed = true;
+        if (rangeEnd != null && sync.printed > rangeEnd) rangeOvershootAfter++;
+        if (inRange) rangePrintedSeen.add(sync.printed);
+      }
     } else {
       steps.push(sync.reason === 'frame-nao-atualizou-conteudo' ? 'frame-sem-conteudo-atualizado' : 'sem-frame-identificavel');
       break;
@@ -1196,6 +1247,15 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     prevState = await driver.state();
   }
   if (!reachedChapterEnd && collected.length >= maxPages) { maxPagesHit = true; steps.push('limite-de-paginas'); }
+
+  // Páginas ausentes DENTRO do intervalo (apenas quando ambos os limites são
+  // numéricos e o fim foi alcançado): conta as páginas impressas esperadas que não
+  // apareceram na captura — sinal de salto/falha, rebaixa a confirmação.
+  if (rangeStart != null && rangeEnd != null && rangeEnd >= rangeStart) {
+    let covered = 0;
+    for (let p = rangeStart; p <= rangeEnd; p++) if (rangePrintedSeen.has(p)) covered++;
+    rangeMissingPages = Math.max(0, (rangeEnd - rangeStart + 1) - covered);
+  }
 
   if (collected.length && nextChapter) {
     const last = collected[collected.length - 1];
@@ -1215,6 +1275,12 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     discardedCount,
     startChapterPage,
     nextChapterPage,
+    rangeStart,
+    rangeEnd,
+    rangeStartConfirmed,
+    rangeEndConfirmed,
+    rangeMissingPages,
+    rangeOvershootAfter,
     pageSequence: collected.map((p) => p.page),
     pageidSequence: collected.map((p) => p.pageid),
     collectedHashes: collected.map((p) => ({ page: p.page, pageid: p.pageid, chars: p.text.trim().length, sha256: sha256(p.text.trim()) })),
@@ -1224,7 +1290,7 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
   const chapterPageRangeConfirmed = !!(nextChapterPage && reachedChapterEnd);
   const validation = validateContent({
     text,
-    expected: { ...expected, reachedChapterEnd, maxPagesHit, chapterPageRangeConfirmed, startChapterPage, nextChapterPage, ambiguousPages: ambiguousCount, unexpectedContent },
+    expected: { ...expected, reachedChapterEnd, maxPagesHit, chapterPageRangeConfirmed, startChapterPage, nextChapterPage, ambiguousPages: ambiguousCount, unexpectedContent, rangeStart, rangeEnd, rangeStartConfirmed, rangeEndConfirmed, rangeMissingPages, rangeOvershootAfter },
     kind: 'pageid',
   });
 
@@ -1247,6 +1313,12 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     pages: collected.length,
     reachedChapterEnd,
     maxPagesHit,
+    rangeStart,
+    rangeEnd,
+    rangeStartConfirmed,
+    rangeEndConfirmed,
+    rangeMissingPages,
+    rangeOvershootAfter,
     tocPages,
     error: null,
   };

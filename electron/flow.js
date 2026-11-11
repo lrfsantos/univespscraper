@@ -189,6 +189,8 @@ async function extractResource({ app, win, resource, weekDir, logger, seen, cour
     entry.expected = { chapter: expected.chapter, hasChapter: expected.hasChapter, book: expected.book, pageRange: expected.pageRange, hasPageRange: expected.hasPageRange };
     entry.evidenceNotes = b.evidenceNotes || null;
     entry.endOk = b.validation ? b.validation.endOk : null;
+    entry.pageRangeOk = b.validation ? b.validation.pageRangeOk : null;
+    entry.pageRangeNote = b.validation ? b.validation.pageRangeNote : null;
     entry.identifiedPages = b.validation && b.validation.identifiedPages != null ? b.validation.identifiedPages : null;
     entry.xhtmlDocs = b.xhtmlDocs != null ? b.xhtmlDocs : null;
     entry.syncNotes = b.syncNotes || null;

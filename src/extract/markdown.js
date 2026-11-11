@@ -143,6 +143,8 @@ function renderReadingDocument({ entry, course, week, meta = {} }) {
     line('Data da extração', m.extractedAt),
     line('Evidência de começo/meio/fim', entry.evidenceNotes || null),
     line('Evidência do limite estrutural do capítulo', entry.endOk === true ? 'confirmado' : (entry.endOk === false ? 'não confirmado' : '—')),
+    line('Intervalo de páginas declarado confirmado', entry.pageRangeOk === true ? 'sim' : (entry.pageRangeOk === false ? 'não (conservador)' : '—')),
+    line('Faixa de páginas extraída', entry.pageRangeNote),
     line('Páginas identificadas', entry.identifiedPages != null ? entry.identifiedPages : null),
     line('Documentos XHTML capturados (EPUB)', entry.xhtmlDocs != null ? entry.xhtmlDocs : null),
     line('Observações de sincronização', entry.syncNotes || null),
