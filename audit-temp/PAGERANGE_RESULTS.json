@@ -1,0 +1,34 @@
+{
+  "ts": "2026-11-11T04:30:39.826Z",
+  "results": [
+    {
+      "id": "R-3",
+      "title": "4.3: início do intervalo não alcançado → conservador (não integral)",
+      "status": "PASS",
+      "detail": "startConfirmed=false rangeOk=null status=not_found"
+    },
+    {
+      "id": "R-2",
+      "title": "4.3: página ausente no intervalo (salto) → intervalo NÃO confirmado (conservador)",
+      "status": "PASS",
+      "detail": "ausentes=1 rangeOk=false"
+    },
+    {
+      "id": "R-1",
+      "title": "4.3: intervalo de páginas confirmado — captura exatamente 10..12 pela paginação impressa e para no fim",
+      "status": "PASS",
+      "detail": "capturadas=10,11,12 rangeOk=true steps=pagina-limite-intervalo"
+    },
+    {
+      "id": "R-4",
+      "title": "4.3: capítulo + intervalo simultâneos — o intervalo encerra sem perder o capítulo",
+      "status": "PASS",
+      "detail": "rangeOk=true chapterOk=false reachedChapterEnd=false"
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  }
+}

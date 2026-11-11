@@ -1,0 +1,36 @@
+{
+  "app": "UnivespStudyTool",
+  "version": "1.0.0",
+  "branch": "review/pre-release-2026-11-07",
+  "commit": "f5aa45abf70fab6ed59b1738173fcded64a55075",
+  "build": {
+    "date": "2026-11-11T01:04:25Z",
+    "target": "portable (win32 x64)",
+    "tool": "electron-builder 26.18.0",
+    "electron": "45.2.1",
+    "electron_manifest": "^45.2.3",
+    "node_embedded": "24.22.1",
+    "chromium_embedded": "156.0.8078.75",
+    "size_bytes": 124889576,
+    "sha256": "D16D5A80E121ACFE982114231E6A723A31EA2C483976ED341AD22EC74983CB45",
+    "signed": false,
+    "icon": "default Electron icon",
+    "asar_verified": {
+      "electron/browser.js": true,
+      "electron/flow.js": true,
+      "electron/workdir.js": true,
+      "src/extract/markdown.js": true,
+      "src/extract/pdfs.js": true
+    },
+    "smoke_test": {
+      "win_unpacked_launch": "pass",
+      "app_alive_after_10s": true,
+      "portable_exe_run": "blocked_by_environment_policy_WDAC (documented; needs owner's authorized Windows)"
+    }
+  },
+  "notes": [
+    "win-unpacked abriu e permaneceu ativo por 10s (smoke test básico).",
+    "A abertura da janela auxiliar do navegador no pacote e o fluxo completo (login manual -> extração -> ZIP) dependem de validação prática do proprietário em Windows/AVA autorizados.",
+    "Executável não assinado: Windows pode exibir alertas SmartScreen/Defender."
+  ]
+}
