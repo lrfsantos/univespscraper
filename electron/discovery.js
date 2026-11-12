@@ -108,13 +108,16 @@ function balancedElement(tokens, startIdx, name) {
 // Separa a SITUAÇÃO acadêmica da DISCIPLINA da DISPONIBILIDADE real de acesso.
 // Correção B: palavras como "concluída", "encerrada", "inativa" ou "antiga"
 // descrevem a situação acadêmica, NÃO provam que o conteúdo está inacessível.
-// Uma matéria só é desabilitada (available=false) quando há evidência concreta
-// de que o conteúdo não pode ser acessado.
-const INDISPONIVEL_EVIDENCIA_RE = /indispon[ií]vel|n[aã]o dispon[ií]vel|sem oferta|fora do ar|acesso negado|n[aã]o autorizado|matr[ií]cula n[aã]o dispon[ií]vel|vagas encerradas/i;
+// Seção 3.4: "sem oferta" e "vagas encerradas" são situação acadêmica — disciplinas
+// antigas com esses rótulos continuam consultáveis. Uma matéria só é desabilitada
+// (available=false) diante de EVIDÊNCIA CONCRETA de bloqueio de acesso (permissão
+// negada / não autorizado / fora do ar / indisponível).
+const INDISPONIVEL_EVIDENCIA_RE = /indispon[ií]vel|n[aã]o dispon[ií]vel|fora do ar|acesso negado|n[aã]o autorizado|permiss[ãa]o negada|forbidden|matr[ií]cula n[aã]o dispon[ií]vel/i;
 const SITUACAO_RE = [
   { nome: 'indisponivel', re: INDISPONIVEL_EVIDENCIA_RE },
   { nome: 'concluida', re: /conclu[ií]da|conclu[ií]do/ },
   { nome: 'encerrada', re: /encerrada|encerrado|fechada/ },
+  { nome: 'sem vagas', re: /vagas encerradas/ },
   { nome: 'inativa', re: /\binativa\b|\binativo\b|sem oferta/ },
 ];
 

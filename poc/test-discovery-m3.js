@@ -240,6 +240,27 @@ const COURSE_HTML = [
     record({ id: 'D-9', title: 'P1 (2): isIgnoredActivity normaliza acentos/caixa/espaços/numeração e não descarta "Introdução"', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(samples) });
   }
 
+  // --- P1 (3.4): disciplinas antigas — "sem oferta"/"vagas encerradas" são situação
+  // acadêmica, NÃO bloqueio de acesso; só evidência concreta desabilita.
+  {
+    const html = [
+      '<div class="course-list">',
+      '  <a href="https://ava.univesp.br/course/view.php?id=201">Administracao Publica (ADM201) - sem oferta</a>',
+      '  <a href="https://ava.univesp.br/course/view.php?id=202">Calculo Numerico (CAL202) - vagas encerradas</a>',
+      '  <a href="https://ava.univesp.br/course/view.php?id=203">Direito (DIR203) - acesso negado</a>',
+      '  <a href="https://ava.univesp.br/course/view.php?id=204">Economia (ECO204)</a>',
+      '</div>',
+    ].join('\n');
+    const courses = parseCoursesFromHtml(html);
+    const byId = (id) => courses.find((c) => c.id === String(id));
+    const ok =
+      byId(201).available === true && byId(201).situacao === 'inativa' &&
+      byId(202).available === true && (byId(202).situacao === 'sem vagas' || byId(202).situacao === 'encerrada') &&
+      byId(203).available === false && byId(203).situacao === 'indisponivel' &&
+      byId(204).available === true && byId(204).situacao === 'ativa';
+    record({ id: 'D-10', title: 'P1 (3.4): disciplinas "sem oferta"/"vagas encerradas" continuam consultáveis; só bloqueio concreto desabilita', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(courses.map((c) => ({ id: c.id, titulo: c.title, situacao: c.situacao, available: c.available }))) });
+  }
+
   // --- A6: status geral honesto ---
   {
     const c1 = overallStatus({ resources: [{ status: 'integral' }, { status: 'integral' }], zip: { ok: true } });

@@ -1,0 +1,46 @@
+{
+  "ts": "2026-11-12T11:25:43.131Z",
+  "results": [
+    {
+      "id": "V-1",
+      "title": "4.5: URL de leitor redigida — query string (code/token) e fragmento removidos",
+      "status": "PASS",
+      "detail": "redigida=https://leitor.bvirtual.com.br/reader/books/123/pageid/45"
+    },
+    {
+      "id": "V-2",
+      "title": "4.5: redação também cobre URLs não absolutas",
+      "status": "PASS",
+      "detail": "absoluta=https://x/y relativa=valor"
+    },
+    {
+      "id": "V-3",
+      "title": "4.5: leitor BVirtual tipo EPUB é classificado por conteúdo estruturado (não por aparência)",
+      "status": "PASS",
+      "detail": "format=epub"
+    },
+    {
+      "id": "V-4",
+      "title": "4.5: leitor paginado (pageid) e plataforma BVirtual são distinguidos por evidência técnica",
+      "status": "PASS",
+      "detail": "pageid=pageid bv=bvpdf"
+    },
+    {
+      "id": "V-5",
+      "title": "4.5: diagnoseReader produz relatório sanitizado (sem code/token/credenciais/conteúdo)",
+      "status": "PASS",
+      "detail": "classif=epub origem=https://ava.univesp.br/mod/lti/launch.php semDados=true tipos=html-doc,epub-content-frame"
+    },
+    {
+      "id": "V-6",
+      "title": "4.5: leitor paginado BVirtual é diagnosticado sem inventar extração textual",
+      "status": "PASS",
+      "detail": "classif=unknown evidenciaPdf=nao-observado"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

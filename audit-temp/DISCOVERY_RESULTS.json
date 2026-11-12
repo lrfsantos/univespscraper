@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-11T18:26:36.056Z",
+  "ts": "2026-11-12T11:24:38.906Z",
   "results": [
     {
       "id": "D-1",
@@ -44,6 +44,12 @@
       "detail": "{\"S1 Início\":true,\"S2 inicio\":true,\"início\":true,\"INICIO\":true,\"S1  Início \":true,\"S1Em Síntese\":true,\"S1 Em Síntese\":true,\"Em síntese\":true,\"em síntese\":true,\"EM SINTESE\":true,\"S1 Videoaulas\":false,\"S1 Material base\":false,\"Aprofundando o tema\":false,\"Introdução\":false,\"Texto-base - Capítulo 1\":false}"
     },
     {
+      "id": "D-10",
+      "title": "P1 (3.4): disciplinas \"sem oferta\"/\"vagas encerradas\" continuam consultáveis; só bloqueio concreto desabilita",
+      "status": "PASS",
+      "detail": "[{\"id\":\"201\",\"titulo\":\"Administracao Publica sem oferta\",\"situacao\":\"inativa\",\"available\":true},{\"id\":\"202\",\"titulo\":\"Calculo Numerico vagas encerradas\",\"situacao\":\"encerrada\",\"available\":true},{\"id\":\"203\",\"titulo\":\"Direito acesso negado\",\"situacao\":\"indisponivel\",\"available\":false},{\"id\":\"204\",\"titulo\":\"Economia\",\"situacao\":\"ativa\",\"available\":true}]"
+    },
+    {
       "id": "D-4",
       "title": "A6: overallStatus distingue concluido / concluido com pendencias / falhou",
       "status": "PASS",
@@ -57,8 +63,8 @@
     }
   ],
   "summary": {
-    "total": 9,
-    "passed": 9,
+    "total": 10,
+    "passed": 10,
     "failed": 0
   }
 }

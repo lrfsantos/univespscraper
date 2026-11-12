@@ -1455,6 +1455,89 @@ async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
   });
 }
 
+// ---- Seção 4.5: diagnóstico sanitizado dos leitores (BVirtual/VitalSource) ----
+
+// Redige uma URL para relatórios/logs: remove query string, fragmento e credenciais.
+// Parâmetros como `code` (códigos temporários observados na gravação), tokens e
+// sessão são tratados como sensíveis — nunca reproduzidos. Puro e testável.
+function sanitizeUrlForReport(url, { keepHostPath = true } = {}) {
+  if (url == null) return null;
+  const s = String(url);
+  if (!keepHostPath) return '<url-omitida>';
+  try {
+    const u = new URL(s);
+    // Redação por padrão de toda a query string (pode conter code/token/sessão).
+    const clean = u.origin + u.pathname;
+    return clean.length > 200 ? clean.slice(0, 200) + '…' : clean;
+  } catch {
+    // Não é URL absoluta: remove qualquer coisa que pareça query/credencial.
+    const withoutQuery = s.split(/[?#]/, 1)[0];
+    return withoutQuery.length > 200 ? withoutQuery.slice(0, 200) + '…' : withoutQuery;
+  }
+}
+
+// Conteúdo bruto que nunca deve ir para relatório (credenciais/tokens/cookies).
+const SENSITIVE_REPORT_RE = /(password|senha|token|access_token|refresh_token|code=|authorization|cookie|session|login_hint|wantsurl)=/i;
+
+// Modo de diagnóstico SANITIZADO: abre o leitor (uma navegação), classifica-o e
+// gera relatório técnico SEM credenciais/tokens/query strings/conteúdo de livros.
+// Reutiliza as infraestruturas de observação/classificação de produção.
+// Retorna objeto serializável; usa redação por padrão em todas as URLs.
+async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
+  const started = Date.now();
+  const attempts = [];
+  let gotoOk = false;
+  try { await win.goto(launchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }); gotoOk = true; } catch (e) { attempts.push('goto-falhou'); }
+  if (gotoOk) await waitTimeout(1500);
+  attempts.push('goto=' + (gotoOk ? 'ok' : 'falhou'));
+  const det = await observeReader(app, opts.observeTimeoutMs != null ? opts.observeTimeoutMs : 25000, 1500);
+  attempts.push('classificacao=' + det.format);
+  const frames = await collectFrames(app);
+  const types = new Set();
+  for (const f of frames) {
+    const clean = sanitizeUrlForReport(f.url);
+    const hay = String(f.url || '');
+    if (/\.pdf($|[?#])/i.test(hay)) types.add('pdf-link');
+    if (/\.x?html?($|[?#])/i.test(hay) && !/\.pdf/i.test(hay)) types.add('html-doc');
+    if (/\/epub\/OEBPS\/Text\//i.test(hay)) types.add('epub-content-frame');
+    if (/\/pages\/\d+\/content/i.test(hay)) types.add('pageid-content-frame');
+    if (/jigsaw\.minhabiblioteca/i.test(hay)) types.add('jigsaw-frame');
+    if (clean) types.add('host:' + (new URL(f.url).hostname || '').replace(/^www\./, ''));
+  }
+  const typesList = [...types].filter((t) => !t.startsWith('host:'));
+  const hosts = [...types].filter((t) => t.startsWith('host:'));
+  let pdfEvidence = 'nao-observado';
+  let epdfEvidence = 'nao-observado';
+  if (typesList.some((t) => /pdf/i.test(t))) pdfEvidence = 'indicio-de-pdf-na-url';
+  if (typesList.some((t) => /epub-content-frame|html-doc/i.test(t))) epdfEvidence = 'indicio-de-conteudo-html/epub';
+  const report = {
+    ts: new Date().toISOString(),
+    origemAva: sanitizeUrlForReport(launchUrl),
+    dominioOrigem: (() => { try { return new URL(launchUrl).hostname; } catch { return null; } })(),
+    tituloAtividadeAva: expected.text || null,
+    tituloLivroEsperado: expected.book || null,
+    classificacao: det.format,
+    failureType: det.failureType || null,
+    janelas: allWindows(app).length,
+    framesDeConteudo: frames.length,
+    dominiosObservados: hosts.map((h) => h.slice(5)).filter(Boolean).slice(0, 8),
+    tiposDeConteudo: typesList.slice(0, 12),
+    evidenciaPdf: pdfEvidence,
+    evidenciaConteudoHtmlEpub: epdfEvidence,
+    metodoNavegacao: det.format === 'epub' ? 'documentos-EPUB' : det.format === 'pageid' ? 'paginas-pageid' : 'nao-determinado',
+    estrategiaExtrai: det.format === 'epub' || det.format === 'pageid' ? 'extração estrutural' : 'não aplicável (formato não reconhecido/canvas)',
+    carregamentoMs: Date.now() - started,
+    attempts,
+    limitacoes: [
+      'diagnóstico baseado em observação de frames/URLs na sessão autenticada',
+      'presença de PDF/EPUB só pode ser CONFIRMADA por inspeção de rede/DOM com sessão real',
+      'query strings (ex.: parâmetro code) são redigidas por padrão',
+    ],
+    semDadosSensiveis: !SENSITIVE_REPORT_RE.test(JSON.stringify({ origemAva: sanitizeUrlForReport(launchUrl), dominios: hosts })),
+  };
+  return report;
+}
+
 module.exports = {
   extractBook,
   detectFormat,
@@ -1495,4 +1578,6 @@ module.exports = {
   epubDocPathFromUrl,
   navigateEpubNextDoc,
   waitEpubDocChange,
+  sanitizeUrlForReport,
+  diagnoseReader,
 };
