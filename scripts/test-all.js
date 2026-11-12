@@ -34,6 +34,7 @@ const suites = [
   { name: 'poc/test-pdf-m3.js', out: 'PDF_RESULTS.json' },
   { name: 'poc/test-books-m3.js', out: 'BOOKS_RESULTS.json' },
   { name: 'poc/test-bvirtual-m3.js', out: 'BVIRTUAL_RESULTS.json' },
+  { name: 'poc/test-my-courses-m3.js', out: 'MYCOURSES_RESULTS.json' },
 ];
 
 let failed = 0;

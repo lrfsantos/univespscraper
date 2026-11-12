@@ -1,0 +1,52 @@
+{
+  "ts": "2026-11-12T12:49:30.718Z",
+  "results": [
+    {
+      "id": "M-1",
+      "title": "Meus cursos: opções do seletor classificadas por heurística (situação/período/categoria)",
+      "status": "PASS",
+      "detail": "classificacao-ok"
+    },
+    {
+      "id": "M-2",
+      "title": "Meus cursos: cartão preserva nome/código/período/situação/progresso (código LEGADO_ incluso)",
+      "status": "PASS",
+      "detail": "[{\"id\":\"101\",\"code\":\"ADM270\",\"period\":\"4º Bimestre (2026)\",\"situation\":\"Em andamento\",\"progress\":\"75%\"},{\"id\":\"102\",\"code\":\"LEGADO_COM100\",\"period\":\"Legado\",\"situation\":\"Legado\",\"progress\":null}]"
+    },
+    {
+      "id": "M-3",
+      "title": "Meus cursos: percorre situações+períodos+Legado+sem período; dedup por id preservando categorias",
+      "status": "PASS",
+      "detail": "unicos=7 ocorrencias=9 dedup=2 categorias=8 ids=101,103,104,105,110,111,112 c101Cat=4º Bimestre (2026)|Todos|Em andamento"
+    },
+    {
+      "id": "M-4",
+      "title": "Meus cursos: paginação percorrida (página 2 não é perdida)",
+      "status": "PASS",
+      "detail": "unicos=3 ids=201,202,203"
+    },
+    {
+      "id": "M-5",
+      "title": "Meus cursos: Legado e encerrados continuam acessíveis (situação ≠ permissão)",
+      "status": "PASS",
+      "detail": "unicos=2 negados=0"
+    },
+    {
+      "id": "M-6",
+      "title": "Meus cursos: acesso negado explícito marcado e contabilizado (sem quebrar descoberta)",
+      "status": "PASS",
+      "detail": "negados=1 neg402=false"
+    },
+    {
+      "id": "M-7",
+      "title": "Meus cursos: relatório por categoria (ocorrências/deduplicados/únicos) honesto",
+      "status": "PASS",
+      "detail": "{\"byCategory\":{\"Legado\":1,\"Todos\":2,\"Em andamento\":1},\"summary\":{\"categoriasPercorridas\":3,\"ocorrencias\":4,\"cursosUnicos\":3,\"deduplicados\":1,\"acessoNegado\":0,\"acessiveis\":3,\"completo\":true}}"
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0
+  }
+}

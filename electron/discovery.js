@@ -103,6 +103,90 @@ function balancedElement(tokens, startIdx, name) {
   return null;
 }
 
+// ---------- Parser de cartões do "Meus cursos" (nova visão com seletor) ----------
+
+// Normaliza um rótulo de opção do seletor em um grupo heurístico. NÃO presume que
+// o seletor é uma combinação de filtros independentes — apenas classifica a opção
+// para fins de relatório/ordem. Grupos: situacao | periodo | categoria | outros.
+function classifySelectorOption(label) {
+  const t = String(label || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/todos|em andamento|nao iniciad|encerrad/.test(t)) return 'situacao';
+  if (/\d+\s*bimestre|bimestre|semestre|\bano\b|\(\d{4}\)/.test(t)) return 'periodo';
+  if (/legado|nenhum periodo|favorit|removid/.test(t)) return 'categoria';
+  return 'categoria';
+}
+
+// Extrai metadados de um cartão de disciplina. `cardInner` é o HTML interno do
+// cartão; `fallbackText` é o texto bruto (usado quando não há âncora).
+function extractCardMeta(cardInner, baseUrl, optionLabel) {
+  const inner = String(cardInner || '');
+  const linkM = inner.match(/<a[^>]*href=["']([^"']*course\/view\.php\?id=(\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i);
+  const idAttr = (inner.match(/data-(?:course|courseid|id)\s*=\s*["']?(\d+)/i) || [])[1];
+  const id = linkM ? linkM[2] : idAttr || null;
+  if (id == null) return null;
+  const url = linkM ? resolveUrl(linkM[1], baseUrl) : `${baseUrl}/course/view.php?id=${id}`;
+  const name = (linkM ? linkM[3] : inner).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const grab = (attr, re) => {
+    const v = (inner.match(new RegExp(`data-${attr}\\s*=\\s*["']([^"']+)["']`, 'i')) || [])[1] || null;
+    if (v) return v;
+    const spans = inner.split(/<span[^>]*>/gi);
+    for (const s of spans) {
+      const t = s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      if (re && re.test(t)) return t;
+    }
+    return null;
+  };
+  const code =
+    (inner.match(/data-code\s*=\s*["']([^"']+)["']/i) || [])[1] ||
+    (name.match(/\(([A-Z]{2,8}\d{2,4})\)/) || [])[1] ||
+    (name.match(/\b(LEGADO_[A-Z]{2,8}\d{2,4}|[A-Z]{2,8}\d{2,4})\b/i) || [])[1] ||
+    null;
+  const progress = (inner.match(/data-progress\s*=\s*["']([^"']+)["']/i) || [])[1] || grab('progress', /\d+\s*%/);
+  const turma = (inner.match(/data-turma\s*=\s*["']([^"']+)["']/i) || [])[1] || grab('turma', /^[Tt]?\d{2,4}$/);
+  const period = (inner.match(/data-period\s*=\s*["']([^"']+)["']/i) || [])[1] || grab('period', /\bimestre|\bano\b|\d{4}/) || (optionLabel && /bimestre|\(\d{4}\)/.test(optionLabel) ? optionLabel : null);
+  const situation = (inner.match(/data-situation\s*=\s*["']([^"']+)["']/i) || [])[1] || grab('situation', /andamento|encerrad|conclu[ií]d|n[aã]o iniciad|inativ|legado|sem oferta|vagas encerradas/i);
+  const accessDenied = /acesso negado|n[aã]o autorizado|permiss[ãa]o negada|forbidden/i.test(inner);
+  return {
+    id,
+    url,
+    name: name || `Disciplina ${id}`,
+    code,
+    turma,
+    period,
+    situation,
+    progress,
+    accessible: !accessDenied,
+  };
+}
+
+// Extrai TODOS os cartões de disciplinas do HTML da visão "Meus cursos" (cartões
+// + links diretos), sem deduplicação (quem deduplica é o orquestrador, preservando
+// as categorias). Cada cartão retorna metadados canônicos. Puro e testável.
+function parseCourseCardsFromHtml(html, baseUrl = 'https://ava.univesp.br', optionLabel = null) {
+  const out = [];
+  // 1) Cartões com classe de cartão (course-card / course-item / course-block).
+  const blockRe = /<([a-z][a-z0-9]*)\b[^>]*class=["'][^"']*\bcourse[-_ ]?(?:card|item|block)\b[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi;
+  let m;
+  while ((m = blockRe.exec(html)) !== null) {
+    // Passa o cartão INTEIRO (abertura + inner): os data-* ficam na tag de abertura.
+    const card = extractCardMeta(m[0], baseUrl, optionLabel);
+    if (card) out.push(card);
+  }
+  // 2) Fallback: âncoras diretas a cursos fora de cartões (visão clássica).
+  const hrefRe = /<a[^>]*href=["']([^"']*course\/view\.php\?id=(\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let n;
+  while ((n = hrefRe.exec(html)) !== null) {
+    const id = n[2];
+    const already = out.some((c) => String(c.id) === String(id));
+    if (already) continue;
+    const url = resolveUrl(n[1], baseUrl);
+    const name = n[3].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const code = (name.match(/\(([A-Z]{2,8}\d{2,4})\)/) || [])[1] || (name.match(/\b(LEGADO_[A-Z]{2,8}\d{2,4})\b/i) || [])[1] || null;
+    out.push({ id, url, name, code, turma: null, period: optionLabel && /bimestre|\(\d{4}\)/.test(optionLabel) ? optionLabel : null, situation: null, progress: null, accessible: true });
+  }
+  return out;
+}
+
 // ---------- Parser de disciplinas (/my/courses.php) ----------
 
 // Separa a SITUAÇÃO acadêmica da DISCIPLINA da DISPONIBILIDADE real de acesso.
@@ -331,4 +415,4 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   return expected;
 }
 
-module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, scanTags, attrsOf, balancedElement, inferSituacao };
+module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, classifySelectorOption, parseCourseCardsFromHtml, scanTags, attrsOf, balancedElement, inferSituacao };

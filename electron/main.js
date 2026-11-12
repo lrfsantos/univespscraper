@@ -7,6 +7,7 @@ const { installTempProfile } = require('./profile');
 const { makeWorkDir, cleanupWorkDir, cleanupResidualWorkDirs } = require('./workdir');
 const { createBrowserWindow: createAuxWindow, applyBrowserDefaults } = require('./browser');
 const { buildAuxEnv } = require('./env');
+const { discoverAllCourses } = require('./my-courses');
 const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
@@ -114,9 +115,13 @@ async function handleDiscoverCourses() {
     const ainda = await isLoggedIn(auxWin);
     if (!ainda) return { error: 'aguardando-login-manual', message: 'Você ainda não está autenticado. Conclua o login manual na janela do navegador e tente novamente.' };
   }
-  const { courses } = await discoverCourses(auxWin);
-  sendStatus('disciplinas-descobertas', { count: courses.length });
-  return { ok: true, courses };
+  // Descoberta COMPLETA: percorre o seletor "Meus cursos" (situação/períodos/
+  // categorias), páginas e "Mostrar: Todos", deduplicando por id e preservando
+  // categorias. Fallback para a visão clássica quando não houver seletor.
+  const disc = await discoverAllCourses(auxWin);
+  const courses = disc.courses;
+  sendStatus('disciplinas-descobertas', { count: courses.length, summary: disc.summary });
+  return { ok: true, courses, summary: disc.summary, categories: disc.byCategory };
 }
 
 async function handleDiscoverWeeks(courseIds) {
