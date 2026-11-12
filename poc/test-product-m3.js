@@ -53,12 +53,30 @@ function record(entry) {
     record({ id: 'P-B', title: 'B: semanas dinamicas (3 e 15; secao Geral nao e semana)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ tres: s3.filter((x) => x.relevant).length, quinze: s15.filter((x) => x.relevant).length }) });
   }
 
-  // C) Selecao respeitada
+  // C) Selecao respeitada — CAMINHO REAL: buildSelectionPlan (mesma função usada
+  //    pelo backend handleRunExtraction), com discover injetado na fronteira.
   {
-    const weeks = [{ id: '1', name: 'Semana 1' }, { id: '2', name: 'Semana 2' }, { id: '3', name: 'Semana 3' }];
-    const selected = weeks.filter((w) => ['1', '3'].includes(String(w.id)));
-    const ok = selected.length === 2 && selected.map((w) => w.id).join(',') === '1,3';
-    record({ id: 'P-C', title: 'C: extracao respeita exatamente as semanas selecionadas', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(selected.map((w) => w.id)) });
+    const courses = [
+      { id: '1', code: 'MAT100', title: 'Matematica' },
+      { id: '2', code: 'POR200', title: 'Portugues' },
+      { id: '3', code: 'FIS300', title: 'Fisica' },
+    ];
+    const mkWeeks = (n) => Array.from({ length: n }, (_, i) => ({ id: String(i + 1), name: 'Semana ' + (i + 1) }));
+    const discover = async (course) => ({ weeks: mkWeeks(course.id === '2' ? 0 : 8), sections: [] });
+
+    const planAll = await flow.buildSelectionPlan({ courses, selection: null, discover });
+    const planPartial = await flow.buildSelectionPlan({ courses, selection: [{ courseId: '1', weekIds: ['1', '3'] }], discover });
+    const planOne = await flow.buildSelectionPlan({ courses, selection: [{ courseId: '1', weekIds: ['5'] }], discover });
+    const planNone = await flow.buildSelectionPlan({ courses, selection: [{ courseId: '1', weekIds: [] }], discover });
+    const planExcluded = await flow.buildSelectionPlan({ courses, selection: [{ courseId: '3', weekIds: ['1'] }], discover });
+
+    const allOk = planAll.length === 3 && planAll.find((p) => p.course.id === '1').weeks.length === 8 && planAll.find((p) => p.course.id === '2').weeks.length === 0;
+    const partialOk = planPartial.length === 1 && planPartial[0].weeks.map((w) => w.id).join(',') === '1,3';
+    const oneOk = planOne.length === 1 && planOne[0].weeks.map((w) => w.id).join(',') === '5';
+    const noneOk = planNone.length === 1 && planNone[0].weeks.length === 0; // desmarcou tudo
+    const excludedOk = planExcluded.length === 1 && !planExcluded.some((p) => p.course.id === '1'); // matéria fora da seleção não entra
+    const ok = allOk && partialOk && oneOk && noneOk && excludedOk;
+    record({ id: 'P-C', title: 'C: seleção de semanas pelo caminho REAL (buildSelectionPlan): todas/parcial/uma/nenhuma/matéria excluída/matéria sem semanas', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ todas: planAll.map((p) => p.course.id + ':' + p.weeks.length).join(','), parcial: planPartial[0].weeks.map((w) => w.id).join(','), uma: planOne[0].weeks.map((w) => w.id).join(','), nenhuma: planNone[0].weeks.length, excluida: excludedOk }) });
   }
 
   // D) Integracao: modulos produzem status consumidos pelo fluxo
@@ -99,11 +117,23 @@ function record(entry) {
     record({ id: 'P-F', title: 'F: status honestos (concluido / com pendencias / falhou) - sem sucesso falso', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ c, p, f, pp }) });
   }
 
-  // G) Interface: selecao/desmarcacao
+  // G) Interface: lógica REAL de seleção — handlers de UI inspecionados + o payload
+  //    que a UI produz (array {courseId, weekIds}) executa o backend real para
+  //    todas/parcial/nenhuma. Sem números fixos inventados.
   {
-    const total = 12, selected = 7;
-    const ok = selected >= 1 && selected <= total;
-    record({ id: 'P-G', title: 'G: interface permite selecionar todas / desmarcar todas / parcial (contagem refletida)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ total, selected }) });
+    const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+    const hasAll = UI.includes("$('btn-all-weeks').addEventListener") && UI.includes('cb.checked = true');
+    const hasNone = UI.includes("$('btn-none-weeks').addEventListener") && UI.includes('cb.checked = false');
+    const buildsPayload = UI.includes('weekIds.push(cb.dataset.week)') && UI.includes('selection.push({ courseId, weekIds })');
+    const gate = UI.includes('Selecione ao menos uma semana') && UI.includes('window.api.runExtraction(selection)');
+    // 12 semanas reais; a UI produz weekIds dos checkboxes marcados: 7 marcados -> 7; "todas" -> 12; "nenhuma" -> 0.
+    const mkWeeks = (n) => Array.from({ length: n }, (_, i) => ({ id: String(i + 1), name: 'Semana ' + (i + 1) }));
+    const discover = async () => ({ weeks: mkWeeks(12), sections: [] });
+    const plan7 = await flow.buildSelectionPlan({ courses: [{ id: '1' }], selection: [{ courseId: '1', weekIds: mkWeeks(12).slice(0, 7).map((w) => w.id) }], discover });
+    const plan12 = await flow.buildSelectionPlan({ courses: [{ id: '1' }], selection: [{ courseId: '1', weekIds: mkWeeks(12).map((w) => w.id) }], discover });
+    const plan0 = await flow.buildSelectionPlan({ courses: [{ id: '1' }], selection: [{ courseId: '1', weekIds: [] }], discover });
+    const ok = hasAll && hasNone && buildsPayload && gate && plan7[0].weeks.length === 7 && plan12[0].weeks.length === 12 && plan0[0].weeks.length === 0;
+    record({ id: 'P-G', title: 'G: lógica real da UI (todas/nenhuma/marcar) inspecionada + payload executado no backend (7/12/0 semanas)', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ ui: hasAll && hasNone && buildsPayload && gate, sete: plan7[0].weeks.length, doze: plan12[0].weeks.length, zero: plan0[0].weeks.length }) });
   }
 
   // H) Video: identificacao sem rede (nao tenta transcricao real)
