@@ -199,12 +199,21 @@ async function extractResource({ app, win, resource, weekDir, logger, seen, cour
     entry.chars = b.text ? b.text.length : 0;
     entry.bookText = b.text || '';
     entry.format = b.format;
-    entry.expected = { chapter: expected.chapter, hasChapter: expected.hasChapter, book: expected.book, pageRange: expected.pageRange, hasPageRange: expected.hasPageRange };
+    entry.expected = { chapter: expected.chapter, hasChapter: expected.hasChapter, book: expected.book, author: expected.author || null, pageRange: expected.pageRange, hasPageRange: expected.hasPageRange };
+    // Seção 5.1/5.2: metadados REAIS — do OPF do EPUB (meta) quando disponível, ou
+    // do âncora do AVA (expected.book/author). Nunca inventa.
+    entry.bookName = (b.meta && b.meta.title) || expected.book || null;
+    entry.author = (b.meta && b.meta.author) || expected.author || null;
+    entry.publisher = (b.meta && b.meta.publisher) || null;
+    entry.edition = (b.meta && b.meta.year) ? `ano ${b.meta.year}` : null;
+    entry.metaOrigin = (b.meta && (b.meta.author || b.meta.title)) ? 'OPF do EPUB (metadados reais do pacote)' : (expected.book || expected.author ? 'âncora do AVA (título/autor declarados)' : null);
     entry.evidenceNotes = b.evidenceNotes || null;
     entry.endOk = b.validation ? b.validation.endOk : null;
     entry.pageRangeOk = b.validation ? b.validation.pageRangeOk : null;
     entry.pageRangeNote = b.validation ? b.validation.pageRangeNote : null;
-    entry.identifiedPages = b.validation && b.validation.identifiedPages != null ? b.validation.identifiedPages : null;
+    entry.identifiedPages = b.identifiedPages != null ? b.identifiedPages : (b.validation && b.validation.identifiedPages != null ? b.validation.identifiedPages : null);
+    entry.capturedPages = b.capturedPages != null ? b.capturedPages : null;
+    entry.duplicatePages = b.duplicatePages != null ? b.duplicatePages : null;
     entry.xhtmlDocs = b.xhtmlDocs != null ? b.xhtmlDocs : null;
     entry.syncNotes = b.syncNotes || null;
     if (b.text && b.text.trim().length > 100) {

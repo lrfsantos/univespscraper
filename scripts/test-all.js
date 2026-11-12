@@ -25,6 +25,7 @@ const suites = [
   'poc/test-videos-m3.js',
   'poc/test-html-m3.js',
   'poc/test-pdf-m3.js',
+  'poc/test-books-m3.js',
 ];
 
 let failed = 0;

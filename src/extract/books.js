@@ -562,6 +562,7 @@ async function fetchEpubPackageFromFetcher(contentUrl, fetcher) {
     navUsed: ncxXml ? 'ncx' : navHtml ? 'nav3' : 'none',
     opfAttempts,
     navAttempts,
+    meta: ep.parseOpfMetadata(opfText),
   };
 }
 
@@ -879,6 +880,7 @@ async function extractEpubViaAdapter(reader, expected, opts = {}) {
     attempts,
     validation,
     chapterNotFound,
+    meta: (pkgRes && pkgRes.meta) || null, // metadados REAIS do OPF (nunca inventados)
     structural: { ident, nextDocIdent, epubBoundaryConfirmed, epubChapterConfirmed, packageUsed, packageUnavailableReason, structVal, capturedDocIds: extractedDocIds, expectedDocCount: (structVal && structVal.boundaryKnown ? structVal.chapterIds.length : null), audit },
     error: null,
   };
@@ -1226,8 +1228,12 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
         prevHash = sync.hash;
       }
       if (sync.printed != null) {
-        if (rangeStart != null && sync.printed >= rangeStart) rangeStartConfirmed = true;
-        if (rangeEnd != null && sync.printed >= rangeEnd) rangeEndConfirmed = true;
+        // Confirmação CONSERVADORA (seção 5.4): o extremo só é confirmado quando a
+        // PÁGINA EXATA do intervalo é observada pela paginação impressa — ver uma
+        // página maior que o início não confirma que a página inicial foi alcançada;
+        // ver a última página do intervalo confirma o fim (o loop para ao passar dele).
+        if (rangeStart != null && sync.printed === rangeStart) rangeStartConfirmed = true;
+        if (rangeEnd != null && sync.printed === rangeEnd) rangeEndConfirmed = true;
         if (rangeEnd != null && sync.printed > rangeEnd) rangeOvershootAfter++;
         if (inRange) rangePrintedSeen.add(sync.printed);
       }
@@ -1311,6 +1317,15 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
     discardedCount,
     unexpectedContent,
     pages: collected.length,
+    // Seção 5.3: distinção entre páginas IDENTIFICADAS (números impressos distintos
+    // observados), CAPTURADAS (blocos efetivamente aceitos) e DUPLICADAS (números
+    // impressos que se repetiram — sinal de paginação duplicada).
+    identifiedPages: new Set(collected.filter((p) => p.page != null).map((p) => p.page)).size,
+    capturedPages: collected.length,
+    duplicatePages: (() => {
+      const uniq = new Set(collected.map((p) => (p.page != null ? `p${p.page}` : `i${p.pageid}`)));
+      return Math.max(0, collected.length - uniq.size);
+    })(),
     reachedChapterEnd,
     maxPagesHit,
     rangeStart,

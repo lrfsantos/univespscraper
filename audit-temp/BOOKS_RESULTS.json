@@ -1,0 +1,70 @@
+{
+  "ts": "2026-11-12T01:41:29.568Z",
+  "results": [
+    {
+      "id": "B-1",
+      "title": "5: parseOpfMetadata extrai título/autor/editora/ano/idioma REAIS do OPF",
+      "status": "PASS",
+      "detail": "{\"title\":\"Empreendedorismo: criação de novos negócios\",\"author\":\"Dornelas\",\"publisher\":\"Atlas\",\"year\":\"2021\",\"language\":\"pt-BR\"}"
+    },
+    {
+      "id": "B-2",
+      "title": "5: OPF sem metadados -> null; âncora AVA com \"| Autor\" expõe autor real",
+      "status": "PASS",
+      "detail": "{\"empty\":{\"title\":null,\"author\":null,\"publisher\":null,\"year\":null,\"language\":null},\"expected\":{\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"author\":\"Dornelas\"}}"
+    },
+    {
+      "id": "B-3",
+      "title": "5: intervalo [10..12] confirmado; identificadas=capturadas=3, duplicadas=0",
+      "status": "PASS",
+      "detail": "ident=3 capt=3 dup=0 cap=10,11,12 ok=true"
+    },
+    {
+      "id": "B-4",
+      "title": "5: início do intervalo nunca observado (página exata ausente) -> não confirmado, nunca integral",
+      "status": "PASS",
+      "detail": "start=false ok=false status=partial"
+    },
+    {
+      "id": "B-5",
+      "title": "5: fim do intervalo nunca observado (página exata ausente) -> não confirmado",
+      "status": "PASS",
+      "detail": "end=false ok=false status=partial"
+    },
+    {
+      "id": "B-6",
+      "title": "5: página ausente no intervalo -> não confirmado com aviso explícito",
+      "status": "PASS",
+      "detail": "ausentes=1 ok=false"
+    },
+    {
+      "id": "B-7",
+      "title": "5: paginação duplicada detectada (capturadas > identificadas distintas)",
+      "status": "PASS",
+      "detail": "ident=3 capt=4 dup=1"
+    },
+    {
+      "id": "B-8",
+      "title": "5: limite de capítulo pela paginação do sumário (para ao chegar ao início do cap. 2)",
+      "status": "PASS",
+      "detail": "fimCap=true status=integral"
+    },
+    {
+      "id": "B-9",
+      "title": "5: associação de página ambígua (dois frames) não inventa conteúdo",
+      "status": "PASS",
+      "detail": "status=not_found amb=3"
+    },
+    {
+      "id": "B-10",
+      "title": "5: documento do livro traz metadados reais, origem, faixa e páginas capturadas/duplicadas",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0
+  }
+}

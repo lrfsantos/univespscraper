@@ -319,6 +319,12 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   book = book.replace(/\(\s*p[aá]ginas?\s+[\d\s\-–—aà]+\s*\)\s*$/i, '').trim();
   book = book.replace(/[-–—]\s*leia\s+(?:o\s+cap[ií]tulo\s+\d+|as\s+p[aá]ginas?\s+[\d\s\-–—aà]+)\s*$/i, '').trim();
   if (book) expected.book = book;
+  // Autor declarado APÓS o "|" no âncora (ex.: "… | Autor") — metadado REAL do AVA.
+  const pipeParts = t.split('|');
+  if (pipeParts.length > 1) {
+    const author = pipeParts[pipeParts.length - 1].trim();
+    if (author && !/cap[ií]tulo|p[aá]ginas?/i.test(author)) expected.author = author;
+  }
   return expected;
 }
 

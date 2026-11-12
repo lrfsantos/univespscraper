@@ -459,6 +459,29 @@ function discoverNavTargets(pkg) {
   return { ncxHrefs, navHrefs };
 }
 
+// Metadados REAIS do pacote EPUB a partir do OPF (Dublin Core). Nunca inventa:
+// retorna somente o que consta no XML; campos ausentes ficam null.
+//   dc:title -> title | dc:creator -> author | dc:publisher -> publisher |
+//   dc:date -> year (4 primeiros dígitos) | dc:language -> language
+function parseOpfMetadata(opfXml) {
+  const out = { title: null, author: null, publisher: null, year: null, language: null };
+  const s = String(opfXml || '');
+  const grab = (tag) => {
+    const re = new RegExp(`<dc:${tag}[^>]*>([\\s\\S]*?)<\\/dc:${tag}>`, 'i');
+    const m = re.exec(s);
+    if (!m) return null;
+    const t = m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    return t || null;
+  };
+  out.title = grab('title');
+  out.author = grab('creator');
+  out.publisher = grab('publisher');
+  const date = grab('date');
+  if (date) { const ym = date.match(/\b(19|20)\d{2}\b/); out.year = ym ? ym[0] : null; }
+  out.language = grab('language');
+  return out;
+}
+
 // Parser completo a partir de strings (OPF + NCX e/ou nav.xhtml).
 // baseUrl: URL do diretório do OPF (produção por URL) — usada para resolver hrefs
 // de manifest e navegação no mesmo espaço. ncxBase/navBase: diretórios dos arquivos
@@ -494,6 +517,7 @@ module.exports = {
   parseXml,
   parsePackageFromXml,
   parseOpfFromXml,
+  parseOpfMetadata,
   navFromNcxXml,
   navFromNavHtml,
   resolveNavEntries,
