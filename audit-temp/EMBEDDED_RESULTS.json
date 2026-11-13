@@ -1,0 +1,52 @@
+{
+  "ts": "2026-11-13T16:50:32.024Z",
+  "results": [
+    {
+      "id": "E-1",
+      "title": "9: mesma videoaula em watch/embed/youtu.be/shorts extraída UMA vez (identidade de vídeo)",
+      "status": "PASS",
+      "detail": "recursos=1 keys=video:youtube:AAA11111111"
+    },
+    {
+      "id": "E-2",
+      "title": "9: ciclo evitado — página já vista no `seen` compartilhado não reentra na descoberta",
+      "status": "PASS",
+      "detail": "recursos=1"
+    },
+    {
+      "id": "E-3",
+      "title": "9: limite de profundidade definido (MAX_EMBED_DEPTH) para recursão em páginas internas",
+      "status": "PASS",
+      "detail": "MAX_EMBED_DEPTH=3"
+    },
+    {
+      "id": "E-4",
+      "title": "9: iframe arbitrário NÃO vira vídeo nem página extraída; só vídeo/PDF/livro/módulo AVA com evidência",
+      "status": "PASS",
+      "detail": "iframeArbitrario=page/iframe vimeo=video descobertos=0"
+    },
+    {
+      "id": "E-5",
+      "title": "9: múltiplos recursos distintos (2 vídeos + 2 PDFs + 1 livro) sem duplicar nem perder",
+      "status": "PASS",
+      "detail": "kinds=pdf,video,video,pdf,book"
+    },
+    {
+      "id": "E-6",
+      "title": "9: página interna (mod/page) preservada com origem sourcePage",
+      "status": "PASS",
+      "detail": "kind=page source=https://ava.univesp.br/mod/page/view.php?id=9"
+    },
+    {
+      "id": "E-7",
+      "title": "9: `seen` compartilhado entre páginas evita re-extração global do mesmo recurso",
+      "status": "PASS",
+      "detail": "pagina1=1 pagina2=0 seen=1"
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0
+  }
+}
