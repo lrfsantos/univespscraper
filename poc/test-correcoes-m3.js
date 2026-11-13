@@ -717,6 +717,53 @@ function groupH() {
 
 // ==================== Runner ====================
 
+// ==================== SEÇÃO 12 — SEGURANÇA DO ELECTRON ====================
+function groupSEC() {
+  const G = 'SEC';
+  const MAIN_SRC_LOCAL = fs.readFileSync(path.join(__dirname, '..', 'electron', 'main.js'), 'utf8');
+  const BROWSER_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'browser.js'), 'utf8');
+  const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+  const PRELOAD = fs.readFileSync(path.join(__dirname, '..', 'electron', 'preload.js'), 'utf8');
+
+  // SEC-1: janela principal com sandbox + contextIsolation + nodeIntegration false.
+  {
+    const ok = MAIN_SRC_LOCAL.includes('sandbox: true') && MAIN_SRC_LOCAL.includes('contextIsolation: true') && MAIN_SRC_LOCAL.includes('nodeIntegration: false');
+    record({ id: G + '-1', title: 'Seção 12: janela principal com sandbox+contextIsolation e sem nodeIntegration', status: ok ? 'PASS' : 'FAIL', detail: 'inspeção de main.js' });
+  }
+  // SEC-2: navegador auxiliar também com as mesmas proteções.
+  {
+    const ok = BROWSER_SRC.includes('contextIsolation: true') && BROWSER_SRC.includes('nodeIntegration: false') && BROWSER_SRC.includes('sandbox: true');
+    record({ id: G + '-2', title: 'Seção 12: janela auxiliar (navegador AVA) com as mesmas proteções', status: ok ? 'PASS' : 'FAIL', detail: 'inspeção de browser.js' });
+  }
+  // SEC-3: TODOS os handlers IPC passam por validação de remetente (trustedIpc).
+  {
+    const handles = (MAIN_SRC_LOCAL.match(/ipcMain\.handle\(/g) || []).length;
+    const trusted = (MAIN_SRC_LOCAL.match(/ipcMain\.handle\([^,]+,\s*trustedIpc\(/g) || []).length;
+    const ok = handles > 0 && trusted === handles && MAIN_SRC_LOCAL.includes('function trustedIpc');
+    record({ id: G + '-3', title: 'Seção 12: validação de origem (trustedIpc) aplicada a TODOS os handlers IPC (' + trusted + '/' + handles + ')', status: ok ? 'PASS' : 'FAIL', detail: `handles=${handles} trusted=${trusted}` });
+  }
+  // SEC-4: janela principal não navega para o remoto e não abre popups (UI local).
+  {
+    const ok = MAIN_SRC_LOCAL.includes("webContents.on('will-navigate'") && MAIN_SRC_LOCAL.includes('e.preventDefault()') &&
+      MAIN_SRC_LOCAL.includes('setWindowOpenHandler') && MAIN_SRC_LOCAL.includes("action: 'deny'");
+    record({ id: G + '-4', title: 'Seção 12: navegação externa e popups restringidos na janela principal (UI local)', status: ok ? 'PASS' : 'FAIL', detail: 'inspeção de main.js' });
+  }
+  // SEC-5: CSP presente no UI local.
+  {
+    const ok = UI.includes('Content-Security-Policy') && UI.includes("default-src 'self'");
+    record({ id: G + '-5', title: 'Seção 12: CSP definida no UI local (default-src self)', status: ok ? 'PASS' : 'FAIL', detail: 'inspeção de ui.html' });
+  }
+  // SEC-6: preload expõe APENAS as APIs mínimas (sem ipcRenderer genérico).
+  {
+    const ok = PRELOAD.includes('contextBridge.exposeInMainWorld') && !/ipcRenderer\.(on|send|invoke)\((['"][^'"]{0,3}['"])\s*[,)]/.test(PRELOAD.replace(/ipcRenderer\.invoke\(([^)]*)\)/g, 'ipcRenderer.invoke(API($1))'));
+    // Verificação conservadora: cada invoke do preload usa uma constante nomeada de canal.
+    const namedChannels = PRELOAD.match(/ipcRenderer\.invoke\('[^']+'\)/g) || [];
+    const dynamicChannels = PRELOAD.match(/ipcRenderer\.invoke\('[^']*'\+/g) || [];
+    const ok2 = ok && namedChannels.length > 0 && dynamicChannels.length === 0;
+    record({ id: G + '-6', title: 'Seção 12: preload expõe APIs mínimas com canais fixos (sem invoke dinâmico)', status: ok2 ? 'PASS' : 'FAIL', detail: `canaisFixos=${namedChannels.length} dinamicos=${dynamicChannels.length}` });
+  }
+}
+
 function main() {
   const start = Date.now();
   groupA();
@@ -724,6 +771,7 @@ function main() {
   groupC();
   groupD();
   groupE();
+  groupSEC();
   groupH();
   groupF().then(() => {
     setTimeout(() => {

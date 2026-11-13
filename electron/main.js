@@ -78,10 +78,47 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true, // seção 12: renderer do UI local sem acesso irrestrito ao Node
     },
   });
   mainWindow.loadFile(path.join(__dirname, 'ui.html'));
+  // Seção 12: a janela principal é LOCAL (arquivo próprio); não navega para o
+  // remoto — bloqueia navegações externas e janelas popup a partir dela.
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    const local = url.startsWith('file:') || url.startsWith('data:') || url.startsWith('devtools:');
+    if (!local) e.preventDefault();
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) {
+      // Abre links externos no navegador auxiliar (se estiver ativo) ou no
+      // navegador padrão do sistema — nunca em popup dentro do UI local.
+      if (auxWin) { try { auxWin.goto(url).catch(() => {}); } catch {} }
+      else { require('electron').shell.openExternal(url); }
+      return { action: 'deny' };
+    }
+    return { action: 'deny' };
+  });
+  mainWindow.webContents.session.setPermissionRequestHandler((wc, permission, callback) => {
+    // Permissões mínimas: o UI local não exige câmera/mic/notificações/etc.
+    const allowed = new Set(['fullscreen']);
+    callback(allowed.has(permission));
+  });
   mainWindow.on('closed', () => { mainWindow = null; });
+}
+
+// Seção 12: validação de ORIGEM dos eventos IPC — só a janela principal local é
+// autorizada a invocar handlers. Rejeita remetentes desconhecidos (sem expor
+// dados de sessão no erro).
+function trustedIpc(fn) {
+  return (event, ...args) => {
+    const sender = event && event.sender;
+    const ok = mainWindow && !mainWindow.isDestroyed() && sender && sender === mainWindow.webContents;
+    if (!ok) {
+      logger.warn('IPC rejeitado de origem não autorizada');
+      throw new Error('origem-nao-autorizada');
+    }
+    return fn(...args);
+  };
 }
 
 // --- Lança o navegador auxiliar (janela VISÍVEL do AVA, login manual) ---
@@ -474,20 +511,23 @@ app.whenReady().then(() => {
     return;
   }
   createMainWindow();
-  ipcMain.handle('get-env', () => ({ appVersion: app.getVersion(), packaged: app.isPackaged }));
-  ipcMain.handle('launch-browser', () => launchBrowser());
-  ipcMain.handle('check-auth', () => checkAuth());
-  ipcMain.handle('discover-courses', async () => {
+  // Seção 12: TODOS os handlers IPC passam pela validação de remetente (trustedIpc) —
+  // apenas a janela principal local pode invocá-los; remetentes desconhecidos são
+  // rejeitados sem expor dados de sessão.
+  ipcMain.handle('get-env', trustedIpc(() => ({ appVersion: app.getVersion(), packaged: app.isPackaged })));
+  ipcMain.handle('launch-browser', trustedIpc(() => launchBrowser()));
+  ipcMain.handle('check-auth', trustedIpc(() => checkAuth()));
+  ipcMain.handle('discover-courses', trustedIpc(async () => {
     const r = await handleDiscoverCourses();
     if (r.courses) currentCourses = r.courses;
     return r;
-  });
-  ipcMain.handle('discover-weeks', (e, ids) => handleDiscoverWeeks(ids));
-  ipcMain.handle('run-extraction', (e, selection) => handleRunExtraction(selection));
-  ipcMain.handle('cancel-extraction', () => handleCancelExtraction());
-  ipcMain.handle('save-zip', () => handleSaveZip());
-  ipcMain.handle('reveal-zip', (e, p) => handleRevealZip(p));
-  ipcMain.handle('discard-extraction', () => handleDiscardExtraction());
+  }));
+  ipcMain.handle('discover-weeks', trustedIpc((ids) => handleDiscoverWeeks(ids)));
+  ipcMain.handle('run-extraction', trustedIpc((selection) => handleRunExtraction(selection)));
+  ipcMain.handle('cancel-extraction', trustedIpc(() => handleCancelExtraction()));
+  ipcMain.handle('save-zip', trustedIpc(() => handleSaveZip()));
+  ipcMain.handle('reveal-zip', trustedIpc((p) => handleRevealZip(p)));
+  ipcMain.handle('discard-extraction', trustedIpc(() => handleDiscardExtraction()));
 });
 
 app.on('window-all-closed', () => {

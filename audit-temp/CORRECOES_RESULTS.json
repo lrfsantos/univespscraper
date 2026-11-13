@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-12T12:48:59.465Z",
-  "total": 43,
+  "generatedAt": "2026-11-13T02:50:04.886Z",
+  "total": 49,
   "failed": 0,
   "results": [
     {
@@ -194,6 +194,42 @@
       "title": "Os 14 cenários EPUB obrigatórios (6.3) estão cobertos pelas suítes existentes (npm test)",
       "status": "PASS",
       "detail": "nãoCobertos=[] (cross-reference integ/regression/production)"
+    },
+    {
+      "id": "SEC-1",
+      "title": "Seção 12: janela principal com sandbox+contextIsolation e sem nodeIntegration",
+      "status": "PASS",
+      "detail": "inspeção de main.js"
+    },
+    {
+      "id": "SEC-2",
+      "title": "Seção 12: janela auxiliar (navegador AVA) com as mesmas proteções",
+      "status": "PASS",
+      "detail": "inspeção de browser.js"
+    },
+    {
+      "id": "SEC-3",
+      "title": "Seção 12: validação de origem (trustedIpc) aplicada a TODOS os handlers IPC (10/10)",
+      "status": "PASS",
+      "detail": "handles=10 trusted=10"
+    },
+    {
+      "id": "SEC-4",
+      "title": "Seção 12: navegação externa e popups restringidos na janela principal (UI local)",
+      "status": "PASS",
+      "detail": "inspeção de main.js"
+    },
+    {
+      "id": "SEC-5",
+      "title": "Seção 12: CSP definida no UI local (default-src self)",
+      "status": "PASS",
+      "detail": "inspeção de ui.html"
+    },
+    {
+      "id": "SEC-6",
+      "title": "Seção 12: preload expõe APIs mínimas com canais fixos (sem invoke dinâmico)",
+      "status": "PASS",
+      "detail": "canaisFixos=7 dinamicos=0"
     },
     {
       "id": "H-1",

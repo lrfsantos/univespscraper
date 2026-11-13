@@ -49,17 +49,18 @@ for (const s of suites) {
     failed++;
     console.log(`>>> FALHOU: ${s.name}`);
   }
-  // Agrega o resumo REAL gravado pela suíte nesta execução.
+  // Agrega o resumo REAL gravado pela suíte nesta execução. Aceita tanto o formato
+  // `summary: { total, passed, failed }` quanto o top-level `{ total, failed }`.
   try {
     const file = path.join(auditDir, s.out);
     if (fs.existsSync(file)) {
       const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-      const sum = (json && json.summary) || {};
+      const sum = (json && json.summary) || json || {};
       const t = Number(sum.total) || 0;
-      const f = Number(sum.failed) || 0;
+      const f = Number(sum.failed) != null && !Number.isNaN(Number(sum.failed)) ? Number(sum.failed) : (Number(sum.passed) != null ? Math.max(0, t - Number(sum.passed)) : 0);
       totalCases += t;
-      totalPassed += t - f;
-      console.log(`  [resumo da suíte] casos=${t} pass=${t - f} fail=${f}`);
+      totalPassed += Math.max(0, t - f);
+      console.log(`  [resumo da suíte] casos=${t} pass=${Math.max(0, t - f)} fail=${f}`);
     } else {
       noSummary++;
     }
