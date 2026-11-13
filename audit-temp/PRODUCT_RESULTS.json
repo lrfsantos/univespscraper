@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-12T12:48:52.882Z",
+  "ts": "2026-11-13T02:50:01.215Z",
   "results": [
     {
       "id": "P-A",
@@ -29,7 +29,7 @@
       "id": "P-E",
       "title": "E: ZIP com docs de topo + estrutura por materia; validado; nome UNIVESP_<MATERIA>_<DATA>",
       "status": "PASS",
-      "detail": "{\"top\":[\"AI_STUDY_INSTRUCTIONS.md\",\"INDEX.md\",\"MAT100\",\"SOURCES.md\"],\"hasTop\":true,\"hasCourse\":true,\"zipOk\":true,\"entries\":7,\"matches\":true,\"name\":\"UNIVESP_MAT100_20261112\"}"
+      "detail": "{\"top\":[\"AI_STUDY_INSTRUCTIONS.md\",\"INDEX.md\",\"MAT100\",\"SOURCES.md\"],\"hasTop\":true,\"hasCourse\":true,\"zipOk\":true,\"entries\":7,\"matches\":true,\"name\":\"UNIVESP_MAT100_20261113\"}"
     },
     {
       "id": "P-F",

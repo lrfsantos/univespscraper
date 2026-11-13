@@ -3,8 +3,8 @@
 > Gerado automaticamente pelos escritores e validações reais. Fixtures sintéticas;
 > nenhum material protegido é reproduzido.
 
-Data: 2026-11-13T00:57:33.993Z
-Total de verificações: 13 | Aprovadas: 12 | Reprovadas: 1
+Data: 2026-11-13T02:49:07.606Z
+Total de verificações: 13 | Aprovadas: 13 | Reprovadas: 0
 
 ## QA-FID-1 — Página: conteúdo, headings, listas e recursos incorporados preservados (não resumido)
 - Status: **PASS**
@@ -103,9 +103,9 @@ Total de verificações: 13 | Aprovadas: 12 | Reprovadas: 1
 - Decisão: reprovado
 
 ## QA-CONS-2 — Consistência: regeneração não diverge dos arquivos commitados
-- Status: **FAIL**
-- Métricas observadas: `arquivos=20 divergentes=ADM270\EXTRACTION_REPORT.md, ADM270\Semana_1\PAGE_01.md, ADM270\Semana_1\readings\READING_01.md, ADM270\Semana_1\Semana_1.md, ADM270\Semana_1\supplementary\PDF_01.md, ADM270\Semana_1\videos\VIDEO_01.md, ADM270\SOURCES.md, EXTRACTION_REPORT.md, SAMPLE_PAGE.md, SAMPLE_PDF.md, SAMPLE_READING.md, SAMPLE_VIDEO.md`
-- Verificações aprovadas: —
-- Verificações reprovadas: ver detalhe acima
+- Status: **PASS**
+- Métricas observadas: `arquivos=20 divergentes=nenhum`
+- Verificações aprovadas: todas
+- Verificações reprovadas: nenhuma
 - Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
-- Decisão: reprovado
+- Decisão: aprovado

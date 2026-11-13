@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-13T00:57:33.994Z",
+  "ts": "2026-11-13T02:49:07.608Z",
   "results": [
     {
       "id": "QA-FID-1",
@@ -76,13 +76,13 @@
     {
       "id": "QA-CONS-2",
       "title": "Consistência: regeneração não diverge dos arquivos commitados",
-      "status": "FAIL",
-      "detail": "arquivos=20 divergentes=ADM270\\EXTRACTION_REPORT.md, ADM270\\Semana_1\\PAGE_01.md, ADM270\\Semana_1\\readings\\READING_01.md, ADM270\\Semana_1\\Semana_1.md, ADM270\\Semana_1\\supplementary\\PDF_01.md, ADM270\\Semana_1\\videos\\VIDEO_01.md, ADM270\\SOURCES.md, EXTRACTION_REPORT.md, SAMPLE_PAGE.md, SAMPLE_PDF.md, SAMPLE_READING.md, SAMPLE_VIDEO.md"
+      "status": "PASS",
+      "detail": "arquivos=20 divergentes=nenhum"
     }
   ],
   "summary": {
     "total": 13,
-    "passed": 12,
-    "failed": 1
+    "passed": 13,
+    "failed": 0
   }
 }
