@@ -3,9 +3,9 @@
 - Disciplina: Empreendedorismo e Inovação
 - Semana: Semana 1
 - Título da videoaula: Videoaula 1 — Conceitos fundamentais
-- URL original: https://www.youtube.com/watch?v=bbb222
+- URL original: https://www.youtube.com/watch?v=VIDEO01abcd
 - Plataforma: YouTube
-- ID do vídeo: bbb222
+- ID do vídeo: VIDEO01abcd
 - Origem do vídeo: link direto
 - Data da extração: 2026-11-08T12:00:00.000Z
 - Disponibilidade de transcrição: sim

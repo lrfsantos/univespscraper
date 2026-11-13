@@ -3,8 +3,8 @@
 > Gerado automaticamente pelos escritores e validações reais. Fixtures sintéticas;
 > nenhum material protegido é reproduzido.
 
-Data: 2026-11-12T11:24:36.080Z
-Total de verificações: 9 | Aprovadas: 9 | Reprovadas: 0
+Data: 2026-11-13T00:57:33.993Z
+Total de verificações: 13 | Aprovadas: 12 | Reprovadas: 1
 
 ## QA-FID-1 — Página: conteúdo, headings, listas e recursos incorporados preservados (não resumido)
 - Status: **PASS**
@@ -70,10 +70,42 @@ Total de verificações: 9 | Aprovadas: 9 | Reprovadas: 0
 - Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
 - Decisão: aprovado
 
-## QA-SAMPLE-2 — Conteúdo dos exemplos: fidelidade, separação por página, timestamps, metadados e status honesto
+## QA-SAMPLE-2 — Conteúdo dos exemplos (produzidos pelos EXTRATORES reais): fidelidade, separação por página, timestamps, metadados e status honesto
 - Status: **PASS**
 - Métricas observadas: `{"pageOk":true,"pdfOk":true,"videoOk":true,"readingOk":true,"unkOk":true,"indexOk":true,"reportOk":true}`
 - Verificações aprovadas: todas
 - Verificações reprovadas: nenhuma
 - Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
 - Decisão: aprovado
+
+## QA-SAMPLE-3 — Consistência de identidade: página e vídeo da mesma fixture usam o MESMO id (aaa111/bbb222 corrigido)
+- Status: **PASS**
+- Métricas observadas: `pageId=VIDEO01abcd videoId=VIDEO01abcd`
+- Verificações aprovadas: todas
+- Verificações reprovadas: nenhuma
+- Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
+- Decisão: aprovado
+
+## QA-NEG-1 — Negativo: parágrafo omitido do HTML é DETECTADO na conversão estrutural
+- Status: **PASS**
+- Métricas observadas: `presente=true ausente=true`
+- Verificações aprovadas: todas
+- Verificações reprovadas: nenhuma
+- Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
+- Decisão: aprovado
+
+## QA-CONS-1 — Consistência: geração de amostras termina sem erro
+- Status: **true**
+- Métricas observadas: `exit=0`
+- Verificações aprovadas: —
+- Verificações reprovadas: nenhuma
+- Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
+- Decisão: reprovado
+
+## QA-CONS-2 — Consistência: regeneração não diverge dos arquivos commitados
+- Status: **FAIL**
+- Métricas observadas: `arquivos=20 divergentes=ADM270\EXTRACTION_REPORT.md, ADM270\Semana_1\PAGE_01.md, ADM270\Semana_1\readings\READING_01.md, ADM270\Semana_1\Semana_1.md, ADM270\Semana_1\supplementary\PDF_01.md, ADM270\Semana_1\videos\VIDEO_01.md, ADM270\SOURCES.md, EXTRACTION_REPORT.md, SAMPLE_PAGE.md, SAMPLE_PDF.md, SAMPLE_READING.md, SAMPLE_VIDEO.md`
+- Verificações aprovadas: —
+- Verificações reprovadas: ver detalhe acima
+- Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
+- Decisão: reprovado

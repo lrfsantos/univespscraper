@@ -5,8 +5,9 @@
 - Nome do recurso no AVA: Slides da Semana 1
 - URL de origem: https://assets.univesp.br/ADM270/s1_slides.pdf
 - Nome original do arquivo: PDF_01.pdf
-- Tamanho (bytes): 481230
-- SHA-256 do PDF baixado: aa11bb22cc33dd44ee55ff6677889900aabbccddeeff00112233445566778899
+- PDF original (relativo): [Abrir o arquivo PDF](PDF_01.pdf)
+- Tamanho (bytes): 1134
+- SHA-256 do PDF baixado: 9c7fd0171ec0ecb3770f212f98c4b6d223093bba177c2f6ddfce94fab48b2c14
 - Título (metadados do arquivo): Slides S1
 - Autor (metadados do arquivo): Equipe UNIVESP
 - Total de páginas do arquivo: 3
@@ -21,11 +22,11 @@
 
 ## Página do arquivo 1 (página impressa 1)
 
-Empreendedorismo — Semana 1
+Empreendedorismo - Semana 1
 
 ## Página do arquivo 2 (página impressa 2)
 
-Definição de oportunidade
+Definicao de oportunidade
 
 ## Página do arquivo 3 (página impressa não identificada)
 

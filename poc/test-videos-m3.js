@@ -55,7 +55,7 @@ function rejectingFetch() {
     const r = await extractVideo({ url: 'https://www.youtube.com/watch?v=abc12345678', fetchFn: transcriptFetch(xml) });
     const ok = r.status === 'video-com-transcricao' && r.transcriptAvailable === true && r.transcriptLang === 'pt' &&
       r.segments.length === 3 && r.segments.map((s) => s.text).join('|') === 'Ola.|Segundo.|Terceiro.' &&
-      r.segments[0].offset === 0 && r.segments[2].offset === 2.2 && r.videoId === 'abc12345678';
+      r.segments[0].offset === 0 && r.segments[2].offset === 2200 && r.videoId === 'abc12345678';
     record({ id: G + '-1', title: '3: YouTube com transcrição -> video-com-transcricao; segmentos/ordem/timestamps preservados', status: ok ? 'PASS' : 'FAIL', detail: `status=${r.status} segs=${r.segments.length} ordem=${r.segments.map((s) => s.text).join('|')}` });
   }
 

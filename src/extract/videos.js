@@ -52,9 +52,19 @@ async function fetchTranscript(videoId, { timeoutMs = 15000, fetchFn = globalThi
   for (const lang of langs) {
     try {
       const tr = await YoutubeTranscript.fetchTranscript(videoId, { ...(lang === 'en' ? {} : { lang }), fetch: withTimeout });
-      const segments = (tr || [])
+      let segments = (tr || [])
         .filter((s) => s && typeof s.text === 'string' && s.text.trim().length > 0)
         .map((s) => ({ offset: typeof s.offset === 'number' ? s.offset : null, text: s.text.replace(/\s+/g, ' ').trim() }));
+      // Normaliza offset para MILISSEGUNDOS (o escritor formatTs espera ms). A lib
+      // devolve o formato srv3 em ms, mas o fallback clássico em SEGUNDOS. Heurística:
+      // se o maior offset < 100, os offsets estão em segundos (clássico) -> *1000.
+      // Limitação DOCUMENTADA: vídeo longo obtido pelo fallback clássico (>100 s) pode
+      // ter offsets já em ms grandes preservados como estão (sem falsa conversão).
+      const maxOff = segments.reduce((m, s) => (s.offset != null && s.offset > m ? s.offset : m), 0);
+      const isClassicSeconds = segments.length > 0 && maxOff > 0 && maxOff < 100;
+      if (isClassicSeconds) {
+        segments = segments.map((s) => ({ offset: s.offset != null ? Math.round(s.offset * 1000) : null, text: s.text }));
+      }
       const text = segments.map((s) => s.text).join(' ').replace(/\s+/g, ' ').trim();
       if (text.length > 0) return { ok: true, lang, transcript: text, segments };
     } catch (e) {

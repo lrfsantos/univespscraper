@@ -121,21 +121,127 @@ function qaFixtures() {
   const report = read('EXTRACTION_REPORT.md');
 
   const nonEmpty = [page, pdf, video, reading, unk, index, report].every((s) => s.trim().length >= 40);
-  const pageOk = page.includes('Conteúdo textual integral obtido') && page.includes('Recursos incorporados descobertos') && page.includes('https://ava.univesp.br/mod/page/view.php?id=101');
-  const pdfOk = pdf.includes('## Página do arquivo 1') && pdf.includes('## Página do arquivo 2') && pdf.includes('## Página do arquivo 3') && pdf.includes('Status de fidelidade: partial') && pdf.includes('SHA-256 do PDF baixado');
-  const videoOk = video.includes('[00:00]') && video.includes('[00:12]') && video.includes('segmentos com timestamps') && video.includes('bbb222');
-  const readingOk = reading.includes('## Conteúdo acadêmico extraído') && reading.includes('Capítulo 1') && reading.includes('1 a 25') && reading.includes('limite estrutural do capítulo confirmado');
+  const pageOk = page.includes('Conteúdo textual integral obtido') && page.includes('Recursos incorporados descobertos') && page.includes('https://ava.univesp.br/mod/page/view.php?id=101') && page.includes('VIDEO01abcd');
+  const pdfOk = pdf.includes('## Página do arquivo 1') && pdf.includes('## Página do arquivo 2') && pdf.includes('## Página do arquivo 3') && pdf.includes('Status de fidelidade: partial') && pdf.includes('SHA-256 do PDF baixado') && pdf.includes('PDF original (relativo)');
+  const videoOk = video.includes('[00:00]') && video.includes('[00:12]') && video.includes('[00:30]') && video.includes('segmentos com timestamps') && video.includes('VIDEO01abcd');
+  const readingOk = reading.includes('## Conteúdo acadêmico extraído') && reading.includes('Capítulo solicitado pelo AVA: 1') && reading.includes('limite estrutural do capítulo confirmado') && reading.includes('Autor: Dornelas') && reading.includes('Editora: Atlas') && reading.includes('OPF do EPUB (metadados reais do pacote)');
   const unkOk = unk.includes('unsupported') && unk.includes('Acesse o recurso diretamente no AVA');
   const indexOk = index.includes('Empreendedorismo e Inovação') && index.includes('ADM270');
   const reportOk = report.includes('Resumo') && report.includes('integral');
   const ok = nonEmpty && pageOk && pdfOk && videoOk && readingOk && unkOk && indexOk && reportOk;
-  record({ id: G + '-2', title: 'Conteúdo dos exemplos: fidelidade, separação por página, timestamps, metadados e status honesto', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ pageOk, pdfOk, videoOk, readingOk, unkOk, indexOk, reportOk }) });
+  record({ id: G + '-2', title: 'Conteúdo dos exemplos (produzidos pelos EXTRATORES reais): fidelidade, separação por página, timestamps, metadados e status honesto', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ pageOk, pdfOk, videoOk, readingOk, unkOk, indexOk, reportOk }) });
+
+  // Consistência de IDENTIDADE (corrige a inconsistência aaa111/bbb222 da auditoria):
+  // a página e o vídeo da mesma fixture devem referenciar o MESMO id de vídeo.
+  const pageVidId = (page.match(/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || null;
+  const videoVidId = (video.match(/^-\s*ID do vídeo: ([A-Za-z0-9_-]{11})/m) || [])[1] || (video.match(/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || null;
+  record({ id: G + '-3', title: 'Consistência de identidade: página e vídeo da mesma fixture usam o MESMO id (aaa111/bbb222 corrigido)', status: pageVidId && pageVidId === videoVidId ? 'PASS' : 'FAIL', detail: `pageId=${pageVidId} videoId=${videoVidId}` });
+}
+
+// ==================== QA — TESTES NEGATIVOS (seção 11.3) ====================
+async function qaNegative() {
+  const G = 'QA-NEG';
+  const f = fixtureEntries();
+
+  // N1: parágrafo REMOVIDO do HTML não aparece na conversão estrutural (detecção).
+  const { htmlToMarkdown } = require('../src/extract/html');
+  const fullHtml = '<div role="main"><h1>T</h1><p>Parágrafo presente.</p><p>Parágrafo crítico X.</p><ul><li>A</li><li>B</li></ul></div>';
+  const missingHtml = '<div role="main"><h1>T</h1><p>Parágrafo presente.</p><ul><li>A</li><li>B</li></ul></div>';
+  const fullMd = htmlToMarkdown(fullHtml);
+  const missingMd = htmlToMarkdown(missingHtml);
+  const n1 = fullMd.includes('Parágrafo crítico X.') && !missingMd.includes('Parágrafo crítico X.');
+  record({ id: G + '-1', title: 'Negativo: parágrafo omitido do HTML é DETECTADO na conversão estrutural', status: n1 ? 'PASS' : 'FAIL', detail: `presente=${fullMd.includes('Parágrafo crítico X.')} ausente=${!missingMd.includes('Parágrafo crítico X.')}` });
+
+  // N2: página SEM texto no PDF -> status NUNCA integral (produção).
+  const { analyzePdf, statusFor: pdfStatusFor } = require('../src/extract/pdfs');
+  const { makePdf } = require('./fixtures/synthetic/make-pdf');
+  const full = await analyzePdf(makePdf([{ text: 'A' }, { text: 'B' }, { text: 'C' }]));
+  const withEmpty = await analyzePdf(makePdf([{ text: 'A' }, { text: 'B' }, { text: '' }]));
+  const sFull = pdfStatusFor({ ok: true, bytes: 1, analyze: full, pages: full.pages });
+  const sEmpty = pdfStatusFor({ ok: true, bytes: 1, analyze: withEmpty, pages: withEmpty.pages });
+  const n2 = sFull === 'integral' && sEmpty === 'partial';
+  record({ id: G + '-2', title: 'Negativo: página sem texto no PDF rebaixa para partial (nunca integral)', status: n2 ? 'PASS' : 'FAIL', detail: `completo=${sFull} comPaginaVazia=${sEmpty}` });
+
+  // N3: SEGMENTO de transcrição REMOVIDO é detectado (contagem/ordem).
+  const { extractVideo } = require('../src/extract/videos');
+  const INNERTUBE = 'https://www.youtube.com/youtubei/v1/player';
+  const mkFetch = (xml) => async (url) => String(url).startsWith(INNERTUBE)
+    ? { ok: true, status: 200, json: async () => ({ captions: { playerCaptionsTracklistRenderer: { captionTracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?x=1', languageCode: 'pt' }] } } }), text: async () => '{}' }
+    : { ok: true, status: 200, json: async () => ({}), text: async () => xml };
+  const xmlFull = '<transcript><text start="0" dur="1">Primeiro.</text><text start="5" dur="1">Segundo.</text><text start="10" dur="1">Terceiro.</text></transcript>';
+  const xmlShort = '<transcript><text start="0" dur="1">Primeiro.</text><text start="10" dur="1">Terceiro.</text></transcript>';
+  const vFull = await extractVideo({ url: 'https://www.youtube.com/watch?v=abc12345678', fetchFn: mkFetch(xmlFull), timeoutMs: 5000 });
+  const vShort = await extractVideo({ url: 'https://www.youtube.com/watch?v=abc12345678', fetchFn: mkFetch(xmlShort), timeoutMs: 5000 });
+  const n3 = vFull.segments.length === 3 && vShort.segments.length === 2 && vShort.segments.map((s) => s.text).join('|') === 'Primeiro.|Terceiro.';
+  record({ id: G + '-3', title: 'Negativo: segmento de transcrição removido é detectado (contagem e ordem)', status: n3 ? 'PASS' : 'FAIL', detail: `completo=${vFull.segments.length} comOmissao=${vShort.segments.length} ordem=${vShort.segments.map((s) => s.text).join('|')}` });
+
+  // N4: capítulo/limite NÃO confirmado -> livro nunca integral (produção).
+  const books = require('../src/extract/books');
+  const statusN4 = books.statusForBook({ format: 'epub', readerLoaded: true, chapterNotFound: false, expected: { chapter: 1 }, validation: { hasText: true, noNonsense: true, startOk: true, midOk: true, endOk: false, chapterOk: true, pageRangeOk: null, warnings: ['fim-capitulo-nao-confirmado-estruturalmente'], ambiguousPages: 0, unexpectedContent: [], repetitions: [] } });
+  record({ id: G + '-4', title: 'Negativo: limite do capítulo não confirmado rebaixa o livro para partial', status: statusN4 !== 'integral' ? 'PASS' : 'FAIL', detail: `status=${statusN4}` });
+
+  // N5: recurso DESCONHECIDO nunca é apresentado como extraído.
+  const { renderUnsupportedDocument } = require('../src/extract/markdown');
+  const unkMd = renderUnsupportedDocument({ entry: { ...f.unsupported, kind: 'unknown' }, course, week, meta: META });
+  const n5 = unkMd.includes('unsupported') && !unkMd.includes('Conteúdo textual integral obtido') && !unkMd.includes('## Transcrição');
+  record({ id: G + '-5', title: 'Negativo: recurso desconhecido não é apresentado como conteúdo extraído', status: n5 ? 'PASS' : 'FAIL', detail: `naoFingeExtracao=${n5}` });
+
+  // N6: ZIP inválido (arquivo não-zip) NUNCA valida (produção).
+  const { validateZip } = require('../electron/flow');
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-neg-'));
+  const dest = path.join(tmp, 'out.zip');
+  fs.writeFileSync(dest, 'isso nao e um zip');
+  const v = validateZip({ ok: true, path: dest, bytes: 13, entries: [] });
+  const n6 = v.valid === false;
+  try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  record({ id: G + '-6', title: 'Negativo: ZIP inválido não valida (nunca sucesso)', status: n6 ? 'PASS' : 'FAIL', detail: `valid=${v.valid} reason=${v.reason}` });
+}
+
+// ==================== QA — CONSISTÊNCIA (regenerar == commitado) ====================
+function qaConsistency() {
+  const { spawnSync } = require('child_process');
+  const { execSync } = require('child_process');
+  const G = 'QA-CONS';
+  // Regenera as amostras pelo pipeline real e compara com os arquivos commitados.
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'generate-samples.js')], { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+  const regenOk = r.status === 0;
+  if (!regenOk) { record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: false, detail: (r.stderr || '').slice(0, 200) }); return; }
+  record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: true, detail: 'exit=0' });
+
+  const files = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(md|json)$/.test(e.name)) files.push(p);
+    }
+  };
+  walk(FIXTURES);
+  const divergences = [];
+  for (const p of files) {
+    const rel = path.relative(FIXTURES, p);
+    // Os arquivos commitados já estão em generated-output; a regeneração escreveu
+    // nos MESMOS caminhos. Para comparar "commitado x regenerado" precisamos do
+    // conteúdo versionado (git show HEAD:<path>).
+    const gitPath = 'poc/fixtures/generated-output/' + rel.split(path.sep).join('/');
+    try {
+      const committed = execSync('git show HEAD:' + gitPath, { cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 1024 * 1024 });
+      const regenerated = fs.readFileSync(p, 'utf8');
+      if (committed !== regenerated) divergences.push(rel);
+    } catch (e) {
+      divergences.push(rel + ' (não versionado)');
+    }
+  }
+  record({ id: G + '-2', title: 'Consistência: regeneração não diverge dos arquivos commitados', status: divergences.length === 0 ? 'PASS' : 'FAIL', detail: `arquivos=${files.length} divergentes=${divergences.join(', ') || 'nenhum'}` });
 }
 
 (async () => {
   qaFidelity();
   qaHonesty();
   qaFixtures();
+  qaNegative();
+  qaConsistency();
 
   const failed = results.filter((r) => r.status === 'FAIL');
   // Relatório de qualidade (nunca redigido manualmente — métricas observadas acima).

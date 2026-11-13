@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-12T12:47:58.096Z",
+  "ts": "2026-11-13T00:57:33.994Z",
   "results": [
     {
       "id": "QA-FID-1",
@@ -51,14 +51,38 @@
     },
     {
       "id": "QA-SAMPLE-2",
-      "title": "Conteúdo dos exemplos: fidelidade, separação por página, timestamps, metadados e status honesto",
+      "title": "Conteúdo dos exemplos (produzidos pelos EXTRATORES reais): fidelidade, separação por página, timestamps, metadados e status honesto",
       "status": "PASS",
       "detail": "{\"pageOk\":true,\"pdfOk\":true,\"videoOk\":true,\"readingOk\":true,\"unkOk\":true,\"indexOk\":true,\"reportOk\":true}"
+    },
+    {
+      "id": "QA-SAMPLE-3",
+      "title": "Consistência de identidade: página e vídeo da mesma fixture usam o MESMO id (aaa111/bbb222 corrigido)",
+      "status": "PASS",
+      "detail": "pageId=VIDEO01abcd videoId=VIDEO01abcd"
+    },
+    {
+      "id": "QA-NEG-1",
+      "title": "Negativo: parágrafo omitido do HTML é DETECTADO na conversão estrutural",
+      "status": "PASS",
+      "detail": "presente=true ausente=true"
+    },
+    {
+      "id": "QA-CONS-1",
+      "title": "Consistência: geração de amostras termina sem erro",
+      "status": true,
+      "detail": "exit=0"
+    },
+    {
+      "id": "QA-CONS-2",
+      "title": "Consistência: regeneração não diverge dos arquivos commitados",
+      "status": "FAIL",
+      "detail": "arquivos=20 divergentes=ADM270\\EXTRACTION_REPORT.md, ADM270\\Semana_1\\PAGE_01.md, ADM270\\Semana_1\\readings\\READING_01.md, ADM270\\Semana_1\\Semana_1.md, ADM270\\Semana_1\\supplementary\\PDF_01.md, ADM270\\Semana_1\\videos\\VIDEO_01.md, ADM270\\SOURCES.md, EXTRACTION_REPORT.md, SAMPLE_PAGE.md, SAMPLE_PDF.md, SAMPLE_READING.md, SAMPLE_VIDEO.md"
     }
   ],
   "summary": {
-    "total": 9,
-    "passed": 9,
-    "failed": 0
+    "total": 13,
+    "passed": 12,
+    "failed": 1
   }
 }
