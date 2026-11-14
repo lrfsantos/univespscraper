@@ -40,6 +40,11 @@ function fakeDriver(options) {
     async setShowAll() { return true; },
     async goNextPage() { return false; }, // uma página por opção
     async readCurrentLabel() { return current; },
+    async checkCourseAccess(card) {
+      // Verificação simulada: honra o valor já inferido do cartão (a menos que um
+      // deny map por id seja fornecido na opção atual — ver testes M-10).
+      return { accessible: card.accessible !== false, reason: card.accessible === false ? 'acesso-negado' : 'aberto' };
+    },
   };
 }
 
@@ -150,6 +155,96 @@ function selVal() { return current; }
     const r = await discoverAllCoursesViaDriver(fakeDriver(options));
     const ok = r.byCategory['Todos'] === 2 && r.byCategory['Legado'] === 1 && r.byCategory['Em andamento'] === 1 && r.summary.ocorrencias === 4 && r.summary.cursosUnicos === 3 && r.summary.deduplicados === 1;
     record({ id: G + '-7', title: 'Meus cursos: relatório por categoria (ocorrências/deduplicados/únicos) honesto', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ byCategory: r.byCategory, summary: r.summary }) });
+  }
+
+  // M-8: "Removido da visualização" é inspecionado separadamente, registrado e NÃO restaurado.
+  {
+    const options = [
+      { label: 'Todos', value: 'todos', pages: [card(601, 'Ativo (ATV601)')] },
+      { label: 'Removido da visualização', value: 'removido', pages: [card(602, 'Oculta (OCR602)'), card(603, 'Antiga (ANT603)')] },
+    ];
+    const r = await discoverAllCoursesViaDriver(fakeDriver(options));
+    const oculta = r.courses.find((c) => c.id === '602');
+    const ok = r.summary.removidos === 2 &&
+      r.removidosDaVisualizacao.length === 2 &&
+      oculta && oculta.hiddenFromView === true &&
+      oculta.categories.includes('Removido da visualização') &&
+      r.summary.completo === true;
+    record({ id: G + '-8', title: 'Meus cursos: "Removido da visualização" inspecionado separadamente, registrado e sem restaurar nada', status: ok ? 'PASS' : 'FAIL', detail: `removidos=${r.summary.removidos} listados=${r.removidosDaVisualizacao.length} hidden=${oculta ? oculta.hiddenFromView : 'n/a'} completo=${r.summary.completo}` });
+  }
+
+  // M-9: período MAIS RECENTE determinado pelos rótulos REAIS do AVA (sem valores fixos).
+  {
+    const options = [
+      { label: '1º Bimestre (2026)', value: 'b1', pages: [card(701, 'A (AAA701)')] },
+      { label: '4º Bimestre (2026)', value: 'b4', pages: [card(702, 'B (BBB702)')] },
+      { label: '2º Bimestre (2025)', value: 'b2a', pages: [card(703, 'C (CCC703)')] },
+    ];
+    const r = await discoverAllCoursesViaDriver(fakeDriver(options));
+    const ok = r.summary.periodoMaisRecente === '4º Bimestre (2026)';
+    record({ id: G + '-9', title: 'Meus cursos: período mais recente determinado pela informação real do AVA', status: ok ? 'PASS' : 'FAIL', detail: `maisRecente=${r.summary.periodoMaisRecente}` });
+  }
+
+  // M-10: acesso REAL avaliado pela ABERTURA do curso (link real), não só pelo texto do cartão.
+  {
+    const deny = new Set(['801']);
+    const base = fakeDriver([
+      { label: 'Todos', value: 'todos', pages: [card(801, 'Negado por abertura (NEG801)'), card(802, 'Liberado (LIB802)')] },
+    ]);
+    base.checkCourseAccess = async (card) => {
+      if (deny.has(String(card.id))) return { accessible: false, reason: 'acesso-negado' };
+      return { accessible: true, reason: 'aberto' };
+    };
+    const r = await discoverAllCoursesViaDriver(base);
+    const neg = r.courses.find((c) => c.id === '801');
+    const lib = r.courses.find((c) => c.id === '802');
+    const ok = r.summary.verificadosPorAbertura === 2 &&
+      neg && neg.accessible === false && neg.accessReason === 'acesso-negado' && neg.accessChecked === true &&
+      lib && lib.accessible === true && lib.accessChecked === true &&
+      r.summary.acessoNegado === 1;
+    record({ id: G + '-10', title: 'Meus cursos: acesso avaliado abrindo o curso (link real), não só pelo texto do cartão', status: ok ? 'PASS' : 'FAIL', detail: `verificados=${r.summary.verificadosPorAbertura} neg801=${neg ? neg.accessible : 'n/a'} lib802=${lib ? lib.accessible : 'n/a'} negados=${r.summary.acessoNegado}` });
+  }
+
+  // M-11: Favoritos é visão ADICIONAL — não exigido para "completo".
+  {
+    const options = [
+      { label: 'Todos', value: 'todos', pages: [card(901, 'Curso (CUR901)')] },
+      { label: 'Favoritos', value: 'fav', pages: [card(902, 'Fav (FAV902)')] },
+    ];
+    const r = await discoverAllCoursesViaDriver(fakeDriver(options));
+    const ok = r.summary.favoritosAdicionais === 1 && r.summary.completo === true && r.courses.some((c) => c.categories.includes('Favoritos'));
+    record({ id: G + '-11', title: 'Meus cursos: Favoritos tratado como visão adicional (não bloqueia "completo")', status: ok ? 'PASS' : 'FAIL', detail: `favAdicional=${r.summary.favoritosAdicionais} completo=${r.summary.completo}` });
+  }
+
+  // M-12: funções PURAS do driver real testadas com `document` fake (seletor/estabilidade/abrir).
+  {
+    const { collectSelectorOptions, applySelectOption, readStability, readCards, applyShowAll, applyNextPage, readActiveLabel } = require('../electron/my-courses');
+    const mkEl = (text, extra = {}) => ({ textContent: text, outerHTML: `<div>${text}</div>`, click: () => { extra.clicked = true; }, getAttribute: (a) => extra[a] || null, ...extra });
+    const fakeDoc = {
+      querySelectorAll: (sel) => {
+        if (sel === 'select') return [];
+        if (sel.includes('course-card')) return [mkEl('A'), mkEl('B')];
+        if (sel === 'button, [role="button"], select, a') return [mkEl('Mostrar: Todos')];
+        if (sel === 'button, [role="button"], a, [aria-label]') return [mkEl('Próxima página')];
+        if (sel === 'button, [role="tab"], [role="button"], a') return [mkEl('Em andamento'), mkEl('Próxima página')];
+        if (sel === '[aria-selected="true"], .active, [class*="selected"]') return [mkEl('Legado')];
+        return [];
+      },
+      querySelector: (sel) => {
+        if (sel.includes('selected') || sel.includes('active')) return mkEl('Legado');
+        return null;
+      },
+      body: { innerText: 'lista de cursos', outerHTML: '<body>lista</body>' },
+    };
+    const opts = collectSelectorOptions(fakeDoc);
+    const selOk = opts.some((o) => o.label === 'Em andamento');
+    const cards = readCards(fakeDoc);
+    const st = readStability(fakeDoc);
+    const showAll = applyShowAll(fakeDoc);
+    const next = applyNextPage(fakeDoc);
+    const label = readActiveLabel(fakeDoc);
+    const ok = selOk && cards.includes('A') && cards.includes('B') && st.loading === false && showAll === true && next === true && label === 'Legado';
+    record({ id: G + '-12', title: 'Meus cursos: funções puras do driver real testadas com document fake (sem navegador)', status: ok ? 'PASS' : 'FAIL', detail: `opts=${opts.length} cards=${cards.length} loading=${st.loading} showAll=${showAll} next=${next} label=${label}` });
   }
 
   const failed = results.filter((r) => r.status === 'FAIL');

@@ -107,13 +107,46 @@ function balancedElement(tokens, startIdx, name) {
 
 // Normaliza um rótulo de opção do seletor em um grupo heurístico. NÃO presume que
 // o seletor é uma combinação de filtros independentes — apenas classifica a opção
-// para fins de relatório/ordem. Grupos: situacao | periodo | categoria | outros.
+// para fins de relatório/ordem. Grupos: situacao | periodo | categoria | favoritos
+// | removido | outros. "Favoritos" é visão ADICIONAL (não compõe a lista completa);
+// "Removido da visualização" é inspecionado separadamente (sem restaurar nada).
 function classifySelectorOption(label) {
   const t = String(label || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   if (/todos|em andamento|nao iniciad|encerrad/.test(t)) return 'situacao';
   if (/\d+\s*bimestre|bimestre|semestre|\bano\b|\(\d{4}\)/.test(t)) return 'periodo';
-  if (/legado|nenhum periodo|favorit|removid/.test(t)) return 'categoria';
-  return 'categoria';
+  if (/favorit/.test(t)) return 'favoritos';
+  if (/removid/.test(t)) return 'removido';
+  if (/legado|nenhum periodo/.test(t)) return 'categoria';
+  return 'outros';
+}
+
+// Extrai uma ordem numérica comparável de um rótulo de período real do AVA
+// (ex.: "4º Bimestre (2026)", "2025.2", "1º Semestre 2026"). Sem valores fixos:
+// a ordenação é derivada do texto apresentado. Retorna { year, ordinal } quando
+// reconhecível; null caso contrário.
+function parsePeriodRank(label) {
+  const t = String(label || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const yearM = t.match(/(?:\(|\b)(20\d{2})(?:\)|\b)/);
+  const year = yearM ? parseInt(yearM[1], 10) : null;
+  const ordM = t.match(/(\d{1,2})\s*(?:o|º|a)?\s*(bimestre|semestre|trimestre)/i);
+  const ordinal = ordM ? parseInt(ordM[1], 10) : null;
+  if (year == null && ordinal == null) return null;
+  return { year, ordinal };
+}
+
+// Determina o período MAIS RECENTE a partir dos rótulos realmente observados.
+// Critério: ano decrescente, depois ordinal do bimestre/semestre decrescente.
+// Retorna o rótulo mais recente (ou null se nenhum período reconhecível).
+function mostRecentPeriod(labels) {
+  let best = null;
+  let bestRank = null;
+  for (const l of (labels || [])) {
+    const r = parsePeriodRank(l);
+    if (!r) continue;
+    const rankKey = `${r.year == null ? -1 : r.year}:${String(r.year == null ? 0 : (r.ordinal == null ? 0 : r.ordinal)).padStart(2, '0')}`;
+    if (!bestRank || rankKey > bestRank) { bestRank = rankKey; best = l; }
+  }
+  return best;
 }
 
 // Extrai metadados de um cartão de disciplina. `cardInner` é o HTML interno do
@@ -415,4 +448,4 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   return expected;
 }
 
-module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, classifySelectorOption, parseCourseCardsFromHtml, scanTags, attrsOf, balancedElement, inferSituacao };
+module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, classifySelectorOption, parsePeriodRank, mostRecentPeriod, parseCourseCardsFromHtml, scanTags, attrsOf, balancedElement, inferSituacao };
