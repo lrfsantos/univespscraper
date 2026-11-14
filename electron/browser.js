@@ -57,4 +57,13 @@ function runStandalone() {
 
 module.exports = { installAuxProfile, applyBrowserDefaults, createBrowserWindow, runStandalone, chromiumUserAgent };
 
-if (require.main === module) runStandalone();
+// Entrada independente: este arquivo roda como processo auxiliar (janela do AVA)
+// em DOIS cenários — (1) execução direta `electron browser.js` (require.main ===
+// module) e (2) lançamento via playwright-core._electron em desenvolvimento, em
+// que o entry é passado como ARGUMENTO e `require.main` aponta para o main do
+// Electron, não para este arquivo. O sinal confiável comum é o próprio caminho
+// deste arquivo em process.argv. Ao ser `require`'d pelo main.js principal (que só
+// importa funções), nenhum dos sinais dispara e `runStandalone()` não roda.
+const isStandaloneEntry =
+  require.main === module || process.argv.some((a) => a.includes('browser.js'));
+if (isStandaloneEntry) runStandalone();
