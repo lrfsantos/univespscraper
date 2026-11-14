@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-13T02:50:06.199Z",
+  "ts": "2026-11-14T01:02:17.992Z",
   "results": [
     {
       "id": "V-1",
@@ -29,7 +29,7 @@
       "id": "V-5",
       "title": "3: timeout aborta a requisição subjacente (AbortSignal), status video-registrado com motivo",
       "status": "PASS",
-      "detail": "status=video-registrado note=transcrição não obtida: timeout (a requisição foi abortada) ms=752"
+      "detail": "status=video-registrado note=transcrição não obtida: timeout (a requisição foi abortada) ms=745"
     },
     {
       "id": "V-6",

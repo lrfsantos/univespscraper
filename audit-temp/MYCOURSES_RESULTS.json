@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-13T02:50:36.512Z",
+  "ts": "2026-11-14T01:03:01.073Z",
   "results": [
     {
       "id": "M-1",
@@ -41,12 +41,42 @@
       "id": "M-7",
       "title": "Meus cursos: relatório por categoria (ocorrências/deduplicados/únicos) honesto",
       "status": "PASS",
-      "detail": "{\"byCategory\":{\"Legado\":1,\"Todos\":2,\"Em andamento\":1},\"summary\":{\"categoriasPercorridas\":3,\"ocorrencias\":4,\"cursosUnicos\":3,\"deduplicados\":1,\"acessoNegado\":0,\"acessiveis\":3,\"completo\":true}}"
+      "detail": "{\"byCategory\":{\"Legado\":1,\"Todos\":2,\"Em andamento\":1},\"summary\":{\"categoriasPercorridas\":3,\"ocorrencias\":4,\"cursosUnicos\":3,\"deduplicados\":1,\"acessoNegado\":0,\"acessiveis\":3,\"verificadosPorAbertura\":3,\"periodoMaisRecente\":null,\"favoritosAdicionais\":0,\"removidos\":0,\"completo\":true}}"
+    },
+    {
+      "id": "M-8",
+      "title": "Meus cursos: \"Removido da visualização\" inspecionado separadamente, registrado e sem restaurar nada",
+      "status": "PASS",
+      "detail": "removidos=2 listados=2 hidden=true completo=true"
+    },
+    {
+      "id": "M-9",
+      "title": "Meus cursos: período mais recente determinado pela informação real do AVA",
+      "status": "PASS",
+      "detail": "maisRecente=4º Bimestre (2026)"
+    },
+    {
+      "id": "M-10",
+      "title": "Meus cursos: acesso avaliado abrindo o curso (link real), não só pelo texto do cartão",
+      "status": "PASS",
+      "detail": "verificados=2 neg801=false lib802=true negados=1"
+    },
+    {
+      "id": "M-11",
+      "title": "Meus cursos: Favoritos tratado como visão adicional (não bloqueia \"completo\")",
+      "status": "PASS",
+      "detail": "favAdicional=1 completo=true"
+    },
+    {
+      "id": "M-12",
+      "title": "Meus cursos: funções puras do driver real testadas com document fake (sem navegador)",
+      "status": "PASS",
+      "detail": "opts=2 cards=25 loading=false showAll=true next=true label=Legado"
     }
   ],
   "summary": {
-    "total": 7,
-    "passed": 7,
+    "total": 12,
+    "passed": 12,
     "failed": 0
   }
 }

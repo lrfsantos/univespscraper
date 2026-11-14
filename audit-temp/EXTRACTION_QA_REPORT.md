@@ -3,7 +3,7 @@
 > Gerado automaticamente pelos escritores e validações reais. Fixtures sintéticas;
 > nenhum material protegido é reproduzido.
 
-Data: 2026-11-13T02:49:07.606Z
+Data: 2026-11-14T01:01:20.633Z
 Total de verificações: 13 | Aprovadas: 13 | Reprovadas: 0
 
 ## QA-FID-1 — Página: conteúdo, headings, listas e recursos incorporados preservados (não resumido)
