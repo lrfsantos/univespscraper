@@ -184,8 +184,7 @@ $('btn-none-courses').addEventListener('click', () => {
 });
 
 $('btn-to-weeks').addEventListener('click', async () => {
-  const selected = [];
-  document.querySelectorAll('#courseList input:checked').forEach((cb) => selected.push(cb.dataset.id));
+  const selected = [...selectedCourseIds];
   if (!selected.length) { setLive('Selecione ao menos uma matéria para continuar.', 'notice warn'); return; }
   setLive('Localizando as semanas...');
   const r = await window.api.discoverWeeks(selected);
