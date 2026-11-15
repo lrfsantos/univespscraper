@@ -159,6 +159,22 @@ function record(entry) {
     record({ id: G + '-9', title: '9: páginas incorporadas respeitam o escopo e excluem fóruns/lives', status: ok ? 'PASS' : 'FAIL', detail: `capturados=${found.map((r) => r.url).join(',')}` });
   }
 
+  // E-10: hierarquia de páginas é achatada para relatório sem perder nem duplicar filhos.
+  {
+    const tree = [
+      { id: 'page-1', embedded: [
+        { id: 'video-1' },
+        { id: 'page-2', embedded: [{ id: 'pdf-1' }, { id: 'page-3', embedded: [{ id: 'book-1' }] }] },
+      ] },
+      { id: 'video-2' },
+    ];
+    const flattened = flow.flattenEmbeddedEntries(tree);
+    const ids = flattened.map((entry) => entry.id);
+    const expected = ['page-1', 'video-1', 'page-2', 'pdf-1', 'page-3', 'book-1', 'video-2'];
+    const ok = JSON.stringify(ids) === JSON.stringify(expected) && tree[0].embedded[1].embedded[1].embedded[0].id === 'book-1';
+    record({ id: G + '-10', title: '9: recursos aninhados aparecem uma vez no relatório e mantêm sua hierarquia de origem', status: ok ? 'PASS' : 'FAIL', detail: `ids=${ids.join(',')}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
