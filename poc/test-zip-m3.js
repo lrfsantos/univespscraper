@@ -143,7 +143,7 @@ function tmpDir(name) {
 
   // Z-9: a interface NUNCA mostra "verificado" em estado não validado (inspeção do ui.html).
   {
-    const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+    const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.js'), 'utf8');
     const hasValidadoGate = UI.includes("r.ok && r.state === 'validado'") && UI.includes('ZIP salvo e verificado com sucesso');
     const failureMsg = UI.includes('validação falhou (integridade)');
     const ok = hasValidadoGate && failureMsg;

@@ -28,7 +28,7 @@ function record(entry) {
 }
 
 const MAIN_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'main.js'), 'utf8');
-const UI_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+const UI_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.js'), 'utf8');
 const FLOW_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'flow.js'), 'utf8');
 
 // ==================== CORREÇÃO A — semanas/recursos estruturais ====================
@@ -722,7 +722,7 @@ function groupSEC() {
   const G = 'SEC';
   const MAIN_SRC_LOCAL = fs.readFileSync(path.join(__dirname, '..', 'electron', 'main.js'), 'utf8');
   const BROWSER_SRC = fs.readFileSync(path.join(__dirname, '..', 'electron', 'browser.js'), 'utf8');
-  const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+  const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.js'), 'utf8');
   const PRELOAD = fs.readFileSync(path.join(__dirname, '..', 'electron', 'preload.js'), 'utf8');
 
   // SEC-1: janela principal com sandbox + contextIsolation + nodeIntegration false.

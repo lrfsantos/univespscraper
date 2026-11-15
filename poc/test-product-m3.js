@@ -121,7 +121,7 @@ function record(entry) {
   //    que a UI produz (array {courseId, weekIds}) executa o backend real para
   //    todas/parcial/nenhuma. Sem números fixos inventados.
   {
-    const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8');
+    const UI = fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.html'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'electron', 'ui.js'), 'utf8');
     const hasAll = UI.includes("$('btn-all-weeks').addEventListener") && UI.includes('cb.checked = true');
     const hasNone = UI.includes("$('btn-none-weeks').addEventListener") && UI.includes('cb.checked = false');
     const buildsPayload = UI.includes('weekIds.push(cb.dataset.week)') && UI.includes('selection.push({ courseId, weekIds })');
