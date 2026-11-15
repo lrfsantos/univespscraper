@@ -1,7 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { finalizeZip } = require('../electron/flow');
+const { finalizeZip, createZip, validateZip } = require('../electron/flow');
 
 // Testes P0 — validação real do ZIP (seção 1): o fluxo de produção finalizeZip é
 // exercitado com dependências injetadas apenas nas fronteiras (criação/validação),
@@ -148,6 +148,29 @@ function tmpDir(name) {
     const failureMsg = UI.includes('validação falhou (integridade)');
     const ok = hasValidadoGate && failureMsg;
     record({ id: G + '-9', title: 'P0 ZIP: UI só exibe "verificado" quando state=validado; falha de validação tem mensagem própria (inspeção)', status: ok ? 'PASS' : 'FAIL', detail: `gate=${hasValidadoGate} mensagemFalha=${failureMsg}` });
+  }
+
+  // Z-10: teste de integração REAL da rotina PowerShell/.NET no Windows CI:
+  // cria ZIP, confere nomes exatos das entradas e força leitura/descompressão de todas.
+  {
+    if (process.platform !== 'win32') {
+      record({ id: G + '-10', title: 'ZIP real: integração PowerShell/.NET (somente Windows)', status: 'SKIP', detail: 'A suíte determinística roda em ambiente não Windows; validação executada no CI Windows.' });
+    } else {
+      const dir = tmpDir('zip-real');
+      const src = path.join(dir, 'src');
+      const dest = path.join(dir, 'real.zip');
+      fs.mkdirSync(path.join(src, 'nested'), { recursive: true });
+      fs.writeFileSync(path.join(src, 'root.txt'), 'conteudo raiz');
+      fs.writeFileSync(path.join(src, 'nested', 'material.md'), '# material');
+      const created = await createZip(src, dest);
+      const valid = validateZip(created);
+      const altered = validateZip({ ...created, fileList: [...created.fileList, 'ghost.txt'] });
+      const ok = created.ok === true && created.fileList.length === 2 &&
+        valid.valid === true && valid.matches === true && valid.decompressed === 2 &&
+        altered.valid === true && altered.matches === false;
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+      record({ id: G + '-10', title: 'ZIP real: nomes exatos e conteúdo de todas as entradas validados; divergência é rejeitada', status: ok ? 'PASS' : 'FAIL', detail: `created=${created.ok} entries=${created.fileList && created.fileList.length} valid=${JSON.stringify(valid)} altered=${JSON.stringify(altered)}` });
+    }
   }
 
   const failed = results.filter((r) => r.status === 'FAIL');
