@@ -247,6 +247,33 @@ function selVal() { return current; }
     record({ id: G + '-12', title: 'Meus cursos: funções puras do driver real testadas com document fake (sem navegador)', status: ok ? 'PASS' : 'FAIL', detail: `opts=${opts.length} cards=${cards.length} loading=${st.loading} showAll=${showAll} next=${next} label=${label}` });
   }
 
+  // M-13: links dos cartões e paginação não podem ser interpretados como filtros.
+  {
+    const { selectorControls, collectSelectorOptions, applySelectOption } = require('../electron/my-courses');
+    const make = (text, href, cls = '') => ({
+      tagName: 'A',
+      textContent: text,
+      className: cls,
+      getAttribute: (name) => name === 'href' ? href : name === 'class' ? cls : null,
+      click: () => { make.clicked = (make.clicked || 0) + 1; },
+      closest: (selector) => /course-card/.test(selector) && /course-card/.test(cls) ? {} : null,
+    });
+    const filter = make('Legado', '#filter-legado');
+    const course = make('Disciplina (ADM101)', '/course/view.php?id=101', 'course-card');
+    const next = make('Próxima página', '?page=2');
+    const doc = {
+      location: { href: 'https://ava.univesp.br/my/courses.php' },
+      querySelectorAll: (selector) => selector.includes('button, [role="tab"]') ? [filter, course, next] : [],
+    };
+    const controls = selectorControls(doc);
+    const labels = collectSelectorOptions(doc).map((o) => o.label);
+    const selectedCourse = applySelectOption(doc, 'Disciplina (ADM101)');
+    const ok = controls.length === 1 && controls[0] === filter &&
+      labels.includes('Legado') && !labels.includes('Disciplina (ADM101)') &&
+      !labels.includes('Próxima página') && selectedCourse === false;
+    record({ id: G + '-13', title: 'Meus cursos: links de cartões e paginação excluídos da seleção de filtros', status: ok ? 'PASS' : 'FAIL', detail: `controls=${controls.map((e) => e.textContent).join(',')} labels=${labels.join(',')} courseClick=${selectedCourse}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
