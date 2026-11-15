@@ -8,7 +8,7 @@ const { makeWorkDir, cleanupWorkDir, cleanupResidualWorkDirs } = require('./work
 const { createBrowserWindow: createAuxWindow, applyBrowserDefaults } = require('./browser');
 const { buildAuxEnv } = require('./env');
 const { discoverAllCourses } = require('./my-courses');
-const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, isLoggedIn, safeName, BASE } = require('./flow');
+const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, confirmLoggedIn, isLoggedIn, safeName, BASE } = require('./flow');
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
 // Fluxo: o estudante abre o app, uma janela de navegador VISÍVEL é aberta no AVA,
@@ -205,8 +205,10 @@ async function handleDiscoverWeeks(courseIds) {
 let currentCourses = [];
 let currentWorkResult = null;
 let cancelRequested = false;
+let extractionInProgress = false;
+let lastSavedZipPath = null;
 
-async function handleRunExtraction(selection) {
+async function runExtractionInternal(selection) {
   if (!auxWindowAlive()) return { error: 'navegador-fechado', message: 'O navegador do AVA foi fechado. Clique em "Entrar no AVA" para abri-lo novamente, faça o login e tente de novo.' };
   // selection: [{ courseId, weekIds: [...] }] — P0 2.3: array vazio de weekIds
   // significa NENHUMA semana daquela matéria; null/undefined significa todas.
@@ -297,7 +299,7 @@ async function handleRunExtraction(selection) {
           const section = sections.find((s) => s.id === String(w.id));
           const weekResources = discoverResourcesFromSection(section || { block: '' });
           const weekName = safeName(w.name || 'semana-' + w.id);
-          const weekDir = path.join(outputDir, String(course.code || course.id), weekName);
+          const weekDir = path.join(outputDir, safeName(course.code || course.id), weekName);
           fs.mkdirSync(path.join(weekDir, 'videos'), { recursive: true });
           fs.mkdirSync(path.join(weekDir, 'readings'), { recursive: true });
           fs.mkdirSync(path.join(weekDir, 'supplementary'), { recursive: true });
@@ -307,7 +309,7 @@ async function handleRunExtraction(selection) {
             // Autenticação: antes de cada recurso, confirma que a sessão ainda é
             // válida (não basta a janela aberta). Se expirou, marca o RESTANTE da
             // semana como inacessível (motivo de autenticação) e encerra o fluxo.
-            if (!(await isLoggedIn(auxWin))) {
+            if (!(await confirmLoggedIn(auxWin, { attempts: 3, intervalMs: 700 }))) {
               sessionExpired = true;
               logger.error('sessão expirada durante a extração — recursos restantes marcados como inacessíveis (autenticação)');
               const rest = authExpiredEntries(weekResources.slice(extracted.length), course, w.name);
@@ -407,6 +409,21 @@ async function handleRunExtraction(selection) {
   }
 }
 
+// Guarda de backend: desabilitar o botão no renderer melhora a UX, mas não é
+// uma barreira de concorrência. Uma segunda chamada IPC não pode iniciar outra
+// extração enquanto a primeira compartilha auxWin, cancelRequested e work state.
+async function handleRunExtraction(selection) {
+  if (extractionInProgress) {
+    return { ok: false, error: 'Uma extração já está em andamento. Aguarde a operação atual terminar.' };
+  }
+  extractionInProgress = true;
+  try {
+    return await runExtractionInternal(selection);
+  } finally {
+    extractionInProgress = false;
+  }
+}
+
 // Resumo honesto dos resultados para a tela final.
 // Seção 3: separa vídeo COM transcrição (concluído nessa dimensão) de vídeo SEM
 // transcrição (pendência explícita); `video` é o total (compatibilidade).
@@ -492,13 +509,21 @@ async function handleSaveZip() {
     },
   });
   const status = r.ok ? overallStatus({ resources: res.resources, zip: r.zip }) : 'falhou';
+  if (r.ok) lastSavedZipPath = path.resolve(picked.filePath);
   sendStatus('zip', { ok: r.ok, state: r.state, path: picked.filePath, validation: r.validation });
   return { ...r, status };
 }
 
 async function handleRevealZip(zipPath) {
-  try { await require('electron').shell.showItemInFolder(zipPath); return { ok: true }; }
-  catch { return { ok: false }; }
+  try {
+    if (!lastSavedZipPath || typeof zipPath !== 'string' || !zipPath.trim()) return { ok: false };
+    const requested = path.resolve(zipPath);
+    if (requested !== lastSavedZipPath || path.extname(requested).toLowerCase() !== '.zip') return { ok: false };
+    const st = fs.statSync(requested);
+    if (!st.isFile() || st.size <= 0) return { ok: false };
+    await require('electron').shell.showItemInFolder(requested);
+    return { ok: true };
+  } catch { return { ok: false }; }
 }
 
 function handleCancelExtraction() {
