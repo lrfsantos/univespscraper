@@ -121,6 +121,21 @@ function trustedIpc(fn) {
   };
 }
 
+// Janela auxiliar "viva"? Detecta se o navegador do AVA ainda existe. O usuário
+// pode fechá-la a qualquer momento (X na janela) — o objeto Page do Playwright
+// fica com isClosed()=true e qualquer navegação falha. Handlers que dependem do
+// auxWin devem tratar isso (mensagem clara em vez de "nenhuma semana").
+function auxWindowAlive() {
+  if (!auxWin) return false;
+  try { return !auxWin.isClosed(); } catch { return false; }
+}
+
+// Reseta o estado auxiliar quando a janela foi fechada — permite reabrir.
+function resetAuxState() {
+  auxWin = null;
+  auxApp = null;
+}
+
 // --- Lança o navegador auxiliar (janela VISÍVEL do AVA, login manual) ---
 // P0 2.1: usa o MESMO executável Electron (process.execPath), que existe tanto em
 // desenvolvimento quanto dentro do pacote — não depende de node_modules/.bin nem
@@ -128,7 +143,8 @@ function trustedIpc(fn) {
 // auxiliar (--univesp-aux): abre a janela do navegador sem criar a interface
 // principal e sem disputar o single-instance-lock.
 async function launchBrowser() {
-  if (auxApp) return { ok: true, already: true };
+  if (auxApp && auxWindowAlive()) return { ok: true, already: true };
+  resetAuxState();
   const browserEntry = path.join(__dirname, 'browser.js');
   const args = app.isPackaged ? ['--univesp-aux'] : [browserEntry];
   logger.log('launch browser aux executable=' + process.execPath + ' packaged=' + app.isPackaged + ' args=' + JSON.stringify(args));
@@ -140,13 +156,14 @@ async function launchBrowser() {
 
 // Verifica autenticação na janela auxiliar (não basta a página aberta).
 async function checkAuth() {
-  if (!auxWin) return { loggedIn: false };
+  if (!auxWindowAlive()) return { loggedIn: false };
   return { loggedIn: await isLoggedIn(auxWin) };
 }
 
 async function handleDiscoverCourses() {
   await launchBrowser();
   sendStatus('aguardando-login', { message: 'Faça o login manualmente na janela do navegador.' });
+  if (!auxWindowAlive()) return { error: 'navegador-fechado', message: 'O navegador do AVA foi fechado. Clique em "Entrar no AVA" para abri-lo novamente e refaça o login.' };
   const logged = await waitForManualLogin(auxWin, { timeoutMs: 30000, interval: 2000 });
   if (!logged) {
     const ainda = await isLoggedIn(auxWin);
@@ -162,7 +179,7 @@ async function handleDiscoverCourses() {
 }
 
 async function handleDiscoverWeeks(courseIds) {
-  if (!auxWin) return { error: 'navegador-nao-iniciado' };
+  if (!auxWindowAlive()) return { error: 'navegador-fechado', message: 'O navegador do AVA foi fechado. Clique em "Entrar no AVA" para abri-lo novamente, faça o login e tente de novo.' };
   const result = { weeksByCourse: {}, failuresByCourse: [] };
   const selected = courseIds && courseIds.length ? courseIds : null;
   // Descoberta das semanas de cada disciplina selecionada (ou todas as descobertas).
@@ -190,7 +207,7 @@ let currentWorkResult = null;
 let cancelRequested = false;
 
 async function handleRunExtraction(selection) {
-  if (!auxWin || !auxApp) return { error: 'navegador-nao-iniciado' };
+  if (!auxWindowAlive()) return { error: 'navegador-fechado', message: 'O navegador do AVA foi fechado. Clique em "Entrar no AVA" para abri-lo novamente, faça o login e tente de novo.' };
   // selection: [{ courseId, weekIds: [...] }] — P0 2.3: array vazio de weekIds
   // significa NENHUMA semana daquela matéria; null/undefined significa todas.
   const courses = currentCourses;

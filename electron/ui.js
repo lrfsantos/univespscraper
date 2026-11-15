@@ -16,6 +16,8 @@ function setLive(msg, cls) {
 let courses = [];
 let weeksByCourse = {};
 let cancelled = false;
+let courseFilter = 'todas';
+let periodoMaisRecente = null;
 
 window.api.onStatus((s) => {
   // Contrato de eventos (correção C): o envelope sempre usa step='extracao'
@@ -71,6 +73,7 @@ $('btn-check-session').addEventListener('click', async () => {
     return;
   }
   courses = r.courses || [];
+  periodoMaisRecente = (r.summary && r.summary.periodoMaisRecente) || null;
   if (!courses.length) {
     $('sessionMsg').className = 'notice warn';
     $('sessionMsg').textContent = 'Nenhuma matéria foi encontrada na sua conta. Verifique sua sessão e tente novamente.';
@@ -93,10 +96,30 @@ const SITUACAO_LABEL = {
   inativa: { cls: 'concluida', txt: 'inativa' },
   indisponivel: { cls: 'indisponivel', txt: 'indisponível' },
 };
+function applyCourseFilter() {
+  if (courseFilter === 'todas') return courses;
+  if (courseFilter === 'ativas') {
+    return courses.filter((c) => {
+      const situ = String(c.situacao || c.situation || 'ativa').toLowerCase();
+      return situ === 'ativa' || situ === 'em andamento' || situ === 'andamento';
+    });
+  }
+  if (courseFilter === 'recentes') {
+    return courses.filter((c) => {
+      const p = String(c.period || '');
+      if (periodoMaisRecente && p && p !== periodoMaisRecente) return false;
+      const situ = String(c.situacao || c.situation || 'ativa').toLowerCase();
+      return situ === 'ativa' || situ === 'em andamento' || situ === 'andamento';
+    });
+  }
+  return courses;
+}
+
 function renderCourses() {
   const box = $('courseList');
   box.innerHTML = '';
-  courses.forEach((c) => {
+  const visible = applyCourseFilter();
+  visible.forEach((c) => {
     const real = c.available !== false;
     const situ = c.situacao || 'ativa';
     const s = SITUACAO_LABEL[situ] || SITUACAO_LABEL.ativa;
@@ -113,7 +136,7 @@ function renderCourses() {
     span.innerHTML = '';
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = c.title;
+    name.textContent = c.title || c.name || '';
     const code = c.code ? '<span class="code">' + c.code + '</span>' : '';
     const status = '<span class="status ' + s.cls + '">' + s.txt + '</span>';
     label.appendChild(cb);
@@ -125,8 +148,13 @@ function renderCourses() {
     box.appendChild(div);
   });
   updateCourseCounter();
-  $('courseCount').textContent = courses.length;
+  $('courseCount').textContent = visible.length;
 }
+
+$('filter-courses').addEventListener('change', (e) => {
+  courseFilter = e.target.value;
+  renderCourses();
+});
 
 function updateCourseCounter() {
   const n = document.querySelectorAll('#courseList input:checked').length;

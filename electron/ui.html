@@ -51,6 +51,8 @@
     .item .desc { color: var(--muted); font-size: 13px; }
     .group-title { font-weight: 600; margin: 16px 0 6px; }
     .counter { font-size: 14px; color: var(--muted); margin-top: 10px; }
+    .filter { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .filter select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
     .progressbar { background: #eef1f5; border-radius: 8px; height: 12px; overflow: hidden; margin-top: 8px; }
     .progressbar > div { background: var(--primary); height: 100%; transition: width .3s ease; }
     .progressline { margin: 14px 0; }
@@ -111,6 +113,14 @@
         </div>
         <div id="courseList" class="list"></div>
         <div class="counter" id="courseCounter">0 selecionada(s)</div>
+        <div class="filter">
+          <label for="filter-courses">Filtrar matérias:</label>
+          <select id="filter-courses">
+            <option value="todas">Todas</option>
+            <option value="ativas">Somente ativas</option>
+            <option value="recentes">Período mais recente</option>
+          </select>
+        </div>
         <div class="actions">
           <button id="btn-to-weeks" class="success">Continuar</button>
         </div>
