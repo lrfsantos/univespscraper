@@ -161,7 +161,10 @@ function overallStatus({ resources, zip }) {
 // metadados, rastreabilidade e conteúdo original (nunca resumido).
 async function extractResource({ app, win, resource, weekDir, logger, seen, course, week, embedDepth = 0 }) {
   const cls = resource.classification || classifyResource(resource);
-  const entry = { id: resource.id || resource.url, text: resource.text, url: resource.url, kind: cls.kind, subKind: cls.subKind, status: 'inaccessible' };
+  // ID nunca pode cair para a URL crua: além de nomes inválidos no Windows,
+  // barras/query strings podem criar caminhos fora da pasta da semana.
+  const entryId = safeName(resource.id || resourceId(resource, cls, 1)).slice(0, 80);
+  const entry = { id: entryId, text: resource.text, url: resource.url, kind: cls.kind, subKind: cls.subKind, status: 'inaccessible' };
   const courseLabel = course && (course.title || course.code || course.id);
   const weekLabel = week && (week.name || week.id);
 
@@ -319,17 +322,20 @@ function sanitizeReason(e) {
 // vira conteúdo integral. Preserva id/texto/URL/kind e registra o motivo.
 function authExpiredEntries(resources, course, week) {
   const label = course && (course.code || course.id);
-  return (resources || []).map((r) => ({
-    id: r.id || r.url,
+  return (resources || []).map((r) => {
+    const cls = r.classification || classifyResource(r);
+    return {
+    id: safeName(r.id || resourceId(r, cls, 1)).slice(0, 80),
     text: r.text,
     url: r.url,
-    kind: (r.classification || {}).kind,
-    subKind: (r.classification || {}).subKind,
+    kind: cls.kind,
+    subKind: cls.subKind,
     status: 'inaccessible',
     reason: 'sessao-expirada: faça login novamente no AVA e refaça a extração',
     course: label,
     week,
-  }));
+    };
+  });
 }
 
 // ---------- P0 2.5: descoberta RECURSIVA de materiais incorporados em páginas ----------
