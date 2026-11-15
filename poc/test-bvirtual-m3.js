@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { sanitizeUrlForReport, diagnoseReader, classifyReader } = require('../src/extract/books');
+const { sanitizeUrlForReport, diagnoseReader, classifyReader, extractBook } = require('../src/extract/books');
 
 // Testes da SEÇÃO 4.5 (P1): diagnóstico SANITIZADO dos leitores — redação de query
 // strings (ex.: parâmetro `code`), ausência de credenciais/tokens no relatório, e
@@ -95,6 +95,29 @@ function fakeApp({ windows = [], frameUrls = [] } = {}) {
     const r = await diagnoseReader(app, win, 'https://ava.univesp.br/mod/lti/launch.php?id=9', {}, { observeTimeoutMs: 100 });
     const ok = r.classificacao === 'bvpdf' || r.classificacao === 'unknown' || r.classificacao === 'bvleitor';
     record({ id: G + '-6', title: '4.5: leitor paginado BVirtual é diagnosticado sem inventar extração textual', status: ok ? 'PASS' : 'FAIL', detail: `classif=${r.classificacao} evidenciaPdf=${r.evidenciaPdf}` });
+  }
+
+  // Bv-7: reconhecer a plataforma sem navegar Beta/Clássico NÃO prova DRM.
+  {
+    const win = {
+      async goto() {},
+      url: () => 'https://plataforma.bvirtual.com.br/reader/escolha',
+      title: async () => 'Biblioteca Pearson',
+      frames: () => [],
+    };
+    const app = { windows: () => [win] };
+    const result = await extractBook({
+      app,
+      win,
+      launchUrl: 'https://ava.univesp.br/mod/lti/launch.php?id=77',
+      expected: {},
+      opts: { observeTimeoutMs: 100, observeInterval: 10 },
+    });
+    const ok = result.failureType === 'reader-selection-required' &&
+      result.error === 'selecao-de-leitor-pearson-nao-automatizada' &&
+      result.failureType !== 'drm-not-extractable' &&
+      result.readerSelectionRequired === true;
+    record({ id: G + '-7', title: '4.5: Pearson/BVirtual sem seleção do leitor registra pendência de navegação, nunca presume DRM', status: ok ? 'PASS' : 'FAIL', detail: `format=${result.format} failureType=${result.failureType} error=${result.error}` });
   }
 
   const failed = results.filter((r) => r.status === 'FAIL');
