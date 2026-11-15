@@ -261,16 +261,17 @@ function selVal() { return current; }
     const filter = make('Legado', '#filter-legado');
     const course = make('Disciplina (ADM101)', '/course/view.php?id=101', 'course-card');
     const next = make('Próxima página', '?page=2');
+    const nextArrow = make('›', '?page=3');
     const doc = {
       location: { href: 'https://ava.univesp.br/my/courses.php' },
-      querySelectorAll: (selector) => selector.includes('button, [role="tab"]') ? [filter, course, next] : [],
+      querySelectorAll: (selector) => selector.includes('button, [role="tab"]') ? [filter, course, next, nextArrow] : [],
     };
     const controls = selectorControls(doc);
     const labels = collectSelectorOptions(doc).map((o) => o.label);
     const selectedCourse = applySelectOption(doc, 'Disciplina (ADM101)');
     const ok = controls.length === 1 && controls[0] === filter &&
       labels.includes('Legado') && !labels.includes('Disciplina (ADM101)') &&
-      !labels.includes('Próxima página') && selectedCourse === false;
+      !labels.includes('Próxima página') && !labels.includes('›') && selectedCourse === false;
     record({ id: G + '-13', title: 'Meus cursos: links de cartões e paginação excluídos da seleção de filtros', status: ok ? 'PASS' : 'FAIL', detail: `controls=${controls.map((e) => e.textContent).join(',')} labels=${labels.join(',')} courseClick=${selectedCourse}` });
   }
 
