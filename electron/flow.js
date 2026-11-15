@@ -10,6 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const { extractPage } = require('../src/extract/pages');
 const { extractPdf } = require('../src/extract/pdfs');
 const { extractBook } = require('../src/extract/books');
@@ -22,6 +23,7 @@ const {
   classifyResource,
   parseExpectedFromResource,
   isIgnoredActivity,
+  isExcludedResourceLabel,
 } = require('./discovery');
 const { createLogger } = require('./log');
 
@@ -83,7 +85,7 @@ function discoverResourcesFromSection(section, baseUrl = BASE) {
   for (const l of links) {
     // Regra de produto: "Início" (apresentação) e "Em síntese" NÃO são materiais
     // acadêmicos — não geram documento, não contam como extraídos nem como pendência.
-    if (isIgnoredActivity(l.text)) continue;
+    if (isIgnoredActivity(l.text) || isExcludedResourceLabel(l.text)) continue;
     n++;
     const cls = classifyResource(l);
     const id = resourceId(l, cls, n);
@@ -106,10 +108,16 @@ function discoverResourcesFromSection(section, baseUrl = BASE) {
 
 // Nome de arquivo curto e determinístico a partir da URL do recurso.
 function resourceId(r, cls, n) {
-  const base = String(r.url || '').split('?')[0].split('#')[0].split('/').filter(Boolean).pop() || 'recurso';
-  const ext = base.includes('.') ? '' : `.${cls.kind}`;
-  const safe = safeName(base + ext).slice(0, 60) || `recurso-${n}`;
-  return `r${n}-${safe}`;
+  const rawUrl = String((r && r.url) || '');
+  const base = rawUrl.split('?')[0].split('#')[0].split('/').filter(Boolean).pop() || 'recurso';
+  const ext = base.includes('.') ? '' : \`.\${cls.kind}\`;
+  const safe = safeName(base + ext).slice(0, 52) || \`recurso-\${n}\`;
+  // O nome visível (watch, index, page etc.) NÃO identifica um recurso.
+  // Um hash da identidade estável evita colisões entre vídeos / arquivos
+  // homônimos descobertos em chamadas diferentes, sem expor query strings.
+  const identity = rawUrl ? resourceIdentityKey(rawUrl) : String((r && r.text) || base);
+  const digest = crypto.createHash('sha256').update(identity).digest('hex').slice(0, 10);
+  return \`r\${n}-\${safe}-\${digest}\`;
 }
 
 // --- Classificação de status honesto do fluxo (A6) ---
@@ -139,7 +147,7 @@ function overallStatus({ resources, zip }) {
 // Electron (app, win) e o diretório da semana (para PDFs/organização).
 // Seção 4: gera também o documento Markdown INDIVIDUAL do recurso (`.md`) com
 // metadados, rastreabilidade e conteúdo original (nunca resumido).
-async function extractResource({ app, win, resource, weekDir, logger, seen, course, week }) {
+async function extractResource({ app, win, resource, weekDir, logger, seen, course, week, embedDepth = 0 }) {
   const cls = resource.classification || classifyResource(resource);
   const entry = { id: resource.id || resource.url, text: resource.text, url: resource.url, kind: cls.kind, subKind: cls.subKind, status: 'inaccessible' };
   const courseLabel = course && (course.title || course.code || course.id);
@@ -162,8 +170,8 @@ async function extractResource({ app, win, resource, weekDir, logger, seen, cour
     // páginas). Eles são descobertos e extraídos de acordo com o tipo, preservando
     // a página como fonte independente e registrando sourcePage. `seen` compartilhado
     // (padrão: isolado por chamada) evita reextrair o mesmo recurso em várias páginas.
-    if (p.pageStatus === 'integral' || p.pageStatus === 'partial') {
-      const embedded = await extractEmbeddedFromPage({ win, page: p, sourceUrl: resource.url, weekDir, app, logger, seen, course, week });
+    if ((p.pageStatus === 'integral' || p.pageStatus === 'partial') && canTraverseEmbeddedDepth(embedDepth)) {
+      const embedded = await extractEmbeddedFromPage({ win, page: p, sourceUrl: resource.url, weekDir, app, logger, seen, course, week, depth: embedDepth });
       if (embedded.length) entry.embedded = embedded;
     }
   } else if (cls.kind === 'pdf') {
@@ -321,6 +329,12 @@ function authExpiredEntries(resources, course, week) {
 // reextrair o mesmo recurso em múltiplas páginas; profundidade máxima impede ciclos.
 const MAX_EMBED_DEPTH = 3;
 
+// \`depth\` representa quantos níveis de páginas incorporadas já foram atravessados.
+// O nível máximo ainda pode ser extraído; ele apenas não inicia outro nível.
+function canTraverseEmbeddedDepth(depth = 0) {
+  return Number.isInteger(depth) && depth >= 0 && depth <= MAX_EMBED_DEPTH;
+}
+
 function normalizeUrlKey(url) {
   try {
     const u = new URL(String(url || ''), BASE);
@@ -382,8 +396,9 @@ function discoverEmbeddedResources({ links = [], iframes = [], sourceUrl = '', d
 // extraído pelo fluxo NORMAL (status próprio); a página original permanece fonte
 // independente; `sourcePage` registra a origem; `seen` compartilhado evita reextrair
 // o mesmo recurso em múltiplas páginas.
-async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, logger, seen = new Set(), course, week }) {
-  const discovered = discoverEmbeddedResources({ links: page && page.links, iframes: page && page.iframes, sourceUrl, depth: 0, seen });
+async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, logger, seen = new Set(), course, week, depth = 0 }) {
+  if (!canTraverseEmbeddedDepth(depth)) return [];
+  const discovered = discoverEmbeddedResources({ links: page && page.links, iframes: page && page.iframes, sourceUrl, depth, seen });
   const out = [];
   for (const r of discovered) {
     const subDir = r.classification.kind === 'video' ? 'videos' : (r.classification.kind === 'pdf' ? 'supplementary' : (r.classification.kind === 'book' ? 'readings' : ''));
@@ -391,7 +406,7 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
     try { fs.mkdirSync(targetDir, { recursive: true }); } catch {}
     let e;
     try {
-      e = await extractResource({ app, win, resource: r, weekDir: targetDir, logger, seen, course, week });
+      e = await extractResource({ app, win, resource: r, weekDir: targetDir, logger, seen, course, week, embedDepth: r.depth + 1 });
     } catch (err) {
       e = { id: r.id || r.url, text: r.text, url: r.url, kind: r.classification.kind, subKind: r.classification.subKind, status: 'inaccessible', reason: 'falha-durante-extracao: ' + sanitizeReason(err) };
     }
@@ -399,16 +414,6 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
     e.isEmbedded = true;
     e.embedDepth = r.depth + 1;
     out.push(e);
-    // Recursão em páginas internas do AVA (limite de profundidade, sem ciclos).
-    if (r.classification.kind === 'page' && r.depth < MAX_EMBED_DEPTH) {
-      const sub = await extractPage(win, r.url).catch(() => null);
-      if (sub && (sub.pageStatus === 'integral' || sub.pageStatus === 'partial')) {
-        const nested = await extractEmbeddedFromPage({ win, page: sub, sourceUrl: r.url, weekDir, app, logger, seen, course, week });
-        out.push(...nested);
-      } else if (sub) {
-        out.push({ id: r.id || r.url, text: r.text, url: r.url, kind: 'page', status: sub.pageStatus || 'inaccessible', reason: 'pagina-vinculada-inacessivel', sourcePage: sourceUrl, isEmbedded: true, embedDepth: r.depth + 1 });
-      }
-    }
   }
   return out;
 }
