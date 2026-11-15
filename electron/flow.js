@@ -653,6 +653,7 @@ module.exports = {
   normalizeUrlKey,
   resourceIdentityKey,
   MAX_EMBED_DEPTH,
+  canTraverseEmbeddedDepth,
   overallStatus,
   isDoneStatus,
   buildCourseStructure,
