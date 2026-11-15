@@ -8,7 +8,7 @@ const { makeWorkDir, cleanupWorkDir, cleanupResidualWorkDirs } = require('./work
 const { createBrowserWindow: createAuxWindow, applyBrowserDefaults } = require('./browser');
 const { buildAuxEnv } = require('./env');
 const { discoverAllCourses } = require('./my-courses');
-const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, confirmLoggedIn, isLoggedIn, safeName, BASE } = require('./flow');
+const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, flattenEmbeddedEntries, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, confirmLoggedIn, isLoggedIn, safeName, BASE } = require('./flow');
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
 // Fluxo: o estudante abre o app, uma janela de navegador VISÍVEL é aberta no AVA,
@@ -342,8 +342,9 @@ async function runExtractionInternal(selection) {
             else pendingCount++;
             // P0 2.5: recursos incorporados descobertos na página são tratados como
             // recursos independentes (status próprio) — entram no progresso e no relatório.
-            if (Array.isArray(e.embedded) && e.embedded.length) {
-              for (const emb of e.embedded) {
+            const embeddedResources = flattenEmbeddedEntries(e.embedded);
+            if (embeddedResources.length) {
+              for (const emb of embeddedResources) {
                 emb.course = course.code || course.id;
                 emb.week = w.name;
                 extracted.push(emb);
@@ -351,7 +352,7 @@ async function runExtractionInternal(selection) {
                 if (isDoneStatus(emb.status)) doneCount++;
                 else pendingCount++;
               }
-              totalResources += e.embedded.length;
+              totalResources += embeddedResources.length;
             }
             emitProgress();
           }
