@@ -453,8 +453,8 @@ function flattenEmbeddedEntries(entries, out = []) {
 // --- Renderização da estrutura do ZIP (A7) ---
 function safeName(s) {
   let name = String(s || '')
-    .replace(/[<>:"\/\\|?*\x00-\x1F]/g, '')
-    .replace(/[^\w\-. ]+/g, '')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .replace(/[^\w. -]+/g, '')
     .replace(/\s+/g, '_')
     .replace(/[. ]+$/g, '')
     .slice(0, 80);
