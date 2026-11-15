@@ -17,6 +17,7 @@
     "productName": "UnivespStudyTool",
     "files": [
       "electron/**/*",
+      "!electron/run-poc.js",
       "src/extract/**/*",
       "!**/node_modules/*/{test,__tests__,tests,examples,docs}/**/*"
     ],
