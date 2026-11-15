@@ -213,7 +213,8 @@ function isPaginationControl(el) {
   const text = String((el && el.textContent) || '').replace(/\s+/g, ' ').trim();
   const aria = String(el && el.getAttribute ? el.getAttribute('aria-label') || '' : '');
   const cls = String(el && el.getAttribute ? el.getAttribute('class') || '' : '');
-  return /pr[oó]xima|anterior|next|previous|p[aá]gina\s*\d|\bpage\s*\d|pagination|paginar/i.test(text + ' ' + aria + ' ' + cls);
+  const arrowOnly = /^[›»‹«<>]+$/.test(text);
+  return arrowOnly || /pr[oó]xima|anterior|next|previous|p[aá]gina\s*\d|\bpage\s*\d|pagination|paginar/i.test(text + ' ' + aria + ' ' + cls);
 }
 
 function selectorControls(doc) {
