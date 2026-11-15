@@ -1387,7 +1387,7 @@ function failureResult({ url, format, failureType, readerLoaded = false, error, 
 //   - unknown → espera (observeTimeoutMs) e reavalia SEM navegar; se persistir,
 //     permite NO MÁXIMO UM relaunch e uma única reavaliação após ele;
 //   - relaunch que resultar em reader-auth → interrompe.
-async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
+async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts = {} }) {
   const observeTimeoutMs = opts.observeTimeoutMs != null ? opts.observeTimeoutMs : 30000;
   const observeInterval = opts.observeInterval != null ? opts.observeInterval : 1500;
   const attempts = [];
@@ -1453,6 +1453,32 @@ async function extractBook({ app, win, launchUrl, expected = {}, opts = {} }) {
     error: 'conteudo-em-canvas/DRM-nao-extraivel', expected, attempts,
     extra: { source: det.format, readerUrl: det.readerUrl },
   });
+}
+
+// Fecha apenas janelas de leitor abertas por este recurso. A janela principal
+// e quaisquer janelas que já existiam antes da chamada permanecem intactas.
+// A extração é feita antes do fechamento para permitir leitura de frames/popups.
+async function closeWindowsOpenedSince(app, originalWindows) {
+  const original = originalWindows instanceof Set ? originalWindows : new Set();
+  const opened = allWindows(app).filter((w) => !original.has(w));
+  for (const w of opened) {
+    try {
+      if (w && typeof w.isClosed === 'function' && w.isClosed()) continue;
+      if (w && typeof w.close === 'function') await w.close();
+    } catch { /* melhor esforço: janela já fechada ou contexto destruído */ }
+  }
+  return opened.length;
+}
+
+// Wrapper de ciclo de vida: cada extração de livro mantém popups disponíveis
+// durante a leitura e os fecha em finally, inclusive em falha/retorno antecipado.
+async function extractBook(args) {
+  const originalWindows = new Set(allWindows(args && args.app));
+  try {
+    return await extractBookWithReader(args);
+  } finally {
+    await closeWindowsOpenedSince(args && args.app, originalWindows);
+  }
 }
 
 // ---- Seção 4.5: diagnóstico sanitizado dos leitores (BVirtual/VitalSource) ----
@@ -1540,6 +1566,7 @@ async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
 
 module.exports = {
   extractBook,
+  closeWindowsOpenedSince,
   detectFormat,
   classifyReader,
   observeReader,
