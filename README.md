@@ -74,8 +74,12 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 - A extração de livros digitais depende do leitor VitalSource (Minha Biblioteca)
   carregar o conteúdo; quando o conteúdo não monta (limite de sessão/dispositivo),
   o recurso é registrado honestamente como `inaccessible`/`not_found`.
-- Transcrição de vídeo e extração de vídeo (Módulo 4) estão **fora do escopo**
-  atual; os vídeos são registrados com link e metadados.
+- O scraper captura a transcrição de videoaulas quando a plataforma a
+  disponibiliza, preservando segmentos e timestamps. Não baixa o arquivo de
+  áudio/vídeo; quando não há transcrição acessível, registra a pendência.
+- O escopo desta versão limita-se a leituras, materiais complementares e
+  videoaulas. Fóruns, lives com facilitador e atividades avaliativas são
+  deliberadamente excluídos da extração.
 - O `integral` de PDF significa que o texto extraível foi obtido de todas as
   páginas — **não** que diagramas foram interpretados, imagens reconhecidas ou
   que houve OCR.
