@@ -109,6 +109,25 @@ function makeFakeWin(html) {
     record({ id: 'D-2e', title: 'D2: limpeza do diretório temporário de trabalho em melhor esforço', status: ok ? 'PASS' : 'FAIL', detail: `removed=${removed}` });
   }
 
+  // D-2f: uma sondagem transitória negativa não encerra a sessão imediatamente.
+  {
+    let calls = 0;
+    const okAfterRetry = await flow.confirmLoggedIn({}, {
+      attempts: 3,
+      intervalMs: 0,
+      check: async () => ++calls >= 2,
+    });
+    const callsAll = calls;
+    calls = 0;
+    const remainsLoggedOut = await flow.confirmLoggedIn({}, {
+      attempts: 3,
+      intervalMs: 0,
+      check: async () => { calls++; return false; },
+    });
+    const ok = okAfterRetry === true && callsAll === 2 && remainsLoggedOut === false && calls === 3;
+    record({ id: 'D-2f', title: 'D2: confirmação de sessão repete sondagens transitórias e só expira após tentativas configuradas', status: ok ? 'PASS' : 'FAIL', detail: `recovered=${okAfterRetry} callsToRecover=${callsAll} loggedOut=${remainsLoggedOut} callsWhenLoggedOut=${calls}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
