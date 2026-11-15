@@ -388,7 +388,7 @@ function discoverEmbeddedResources({ links = [], iframes = [], sourceUrl = '', d
   ];
   for (const c of candidates) {
     const cls = classifyResource(c);
-    if (!cls.kind || cls.kind === 'unknown') continue;
+    if (isExcludedResourceLabel(c.text) || !cls.kind || cls.kind === 'unknown') continue;
     // Página vinculada só quando for recurso interno do AVA (evita transformar
     // qualquer link de navegação em material extraído).
     if (cls.kind === 'page' && !/\/mod\/(page|url|resource)\//.test(String(c.url || ''))) continue;
