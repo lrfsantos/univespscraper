@@ -208,13 +208,13 @@ const COURSE_HTML = [
       !texts.some((t) => /em s[ií]ntese/i.test(t)) &&
       texts.some((t) => /Videoaulas/i.test(t)) &&
       texts.some((t) => /Material base/i.test(t)) &&
-      texts.some((t) => /Atividade avaliativa/i.test(t)) &&
+      !texts.some((t) => /Atividade avaliativa/i.test(t)) &&
       texts.some((t) => /Aprofundando/i.test(t)) &&
-      texts.some((t) => /F[oó]rum/i.test(t)) &&
-      texts.some((t) => /Live com facilitador/i.test(t)) &&
+      !texts.some((t) => /F[oó]rum/i.test(t)) &&
+      !texts.some((t) => /Live com facilitador/i.test(t)) &&
       texts.some((t) => t === 'Slides') &&
       resources.some((r) => r.classification.kind === 'video');
-    record({ id: 'D-8', title: 'P1 (2): Geral não é semana; Início e Em síntese ignorados; demais atividades e recursos preservados', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ texts, urls: urls.filter((u) => !u.includes('id=')) }) });
+    record({ id: 'D-8', title: 'P1 (2): escopo do produto mantém leituras/complementos/videoaulas e exclui atividade, fórum e live', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify({ texts, urls: urls.filter((u) => !u.includes('id=')) }) });
   }
 
   // --- P1 (2): variações de acentuação/maiúsculas/espaços/numeração na identificação ---
@@ -237,7 +237,19 @@ const COURSE_HTML = [
       'Texto-base - Capítulo 1': false,
     };
     const ok = Object.entries(samples).every(([label, expectIgnored]) => discovery.isIgnoredActivity(label) === expectIgnored);
-    record({ id: 'D-9', title: 'P1 (2): isIgnoredActivity normaliza acentos/caixa/espaços/numeração e não descarta "Introdução"', status: ok ? 'PASS' : 'FAIL', detail: JSON.stringify(samples) });
+    const excluded = {
+      'S1 Atividade avaliativa': true,
+      'S2 Fórum temático': true,
+      'S3 Live com facilitador': true,
+      'forum': true,
+      'live': true,
+      'S1 Videoaulas': false,
+      'Material base': false,
+      'Aprofundando o tema': false,
+      'Introdução': false,
+    };
+    const scopeOk = Object.entries(excluded).every(([label, expected]) => discovery.isExcludedResourceLabel(label) === expected);
+    record({ id: 'D-9', title: 'P1 (2): rótulos ignorados e escopo de recursos normalizam acentos/caixa/numeração sem descartar Introdução', status: ok && scopeOk ? 'PASS' : 'FAIL', detail: JSON.stringify({ ignored: samples, excluded }) });
   }
 
   // --- P1 (3.4): disciplinas antigas — "sem oferta"/"vagas encerradas" são situação
