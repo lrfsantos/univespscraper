@@ -1,6 +1,6 @@
 # HANDOFF — UNIVESP Study Tool (univespscraper)
 
-**Data:** 2026-11-14
+**Data:** 2026-11-15
 **Branch atual:** `review/pre-release-2026-11-07`
 **Próxima IA:** comece DO ZERO. Não confie em nada do que foi feito nesta sessão além do que está neste documento. NÃO continue a conversa anterior.
 
@@ -21,134 +21,109 @@ Ferramenta Electron que extrai e organiza academicamente o conteúdo das discipl
 
 ---
 
-## 2. ESTADO ATUAL DO GIT (já feito e commitado)
+## 2. ESTADO ATUAL DO GIT (tudo commitado e pushado nesta sessão)
 
-HEAD local = `df4c30f`, já pushado para `origin/review/pre-release-2026-11-07`. Working tree limpo, exceto 2 arquivos intencionalmente NÃO versionados: `poc/_pkg.js` e `poc/probe-readers.js` (diagnósticos preservados por regra, ver `audit-temp/FINAL_STABILIZATION_BASELINE.md`).
+HEAD local = `74d5e81`, pushado para `origin/review/pre-release-2026-11-07`. Working tree limpo, exceto 2 arquivos intencionalmente NÃO versionados: `poc/_pkg.js` e `poc/probe-readers.js` (diagnósticos preservados por regra).
 
-Commits desta sessão (após `b0214da`):
-- `22419df` feat: close Meus cursos discovery gaps (removido da visualização, período mais recente, verificação de acesso abrindo o curso, driver de DOM testável, Favoritos como visão adicional)
-- `df4c30f` chore: refresh audit evidence
+Commits desta sessão (após `df4c30f`):
+- `f4d6558` fix: launch aux browser window when entry is passed as arg by playwright-core._electron (dev) — guard `require.main === module` agora também dispara quando `browser.js` está em `process.argv`
+- `e32a3e0` chore: refresh audit evidence
+- `29aaea7` fix: UI inline script blocked by CSP (script-src 'self') left 'Entrar no AVA' dead — lógica do UI extraída para `electron/ui.js` externo; testes de inspeção passam a ler `ui.html` + `ui.js`
+- `500b3f1` docs: refresh audit evidence
+- `91aedb3` fix: detect closed aux browser (isClosed) + course filter (todas/ativas/período mais recente)
+- `74d5e81` chore: refresh audit evidence
 
-Trabalho anterior já commitado/pushado (seções do prompt): 4, 5, 6, 9, 10/11.5, 12, 14, BVirtual 4.5, e a nova seção "Meus cursos" (testes M-1..M-7). `npm test`: 24/24 suítes, 309/309 casos, 0 falhas.
-
-**Arquivos-chave alterados nesta sessão (para fechar os 5 gaps da nova seção "Meus cursos"):**
-- `electron/discovery.js` — adicionou `parsePeriodRank`, `mostRecentPeriod`; `classifySelectorOption` agora distingue `favoritos` e `removido` (antes retornava `categoria` para tudo)
-- `electron/my-courses.js` — adicionou: coleta de `removidosDaVisualizacao` (registra sem restaurar), verificação REAL de acesso via `checkCourseAccess` (abre o curso), `periodoMaisRecente` no summary, `Favoritos` como visão adicional (não bloqueia `completo`); refatorou o driver real em funções PURAS exportadas (`collectSelectorOptions`, `applySelectOption`, `readStability`, `readCards`, `applyShowAll`, `applyNextPage`, `readActiveLabel`) testáveis com `document` fake
-- `poc/test-my-courses-m3.js` — adicionou testes M-8..M-12 (removido, período mais recente, acesso por abertura, Favoritos adicional, driver puro com document fake). Total M-1..M-12.
-
-**O que AINDA falta no projeto (não é código, depende de ambiente/proprietário):**
-1. Validação real contra o AVA (ver seção 4 abaixo — ESTE é o trabalho em andamento)
-2. Validar portable em máquina sem WDAC
-3. Decisão do proprietário sobre purga do histórico (copyright, commit `8742012`)
+`npm test`: 24/24 suítes, 309/309 casos, 0 falhas.
 
 ---
 
-## 3. PROBLEMA EM ANDAMENTO — "O BOTÃO 'Entrar no AVA' NÃO FAZ NADA"
+## 3. PROBLEMA "O BOTÃO 'Entrar no AVA' NÃO FAZ NADA" — RESOLVIDO (DUAS CAUSAS)
 
-Este é o motivo desta sessão. Reproduzido 100% localmente. **NÃO foi corrigido ainda.**
+### Causa real n.º 1 (a que o USUÁRIO viu): CSP bloqueando o script inline do UI
 
-### Sintoma
-Ao clicar em "Entrar no AVA" (botão `#btn-enter` em `electron/ui.html`), nada acontece — a tela não muda para "screen-session". O app fica travado. No log (`$env:TEMP\univesp-app.log`) NUNCA aparece a linha `launch browser aux ...`, ou seja, `launchBrowser()` inicia mas nunca completa.
+A CSP da seção 12 em `electron/ui.html:5` tem `script-src 'self'` (sem `unsafe-inline`). Todo o JS do UI vivia em um `<script>...</script>` INLINE, que a CSP BLOQUEIA. Resultado: nenhum listener de evento é anexado, o botão "não faz nada" e o log do app NUNCA chega a `launch browser aux`. Confirmado por probe (console do renderer: `Executing inline script violates the following Content Security Policy directive 'script-src 'self''`).
 
-### Causa raiz (confirmada)
-`launchBrowser()` em `electron/main.js:130` lança o navegador auxiliar assim:
-```js
-const browserEntry = path.join(__dirname, 'browser.js');
-const args = app.isPackaged ? ['--univesp-aux'] : [browserEntry];
-auxApp = await _electron.launch({ executablePath: process.execPath, args, env: auxEnv() });
-auxWin = await auxApp.firstWindow();   // <-- TRAVA AQUI: nenhuma janela aparece
-```
+**Correção:** extrair todo o script inline para `electron/ui.js` (arquivo externo, carregado via `<script src="ui.js"></script>`), que satisfaz `script-src 'self'`. A CSP permanece estrita (sem `unsafe-inline`).
 
-Em desenvolvimento (`npm run app`, `app.isPackaged === false`), ele lança com `args: [browserEntry]` e espera a janela via `firstWindow()`.
+### Causa n.º 2 (bônus, só aparecia DEPOIS da correção 1): guard `require.main` no browser.js
 
-**O bug:** em `electron/browser.js`, o código que cria a janela está protegido por:
-```js
-if (require.main === module) runStandalone();
-```
+Mesmo com o UI funcionando, em modo dev o Playwright lança `browser.js` como ARGUMENTO (`args: [browserEntry]`), então `require.main === module` é false e `runStandalone()` nunca rodava → a janela do AVA nunca abria → `firstWindow()` pendurado 30s. **Correção:** guard agora é `require.main === module || process.argv.some(a => a.includes('browser.js'))`. O caminho empacotado (`--univesp-aux`, via main.js) não passa por `browser.js` como entry e permanece intacto.
 
-Quando o Electron é lançado via `playwright-core._electron.launch({ executablePath, args: [browserEntry] })`, **`require.main === module` é `false`** para o `browser.js`. **Confirmado experimentalmente** (probe3-log.txt, arquivo em `$env:TEMP\probe3-log.txt`):
-
-```
-module-loaded requireMain=false
-argv=["...electron.exe","--inspect=0","--remote-debugging-port=0","C:\\...\\probe3-log.js"]
-before-guard requireMain=false
-```
-
-Ou seja: quando o Playwright injeta `--inspect=0` e `--remote-debugging-port=0` e passa o entry como ARGUMENTO (não como `require.main`), o guard `if (require.main === module)` nunca dispara, `runStandalone()` nunca roda, a `BrowserWindow` nunca é criada, e `firstWindow()` fica pendurado 30s → o `await` em `launchBrowser()` nunca resolve → o botão "não faz nada".
-
-### Evidências experimentais (já coletadas — NÃO refaça tudo)
-1. **Probe mínimo (janela simples, sem guard) FUNCIONA:** `new BrowserWindow` + `about:blank` via `_electron.launch` → `firstWindow()` retorna a janela. ✅
-2. **Probe com `installTempProfile` + `applyBrowserDefaults` + `about:blank` FUNCIONA** (o perfil temporário NÃO é o problema). ✅
-3. **Probe com URL real `https://ava.univesp.br/` FUNCIONA** — a janela abre e redireciona para `ava.univesp.br/custom/univesp_login.php`. ✅ (ou seja, rede/URL não é o problema)
-4. **Probe IDÊNTICO ao `browser.js` mas SEM o guard `if (require.main === module)`** → criar a janela diretamente em `app.whenReady()` **FUNCIONA**. ✅
-5. **Probe que replica o guard do `browser.js`** (`if (require.main === module) runStandalone()`) → **FALHA**, `windows=0`, `requireMain=false`. ❌ ← ESTA é a reprodução exata.
-
-Conclusão inequívoca: **o guard `if (require.main === module)` é a causa raiz.** Quando lançado por `_electron.launch` com o entry como argumento, `require.main` nunca é o `browser.js`.
-
-### Correção recomendada (a próxima IA deve implementar e testar)
-O `browser.js` precisa criar a janela também quando é lançado como argumento do Playwright, não só quando `require.main === module`. Opções:
-
-**Opção A (recomendada):** Detectar se foi lançado pelo Playwright. O Playwright adiciona `--remote-debugging-port=0` (e `--inspect=0`) aos args. Ou simplesmente chamar `runStandalone()` sempre que NÃO houver sinal de "modo auxiliar empacotado". Concretamente, em `browser.js`, trocar:
-```js
-if (require.main === module) runStandalone();
-```
-por algo que rode `runStandalone()` em ambos os casos (dev via playwright E standalone). Ex.:
-```js
-if (require.main === module || process.argv.some(a => a.includes('browser.js') || a.includes('remote-debugging-port'))) runStandalone();
-```
-Ou, mais simples e robusto: **remover o guard** e chamar `runStandalone()` incondicionalmente, já que `browser.js` é um processo AUXILIAR dedicado (nunca é `require`'d como biblioteca pelo fluxo normal — `main.js` só importa funções dele, mas o processo auxiliar é lançado como entry). ⚠️ VERIFICAR: `main.js` faz `require('./browser')` e chama `createAuxWindow`/`applyBrowserDefaults`. Se remover o guard e o arquivo for `require`'d pelo `main.js` principal, `runStandalone()` rodaria no processo principal e abriria uma janela indevida. Portanto: a remoção do guard NÃO é segura se `browser.js` for `require`'d no processo principal. **Preferir manter um guard, mas que também cubra o lançamento via Playwright.**
-
-**Verificação obrigatória após a correção:** rodar o teste de reprodução (abaixo) e confirmar que `firstWindow()` retorna a janela com URL do AVA. Depois rodar `npm.cmd test` (309 casos).
-
-### Como reproduzir o bug (comandos prontos)
-```powershell
-cd C:\Users\luiza\Documents\univespscraper
-node -e "const {_electron}=require('playwright-core'); const path=require('path'); const exe=path.join(process.cwd(),'node_modules','electron','dist','electron.exe'); const entry=path.join(process.cwd(),'electron','browser.js'); (async()=>{ const app=await _electron.launch({executablePath:exe,args:[entry]}); const t=setTimeout(()=>{console.log('TIMEOUT windows='+app.windows().length);process.exit(0)},15000); try{ const win=await app.firstWindow(); clearTimeout(t); console.log('WINDOW OK url='+win.url()); await app.close(); }catch(e){clearTimeout(t);console.log('FAILED '+e.message)} })().catch(e=>{console.error('ERR',e&&e.message);process.exit(1)})"
-```
-**Resultado atual (bug):** `TIMEOUT windows=0`
-**Resultado esperado após a correção:** `WINDOW OK url=https://ava.univesp.br/custom/univesp_login.php`
-
-**OBSERVAÇÃO IMPORTANTE sobre `main.js`:** em modo EMPACOTADO (`app.isPackaged === true`), `launchBrowser` usa `args: ['--univesp-aux']`, e o `main.js:504-512` trata `isAuxBrowser` criando a janela via `createAuxWindow()`. Esse caminho NÃO passa por `browser.js` como entry — é o próprio `main.js` em modo auxiliar. Portanto, o bug do `require.main` afeta APENAS o modo desenvolvimento (`npm run app`). A correção não deve quebrar o caminho empacotado.
+### Verificação feita
+- Comando de reprodução do handoff anterior: `WINDOW OK url=https://ava.univesp.br/custom/univesp_login.php` ✅
+- Probe end-to-end do app real: clicar em "Entrar no AVA" → `screen-session` ativo + log `launch browser aux` ✅
+- `npm.cmd test` 309/309 ✅
 
 ---
 
-## 4. PRÓXIMOS PASSOS (validação real no AVA — o que o usuário queria)
+## 4. VALIDAÇÃO REAL NO AVA — FEITA (o que o usuário reportou)
 
-O objetivo do usuário (da sessão anterior) era fazer a **validação real do AVA** (Opção A): rodar `npm run app`, clicar "Entrar no AVA", logar manualmente e ver se a descoberta de disciplinas funciona contra o DOM real. **Isso estava bloqueado pelo bug da seção 3** — o botão não abria o navegador.
+O usuário rodou o app real e **o fluxo funcionou**: botão abriu a janela do AVA, login manual OK, e a tela "Suas matérias" mostrou **10 matérias**, incluindo: Liderança/Competências RH Turma 002 (ADM290), Estudos Organizacionais (ADM210), Metodologias ágeis (CIN200), Gestão de Pessoas (ADM250), Indicadores de desempenho (ADM260), Gestão Contábil (ADM230), AIA, e **LEGADO_INT100** (todos listados como "ativa").
 
-Após corrigir o bug, o fluxo a validar com o usuário (ele NÃO entende jargão de programação — dar passos simples):
-1. `npm.cmd run app`
-2. Clicar **"Entrar no AVA"**
-3. Logar manualmente na janela do UNIVESP que abre
-4. Clicar **"Já concluí o login"**
-5. Ver a tela **"Suas matérias"** e reportar o número e os nomes/períodos
-6. Reportar qualquer erro literal na tela
-
-O usuário reportou literalmente: **"o botão entrar no AVA não faz nada"** — sintoma 100% compatível com o bug da seção 3.
+Feedback do usuário nesta sessão (IMPORTANTE para a próxima IA):
+1. **"ele não tem filtro de materias ativas/mais recentes. ele puxa todas"** → foi adicionado um dropdown de filtro (`#filter-courses`: Todas / Somente ativas / Período mais recente) na tela de matérias (`electron/ui.html` + `electron/ui.js`). ⚠️ O usuário depois disse que **"filtros não funcionam"** e reclamou da UX: filtro fica NO RODAPÉ da lista e **todas as matérias vêm pré-selecionadas**. VERIFICAR e melhorar.
+2. **"ele não escaneia apenas os tópicos que eu quero ... ele passa por todas opções de cada materia. eu quero apenas leituras, material complementar e videoaulas"** → a extração NÃO filtra os tipos de recurso; percorre TODAS as opções de cada matéria (não ignora "Live com facilitador", não ignora "Início", não ignora "Em síntese"/resumo etc.). Há `isIgnoredActivity` em `electron/discovery.js` (ignora só "Início" e "Em síntese" exatos). ⚠️ O usuário quer restringir a **leituras + material complementar + videoaulas**.
+3. **"estou com umas 10-20 abas abertas no navegador do programa" e "a barra de progresso avança porem o numero de pendencias quase nao diminui" e "pelo menos metade delas nao acessaram conteudo algum"** → PROBLEMA CRÍTICO ABERTO (seção 5).
+4. **"existe um leitor diferente da biblioteca pearson? se chama minha biblioteca ... https://app.minhabiblioteca.com.br/reader/books/9788580553338/pageid/22"** → SIM, o leitor "Minha Biblioteca" já é suportado e reconhecido: `app.minhabiblioteca.com.br/reader/books/<id>/pageid/N` é a janela de topo (shell) e o conteúdo vem dos frames `jigsaw.minhabiblioteca.com.br/books/<id>/pageid/N` (padrão pageid, VitalSource). Ver `src/extract/books.js` (`PAGEID_CONTENT_RE`), `electron/discovery.js` (`READER_PLATFORM_RE` inclui `minhabiblioteca`), testes `poc/test-adapters-m3.js`/`poc/test-c-fidelity-m3.js`/`poc/test-regression-m3.js` (caso B9). Não é um leitor "diferente" — é o leitor pageid/VitalSource que já existe no fluxo.
+5. **"o fato de precisar deixar ambas janelas abertas tambem é chato"** → o usuário aceitou manter como está se mudar for grande.
 
 ---
 
-## 5. AVISOS / CONVENÇÕES DO REPO
+## 5. PROBLEMA CRÍTICO ABERTO — ABAS/JANELAS QUE NÃO FECHAM + PENDÊNCIAS QUE NÃO DIMINUEM
+
+**Sintoma (usuário, extração real em andamento):** o programa abre páginas e mais páginas e não as fecha; ~10-20 abas/janelas abertas no navegador auxiliar; a barra de progresso avança mas o nº de pendências quase não cai; metade das abas não acessou conteúdo visível.
+
+**Observação de código (NÃO resolvida):** `src/extract/books.js` usa `allWindows(app)`/`collectFrames(app)` e percorre TODAS as janelas, mas **NÃO há nenhum `.close()`** de janelas extras no arquivo (grep de `close()` não retornou nada). Ou seja: se o leitor (Minha Biblioteca / leitor pageid / BVirtual) abre uma janela nova (via `window.open` ou popup do próprio leitor), ela fica aberta para sempre.
+
+**Suspeitas a investigar (próxima IA):**
+1. O leitor abre janelas novas por execução e elas nunca são fechadas — acumulam. Verificar onde janelas novas são criadas e fechar as janelas auxiliares que não são a principal após cada extração de livro.
+2. `electron/browser.js` cria a janela com `webPreferences` sem tratar `setWindowOpenHandler` — popups/`window.open` do leitor viram janelas novas sem controle. Comparar com `createMainWindow` em `main.js` (que TEM `setWindowOpenHandler`).
+3. "Pendências não diminuem" pode ser: cada recurso abre uma aba nova mas a extração fica presa esperando conteúdo numa aba que não é a certa; ou o contador de pendências considera abas que nunca carregaram. Ver fluxo `handleRunExtraction`/`extractResource` e como `done`/`pending` são computados.
+4. A extração é SEQUENCIAL sobre uma única `auxWin`; se o leitor muda de janela/frame ativo, `extractResource` pode estar lendo frames de janelas erradas.
+
+**É o item nº 1 de prioridade da próxima sessão**, junto com o filtro de tipos de recurso (feedback 2 da seção 4).
+
+---
+
+## 6. RESOLVIDOS NESTA SESSÃO (além da seção 3) — para registro
+
+- **Janela do AVA fechada pelo usuário → "nenhuma semana":** `electron/main.js` agora tem `auxWindowAlive()` (usa `isClosed()` do Playwright), `resetAuxState()`, e os handlers `checkAuth`, `handleDiscoverCourses`, `handleDiscoverWeeks`, `handleRunExtraction` retornam erro claro `navegador-fechado` com mensagem amigável ("O navegador do AVA foi fechado. Clique em 'Entrar no AVA'...") em vez de semanas vazias. `launchBrowser()` também resetar o estado para permitir reabrir.
+- **Filtro de matérias:** dropdown `#filter-courses` (Todas / Somente ativas / Período mais recente) em `electron/ui.html` + lógica `applyCourseFilter()` em `electron/ui.js`; `periodoMaisRecente` vem do summary da descoberta. ⚠️ Usuário disse "não funciona" — verificar.
+
+---
+
+## 7. O QUE AINDA FALTA (não é código / depende do proprietário)
+
+1. Resolver o problema de abas que não fecham + pendências (seção 5).
+2. Implementar filtro de tipos de recurso (leituras + material complementar + videoaulas) — feedback do usuário (seção 4, item 2).
+3. Melhorar UX do filtro de matérias (posição + pré-seleção) (seção 4, item 1).
+4. Validar portable em máquina sem WDAC.
+5. Decisão do proprietário sobre purga do histórico (copyright, commit `8742012`).
+
+---
+
+## 8. AVISOS / CONVENÇÕES DO REPO
 
 - **Regra: NUNCA reescrever histórico git** (sem force push/rebase/clean). O texto integral de um livro licenciado permanece no commit `8742012` (removido da árvore em `d6cf122`); a decisão de purgar é do proprietário.
 - **Regra: NUNCA versionar credenciais/cookies/sessões/conteúdo protegido.** Usar `sanitizeReason` nos logs.
 - **Regra: preservar `poc/_pkg.js` e `poc/probe-readers.js`** (não versionar, não apagar).
 - **NÃO modificar `master`** — trabalhar só na branch `review/pre-release-2026-11-07`.
 - Logs de diagnóstico do app: `$env:TEMP\univesp-app.log` (sanitizado).
-- O navegador auxiliar usa perfil temporário isolado em `%TEMP%\univesp-profile-*`; o UI do app é local (`file:`) com sandbox e CSP (seção 12).
+- O navegador auxiliar usa perfil temporário isolado em `%TEMP%\univesp-profile-*`; o UI do app é local (`file:`) com sandbox e CSP (seção 12). O script do UI é `electron/ui.js` (externo, por causa da CSP).
 - **Credenciais do usuário para testes ao vivo:** ficam em `UNIVESP_USERNAME` / `UNIVESP_PASSWORD` no ambiente (nunca commitadas). O app NÃO usa essas variáveis — são usadas apenas por probes de diagnóstico (`poc/probe-readers.js`).
+- O usuário é leigo (não entende jargão) e impaciente — passos simples e diretos, sem explicações longas.
 
 ---
 
-## 6. RESUMO DO QUE A PRÓXIMA IA DEVE FAZER (ordem)
+## 9. RESUMO DO QUE A PRÓXIMA IA DEVE FAZER (ordem)
 
-1. **Corrigir o bug do `require.main` em `electron/browser.js`** (seção 3) — causa do "botão não faz nada".
-2. **Rodar o comando de reprodução** e confirmar que `firstWindow()` retorna a janela do AVA.
-3. **Rodar `npm.cmd test`** — deve seguir 309/309.
-4. Se a correção alterar código de produção, commitar com mensagem no estilo do repo (prefixo `fix(...)`), seguir com `chore: refresh audit evidence` se necessário.
-5. **Acompanhar o usuário na validação real do AVA** (seção 4), em passos sem jargão.
-6. Itens de ambiente pendentes (portable em máquina sem WDAC; decisão de purga do histórico) — não são código.
+1. **Investigar/resolver abas que não fecham + pendências que não diminuem** (seção 5) — provável falta de `.close()` de janelas extras do leitor + possível leitura de frames de janela errada.
+2. **Implementar filtro de tipos de recurso** (leituras + material complementar + videoaulas) no fluxo de extração, respeitando a regra de honestidade (nunca fingir extração do que foi filtrado).
+3. **Corrigir/melhorar o filtro de matérias** (seção 4, item 1): usuário disse que não funciona; mover filtro para o topo e não pré-selecionar todas.
+4. **Rodar `npm.cmd test`** — deve seguir 309/309.
+5. Commitar com mensagem no estilo do repo (`fix(...)`/`feat(...)`), seguir com `chore: refresh audit evidence` se necessário. **Pushar** (o usuário pediu explicitamente para enviar ao GitHub).
+6. Acompanhar o usuário em nova validação real, em passos sem jargão.
 
 ---
 
-*Documento de handoff gerado em 2026-11-14. Revisei: estado do git, causa raiz (guard require.main), evidências experimentais, e próximos passos. A causa raiz está confirmada experimentalmente; a CORREÇÃO ainda não foi implementada.*
+*Documento de handoff gerado em 2026-11-15. Revisei: estado do git (tudo commitado/pushado até `74d5e81`), as DUAS causas reais do botão "Entrar no AVA" (CSP + require.main, ambas corrigidas e verificadas), a validação real no AVA (funcionou, 10 matérias), os feedbacks do usuário (filtro não funciona, tipos de recurso, abas que não fecham, leitor Minha Biblioteca já suportado) e o problema crítico aberto das abas/pendências.*
