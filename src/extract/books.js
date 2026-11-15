@@ -1447,11 +1447,13 @@ async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts 
     return failureResult({ url: launchUrl, format: 'unknown', failureType: det.failureType || 'unknown', readerLoaded: false, error: 'formato-de-leitor-nao-reconhecido', expected, attempts });
   }
 
-  // 5) bvirtual (canvas/DRM) — leitor carregou, conteúdo não extraível.
+  // 5) BVirtual/Pearson reconhecido, mas o fluxo ainda não selecionou
+  // Beta/Clássico. Não presumir DRM/canvas: isso só pode ser afirmado após
+  // entrar no leitor escolhido e observar a estrutura real do conteúdo.
   return failureResult({
-    url: launchUrl, format: det.format, failureType: 'drm-not-extractable', readerLoaded: true,
-    error: 'conteudo-em-canvas/DRM-nao-extraivel', expected, attempts,
-    extra: { source: det.format, readerUrl: det.readerUrl },
+    url: launchUrl, format: det.format, failureType: 'reader-selection-required', readerLoaded: true,
+    error: 'selecao-de-leitor-pearson-nao-automatizada', expected, attempts,
+    extra: { source: det.format, readerUrl: det.readerUrl, readerSelectionRequired: true },
   });
 }
 
