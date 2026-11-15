@@ -602,13 +602,13 @@ function createZip(srcDir, destZip) {
     try {
       if (fs.existsSync(destZip)) fs.rmSync(destZip, { force: true });
       const { execFileSync } = require('child_process');
-      const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${srcDir.replace(/'/g, "''")}', '${destZip.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $true)`;
+      // O conteúdo do diretório de trabalho vira o conteúdo da RAIZ do ZIP.
+      // Isso mantém INDEX.md/SOURCES.md diretamente visíveis ao abrir o arquivo,
+      // sem embrulhar todo o material numa pasta externa "saida".
+      const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${srcDir.replace(/'/g, "''")}', '${destZip.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $false)`;
       execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 120000, stdio: 'pipe' });
       const size = fs.statSync(destZip).size;
-      // ZipFile.CreateFromDirectory(..., includeBaseDirectory=$true) grava
-      // cada arquivo dentro da pasta-raiz, portanto o nome esperado inclui basename.
-      const rootName = path.basename(path.resolve(srcDir));
-      const fileList = listFiles(srcDir).map((name) => rootName + '/' + name).sort();
+      const fileList = listFiles(srcDir);
       const files = fileList.length;
       resolve({ ok: size > 0, bytes: size, files, fileList, path: destZip, reason: size > 0 ? null : 'zip-vazio' });
     } catch (e) {
