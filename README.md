@@ -71,9 +71,14 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 
 ## Limitações conhecidas
 
-- A extração de livros digitais depende do leitor VitalSource (Minha Biblioteca)
-  carregar o conteúdo; quando o conteúdo não monta (limite de sessão/dispositivo),
-  o recurso é registrado honestamente como `inaccessible`/`not_found`.
+- A extração de livros digitais depende do leitor correspondente carregar o
+  conteúdo. A integração EPUB/PAGEID da Minha Biblioteca foi exercitada; quando
+  o conteúdo não monta (limite de sessão/dispositivo), o recurso é registrado
+  honestamente como `inaccessible`/`not_found`.
+- A Biblioteca Pearson/BVirtual ainda NÃO possui navegação automatizada entre a
+  escolha do leitor Beta e do leitor Clássico. A classificação atual pode
+  reconhecer a plataforma, mas não seleciona um leitor nem extrai seu conteúdo;
+  essa integração depende de mapear a navegação real e validar a extraibilidade.
 - O scraper captura a transcrição de videoaulas quando a plataforma a
   disponibiliza, preservando segmentos e timestamps. Não baixa o arquivo de
   áudio/vídeo; quando não há transcrição acessível, registra a pendência.
