@@ -21,8 +21,20 @@ const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSec
 const logger = makeFlowLogger(path.join(os.tmpdir(), 'univesp-app.log'));
 logger.log('APP START execPath=' + process.execPath + ' packaged=' + app.isPackaged);
 
-process.on('uncaughtException', (e) => { logger.error('UNCAUGHT: ' + e.message); });
-process.on('unhandledRejection', (e) => { logger.error('UNHANDLED: ' + (e && e.message)); });
+let fatalShutdownRequested = false;
+function failClosed(eventName, error) {
+  const message = error && error.message ? error.message : String(error || 'erro desconhecido');
+  logger.error(eventName + ': ' + message);
+  if (fatalShutdownRequested) return;
+  fatalShutdownRequested = true;
+  process.exitCode = 1;
+  // Não continuar a extração com estado possivelmente inconsistente.
+  // app.quit() percorre o fluxo normal de fechamento do navegador e do app;
+  // resíduos de workdir são recuperados pelo cleanupResidualWorkDirs na próxima abertura.
+  try { app.quit(); } catch { process.exit(1); }
+}
+process.on('uncaughtException', (e) => failClosed('UNCAUGHT_FATAL', e));
+process.on('unhandledRejection', (e) => failClosed('UNHANDLED_FATAL', e));
 
 // --- B1: instância única do app PRINCIPAL ---
 // browser.js é um processo auxiliar (lançado via playwright-core) e NÃO deve
