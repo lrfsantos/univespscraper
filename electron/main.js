@@ -304,7 +304,8 @@ async function runExtractionInternal(selection) {
           fs.mkdirSync(path.join(weekDir, 'readings'), { recursive: true });
           fs.mkdirSync(path.join(weekDir, 'supplementary'), { recursive: true });
           const extracted = [];
-          for (const r of weekResources) {
+          for (let resourceIndex = 0; resourceIndex < weekResources.length; resourceIndex++) {
+            const r = weekResources[resourceIndex];
             if (cancelRequested || sessionExpired) break;
             // Autenticação: antes de cada recurso, confirma que a sessão ainda é
             // válida (não basta a janela aberta). Se expirou, marca o RESTANTE da
@@ -312,7 +313,7 @@ async function runExtractionInternal(selection) {
             if (!(await confirmLoggedIn(auxWin, { attempts: 3, intervalMs: 700 }))) {
               sessionExpired = true;
               logger.error('sessão expirada durante a extração — recursos restantes marcados como inacessíveis (autenticação)');
-              const rest = authExpiredEntries(weekResources.slice(extracted.length), course, w.name);
+              const rest = authExpiredEntries(weekResources.slice(resourceIndex), course, w.name);
               for (const authEntry of rest) {
                 extracted.push(authEntry);
                 resources.push(authEntry);
