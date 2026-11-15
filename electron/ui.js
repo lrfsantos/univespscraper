@@ -175,11 +175,13 @@ function updateCourseCounter() {
 }
 
 $('btn-all-courses').addEventListener('click', () => {
-  selectedCourseIds = new Set(courses.filter((c) => c.available !== false).map((c) => String(c.id)));
+  for (const c of applyCourseFilter()) {
+    if (c.available !== false) selectedCourseIds.add(String(c.id));
+  }
   renderCourses();
 });
 $('btn-none-courses').addEventListener('click', () => {
-  selectedCourseIds.clear();
+  for (const c of applyCourseFilter()) selectedCourseIds.delete(String(c.id));
   renderCourses();
 });
 
