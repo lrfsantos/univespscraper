@@ -580,7 +580,10 @@ function createZip(srcDir, destZip) {
       const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${srcDir.replace(/'/g, "''")}', '${destZip.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $true)`;
       execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 120000, stdio: 'pipe' });
       const size = fs.statSync(destZip).size;
-      const fileList = listFiles(srcDir);
+      // ZipFile.CreateFromDirectory(..., includeBaseDirectory=$true) grava
+      // cada arquivo dentro da pasta-raiz, portanto o nome esperado inclui basename.
+      const rootName = path.basename(path.resolve(srcDir));
+      const fileList = listFiles(srcDir).map((name) => rootName + '/' + name).sort();
       const files = fileList.length;
       resolve({ ok: size > 0, bytes: size, files, fileList, path: destZip, reason: size > 0 ? null : 'zip-vazio' });
     } catch (e) {
