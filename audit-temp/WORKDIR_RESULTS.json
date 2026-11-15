@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-14T16:39:50.712Z",
+  "ts": "2026-11-15T04:47:43.649Z",
   "results": [
     {
       "id": "W-1",
@@ -17,7 +17,7 @@
       "id": "W-3",
       "title": "3: pasta de trabalho exclusiva em %TEMP% com OWNER.json (PID do dono)",
       "status": "PASS",
-      "detail": "dir=<TEMP>\\univesp-work-1794674390490-7241a87a"
+      "detail": "dir=<TEMP>\\univesp-work-1794718063391-b26cd624"
     },
     {
       "id": "W-4",
