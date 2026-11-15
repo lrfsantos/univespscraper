@@ -132,11 +132,13 @@ function makeFakeWin(html) {
   {
     const samples = ['..', '.', 'CON', 'NUL.txt', '../../escape', 'C:\\temp\\arquivo'];
     const safe = samples.map((value) => flow.safeName(value));
+    const reserved = (value) => ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'].includes(value.split('.')[0].toUpperCase());
+    const slash = String.fromCharCode(92);
     const ok = safe.every((value) => value && value !== '.' && value !== '..' &&
-      !/[<>:"/\\\\|?*]/.test(value) && !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\\..*)?$/i.test(value)) &&
+      !value.includes('/') && !value.includes(slash) && !/[<>:"|?*]/.test(value) && !reserved(value)) &&
       safe[0] === 'recurso' && safe[1] === 'recurso' && safe[2] === '_CON' && safe[3] === '_NUL.txt';
     const auth = flow.authExpiredEntries([{ url: 'https://www.youtube.com/watch?v=AAA11111111', text: 'video' }], { code: 'ADM1' }, 'Semana 1')[0];
-    const safeFallback = auth.id !== auth.url && !auth.id.includes('/') && !auth.id.includes('\\\\');
+    const safeFallback = auth.id !== auth.url && !auth.id.includes('/') && !auth.id.includes(slash);
     record({ id: 'D-2g', title: 'D2: nomes de pastas/arquivos bloqueiam traversal e nomes reservados; fallback não usa URL crua', status: ok && safeFallback ? 'PASS' : 'FAIL', detail: `names=${JSON.stringify(safe)} fallback=${auth.id}` });
   }
 
