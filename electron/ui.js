@@ -14,6 +14,7 @@ function setLive(msg, cls) {
   el.className = cls || '';
 }
 let courses = [];
+let selectedCourseIds = new Set();
 let weeksByCourse = {};
 let cancelled = false;
 let courseFilter = 'todas';
@@ -73,6 +74,7 @@ $('btn-check-session').addEventListener('click', async () => {
     return;
   }
   courses = r.courses || [];
+  selectedCourseIds = new Set(courses.filter((c) => c.available !== false).map((c) => String(c.id)));
   periodoMaisRecente = (r.summary && r.summary.periodoMaisRecente) || null;
   if (!courses.length) {
     $('sessionMsg').className = 'notice warn';
@@ -128,22 +130,34 @@ function renderCourses() {
     const label = document.createElement('label');
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.checked = real;
+    const courseId = String(c.id);
+    cb.checked = selectedCourseIds.has(courseId);
     cb.disabled = !real;
-    cb.dataset.id = String(c.id);
-    cb.addEventListener('change', updateCourseCounter);
-    const span = document.createElement('span');
-    span.innerHTML = '';
+    cb.dataset.id = courseId;
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedCourseIds.add(courseId);
+      else selectedCourseIds.delete(courseId);
+      updateCourseCounter();
+    });
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = c.title || c.name || '';
-    const code = c.code ? '<span class="code">' + c.code + '</span>' : '';
-    const status = '<span class="status ' + s.cls + '">' + s.txt + '</span>';
+    // Dados do AVA são texto não confiável: nunca interpolar code/status em innerHTML.
+    const metadata = document.createElement('span');
+    if (c.code) {
+      const codeEl = document.createElement('span');
+      codeEl.className = 'code';
+      codeEl.textContent = c.code;
+      metadata.appendChild(codeEl);
+      metadata.appendChild(document.createTextNode(' '));
+    }
+    const statusEl = document.createElement('span');
+    statusEl.className = 'status ' + s.cls;
+    statusEl.textContent = s.txt;
+    metadata.appendChild(statusEl);
     label.appendChild(cb);
-    const txt = document.createElement('span');
-    txt.innerHTML = code + ' ' + status;
     label.appendChild(name);
-    label.appendChild(txt);
+    label.appendChild(metadata);
     div.appendChild(label);
     box.appendChild(div);
   });
@@ -157,17 +171,16 @@ $('filter-courses').addEventListener('change', (e) => {
 });
 
 function updateCourseCounter() {
-  const n = document.querySelectorAll('#courseList input:checked').length;
-  $('courseCounter').textContent = n + ' selecionada(s)';
+  $('courseCounter').textContent = selectedCourseIds.size + ' selecionada(s)';
 }
 
 $('btn-all-courses').addEventListener('click', () => {
-  document.querySelectorAll('#courseList input:not(:disabled)').forEach((cb) => { cb.checked = true; });
-  updateCourseCounter();
+  selectedCourseIds = new Set(courses.filter((c) => c.available !== false).map((c) => String(c.id)));
+  renderCourses();
 });
 $('btn-none-courses').addEventListener('click', () => {
-  document.querySelectorAll('#courseList input:not(:disabled)').forEach((cb) => { cb.checked = false; });
-  updateCourseCounter();
+  selectedCourseIds.clear();
+  renderCourses();
 });
 
 $('btn-to-weeks').addEventListener('click', async () => {
