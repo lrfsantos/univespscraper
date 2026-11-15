@@ -413,14 +413,14 @@ function isIgnoredActivity(text) {
 function isExcludedResourceLabel(text) {
   const t = String(text || '')
     .toLowerCase()
-    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
-    .replace(/\\s+/g, ' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
   if (!t) return false;
-  const stripped = t.replace(/^s\\d+\\s*/, '').trim();
-  return /^atividade avaliativa(?:\\b|$)/.test(stripped) ||
-    /^forum(?: tematico)?(?:\\b|$)/.test(stripped) ||
-    /^live(?: com facilitador)?(?:\\b|$)/.test(stripped);
+  const stripped = t.replace(/^s\d+\s*/, '').trim();
+  return /^atividade avaliativa(?:\b|$)/.test(stripped) ||
+    /^forum(?: tematico)?(?:\b|$)/.test(stripped) ||
+    /^live(?: com facilitador)?(?:\b|$)/.test(stripped);
 }
 
 // Correção E: extrai do texto do âncora do AVA a identificação esperada do
