@@ -138,7 +138,7 @@ function record(entry) {
     });
     const idA = a[0] && a[0].id;
     const idB = b[0] && b[0].id;
-    const safe = (id) => !!id && !id.includes('/') && !id.includes('\\\\') && !/[<>:"*?|]/.test(id);
+    const safe = (id) => typeof id === 'string' && /^[A-Za-z0-9_.-]+$/.test(id);
     const ok = a.length === 1 && b.length === 1 && idA !== idB && safe(idA) && safe(idB);
     record({ id: G + '-8', title: '9: recursos com basename repetido geram nomes únicos e seguros (sem sobrescrever arquivos)', status: ok ? 'PASS' : 'FAIL', detail: `idA=${idA} idB=${idB}` });
   }
