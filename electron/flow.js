@@ -633,7 +633,7 @@ function validateZip(zip) {
     const expected = Array.isArray(zip.fileList) ? [...zip.fileList].sort() : null;
     const actual = [...names].sort();
     const matches = expected ? JSON.stringify(actual) === JSON.stringify(expected) : count === zip.files;
-    return { valid: true, entries: count, matches, decompressed: count, nameMatch: expected ? matches : null };
+    return { valid: true, entries: count, matches, decompressed: count, nameMatch: expected ? matches : null, actualNames: actual, expectedNames: expected };
   } catch (e) { return { valid: false, reason: 'nao-e-zip' }; }
 }
 
