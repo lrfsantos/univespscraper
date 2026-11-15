@@ -23,7 +23,7 @@ Ferramenta Electron que extrai e organiza academicamente o conteúdo das discipl
 
 ## 2. ESTADO ATUAL DO GIT (tudo commitado e pushado nesta sessão)
 
-HEAD local = `74d5e81`, pushado para `origin/review/pre-release-2026-11-07`. Working tree limpo, exceto 2 arquivos intencionalmente NÃO versionados: `poc/_pkg.js` e `poc/probe-readers.js` (diagnósticos preservados por regra).
+HEAD local = `dc54d14`, pushado para `origin/review/pre-release-2026-11-07`. Working tree limpo, exceto 2 arquivos intencionalmente NÃO versionados: `poc/_pkg.js` e `poc/probe-readers.js` (diagnósticos preservados por regra).
 
 Commits desta sessão (após `df4c30f`):
 - `f4d6558` fix: launch aux browser window when entry is passed as arg by playwright-core._electron (dev) — guard `require.main === module` agora também dispara quando `browser.js` está em `process.argv`
@@ -69,19 +69,32 @@ Feedback do usuário nesta sessão (IMPORTANTE para a próxima IA):
 
 ---
 
-## 5. PROBLEMA CRÍTICO ABERTO — ABAS/JANELAS QUE NÃO FECHAM + PENDÊNCIAS QUE NÃO DIMINUEM
+## 5. PROBLEMA CRÍTICO — ABAS/JANELAS QUE NÃO FECHAM + PENDÊNCIAS QUE NÃO DIMINUEM (PARCIALMENTE RESOLVIDO)
 
-**Sintoma (usuário, extração real em andamento):** o programa abre páginas e mais páginas e não as fecha; ~10-20 abas/janelas abertas no navegador auxiliar; a barra de progresso avança mas o nº de pendências quase não cai; metade das abas não acessou conteúdo visível.
+**Sintoma (usuário, extração real):** o programa abre páginas e mais páginas e não as fecha; ~10-20 abas/janelas abertas no navegador auxiliar; a barra de progresso avança mas o nº de pendências quase não cai; metade das abas não acessou conteúdo visível. Resultado real da extração: **95 integral, 2 parcial, 245 inacessível, 39 não encontrado, 86 não suportado, 0 vídeo c/ transcrição, 10 vídeo s/ transcrição** (pasta `C:\Users\luiza\Documents\UNIVESP_materiais_20261115`).
 
-**Observação de código (NÃO resolvida):** `src/extract/books.js` usa `allWindows(app)`/`collectFrames(app)` e percorre TODAS as janelas, mas **NÃO há nenhum `.close()`** de janelas extras no arquivo (grep de `close()` não retornou nada). Ou seja: se o leitor (Minha Biblioteca / leitor pageid / BVirtual) abre uma janela nova (via `window.open` ou popup do próprio leitor), ela fica aberta para sempre.
+### Causa raiz do grosso dos 245 "inacessíveis" — RESOLVIDA
 
-**Suspeitas a investigar (próxima IA):**
-1. O leitor abre janelas novas por execução e elas nunca são fechadas — acumulam. Verificar onde janelas novas são criadas e fechar as janelas auxiliares que não são a principal após cada extração de livro.
-2. `electron/browser.js` cria a janela com `webPreferences` sem tratar `setWindowOpenHandler` — popups/`window.open` do leitor viram janelas novas sem controle. Comparar com `createMainWindow` em `main.js` (que TEM `setWindowOpenHandler`).
-3. "Pendências não diminuem" pode ser: cada recurso abre uma aba nova mas a extração fica presa esperando conteúdo numa aba que não é a certa; ou o contador de pendências considera abas que nunca carregaram. Ver fluxo `handleRunExtraction`/`extractResource` e como `done`/`pending` são computados.
-4. A extração é SEQUENCIAL sobre uma única `auxWin`; se o leitor muda de janela/frame ativo, `extractResource` pode estar lendo frames de janelas erradas.
+Analisando o `EXTRACTION_REPORT.md`, quase todos os inacessíveis eram **recursos EMBUTIDOS** (vídeos/PDFs descobertos dentro de uma página, ex.: vídeos do "Videoaulas", "Aprofundando o tema", slides de apoio) com o erro:
 
-**É o item nº 1 de prioridade da próxima sessão**, junto com o filtro de tipos de recurso (feedback 2 da seção 4).
+```
+falha-durante-extracao: ENOENT: no such file or directory, open 'C:\...\videos\https:\www.youtube.com\embed\LUr2QeynCFY.txt'
+```
+
+**Causa:** `discoverEmbeddedResources` (em `electron/flow.js:357`) criava os recursos embutidos SEM `id`. Depois `extractResource` (flow.js:144) usa `entry.id = resource.id || resource.url` — sem `id`, a **URL crua** virava o nome do arquivo. No Windows, `path.join` converte `/`→`\`, gerando o caminho inválido `https:\www.youtube.com\embed\X.txt` → `ENOENT` → status `inaccessible`. Os recursos de SEÇÃO (via `discoverResourcesFromSection`, flow.js:89) recebiam `resourceId()` corretamente; os embutidos não.
+
+**Correção (commit `2134f32`):** `discoverEmbeddedResources` agora atribui `id = resourceId(c, cls, out.length + 1)` (mesma regra dos recursos de seção). Probe confirma IDs curtos (`r1-watch.video`, `r2-s1_slides.pdf`, `r3-BBB22222222.video`). `npm test` 309/309.
+
+**Pendente de validação REAL:** rodar nova extração completa para confirmar que os vídeos/PDFs embutidos agora gravam (status `video-com-transcricao`/`video-registrado` e PDFs `integral`) em vez de `inaccessible`. O usuário precisa rodar `npm.cmd run app` de novo.
+
+### O que NÃO foi resolvido (investigar na próxima sessão)
+
+1. **Abas/janelas que não fecham:** `src/extract/books.js` percorre `allWindows(app)`/`collectFrames(app)` mas **não há `.close()`** de janelas extras. Se o leitor (Minha Biblioteca pageid/VitalSource/BVirtual) abre janela nova (window.open/popup), ela fica aberta para sempre. `electron/browser.js` não trata `setWindowOpenHandler` (a janela principal em `main.js` trata). Verificar e fechar janelas auxiliares após cada livro.
+2. **Livros LTI com `conteudo-em-canvas/DRM-nao-extraivel`** (ex.: S1 Texto-base Fabrete/Chiavenato/Hisrich) → inacessíveis legítimos (DRM/canvas) — provavelmente esperado, mas confirmar se algum usa formato EPUB extraível (varios "Texto-base" via Minha Biblioteca deveriam abrir via pageid). Muitos "Texto-base" ficaram `not_found` (leitor não confirmou o capítulo) — investigar.
+3. **Vídeos sem transcrição:** 10 `video-registrado` (sem transcrição) + os embutidos que antes falhavam — após a correção, ver quantos passam a ter transcrição.
+4. **PDFs externos (`assets.univesp.br/...pdf`, `repositorio.utfpr.edu.br`, `finep.gov.br`) `inaccessible`** — muitos são links diretos de PDF; verificar se o download falha por sessão/tamanho/limite e se o `extractPdf` deveria tratar.
+
+**Pendências "não diminuem":** parte era o ENOENT (o recurso falhava antes de contar); com a correção, reavaliar. Se ainda houver lentidão, o problema pode ser os livros com espera longa (goto 45-60s + waits).
 
 ---
 
@@ -94,11 +107,12 @@ Feedback do usuário nesta sessão (IMPORTANTE para a próxima IA):
 
 ## 7. O QUE AINDA FALTA (não é código / depende do proprietário)
 
-1. Resolver o problema de abas que não fecham + pendências (seção 5).
-2. Implementar filtro de tipos de recurso (leituras + material complementar + videoaulas) — feedback do usuário (seção 4, item 2).
-3. Melhorar UX do filtro de matérias (posição + pré-seleção) (seção 4, item 1).
-4. Validar portable em máquina sem WDAC.
-5. Decisão do proprietário sobre purga do histórico (copyright, commit `8742012`).
+1. Validar em NOVA extração real que a correção do ENOENT resolveu os vídeos/PDFs embutidos (usuário roda `npm.cmd run app`).
+2. Resolver abas/janelas que não fecham (seção 5, itens 1) — fechar janelas extras do leitor.
+3. Implementar filtro de tipos de recurso (leituras + material complementar + videoaulas) — feedback do usuário (seção 4, item 2).
+4. Melhorar UX do filtro de matérias (posição + pré-seleção) (seção 4, item 1).
+5. Validar portable em máquina sem WDAC.
+6. Decisão do proprietário sobre purga do histórico (copyright, commit `8742012`).
 
 ---
 
