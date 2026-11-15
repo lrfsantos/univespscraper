@@ -369,7 +369,10 @@ function discoverEmbeddedResources({ links = [], iframes = [], sourceUrl = '', d
     const key = resourceIdentityKey(c.url);
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ ...c, classification: cls, sourcePage: sourceUrl, depth });
+    // id curto determinístico (mesma regra dos recursos de seção) — sem isso o
+    // nome de arquivo vira a URL crua e a gravação falha no Windows (ENOENT).
+    const id = resourceId(c, cls, out.length + 1);
+    out.push({ ...c, id, classification: cls, sourcePage: sourceUrl, depth });
   }
   return out;
 }
