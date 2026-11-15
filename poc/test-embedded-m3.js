@@ -48,11 +48,20 @@ function record(entry) {
     record({ id: G + '-2', title: '9: ciclo evitado — página já vista no `seen` compartilhado não reentra na descoberta', status: ok ? 'PASS' : 'FAIL', detail: `recursos=${found.length}` });
   }
 
-  // E-3: limite de profundidade — decisão de recursão respeita MAX_EMBED_DEPTH.
+  // E-3: a decisão de recursão usa o depth recebido, e não reinicia em zero.
   {
-    const ok = flow.MAX_EMBED_DEPTH >= 1 && flow.MAX_EMBED_DEPTH <= 5;
-    const recRule = flow.MAX_EMBED_DEPTH; // exposto
-    record({ id: G + '-3', title: '9: limite de profundidade definido (MAX_EMBED_DEPTH) para recursão em páginas internas', status: ok ? 'PASS' : 'FAIL', detail: `MAX_EMBED_DEPTH=${recRule}` });
+    const root = flow.canTraverseEmbeddedDepth(0);
+    const max = flow.canTraverseEmbeddedDepth(flow.MAX_EMBED_DEPTH);
+    const beyond = flow.canTraverseEmbeddedDepth(flow.MAX_EMBED_DEPTH + 1);
+    const discovered = flow.discoverEmbeddedResources({
+      links: [{ text: 'Sub', url: 'https://ava.univesp.br/mod/page/view.php?id=78' }],
+      iframes: [],
+      sourceUrl: 'parent',
+      depth: 2,
+      seen: new Set(),
+    });
+    const ok = root && max && !beyond && discovered[0] && discovered[0].depth === 2;
+    record({ id: G + '-3', title: '9: profundidade é propagada e bloqueia níveis acima de MAX_EMBED_DEPTH', status: ok ? 'PASS' : 'FAIL', detail: `max=${flow.MAX_EMBED_DEPTH} root=${root} maxAllowed=${max} beyond=${beyond} recordedDepth=${discovered[0] && discovered[0].depth}` });
   }
 
   // E-4: iframe DESCONHECIDO não vira vídeo nem página HTML extraída (fica de fora).
@@ -112,6 +121,26 @@ function record(entry) {
     const b = flow.discoverEmbeddedResources({ links: [{ text: 'V2', url: 'https://youtu.be/AAA11111111' }], iframes: [], sourceUrl: 'p2', seen });
     const ok = a.length === 1 && b.length === 0 && seen.size === 1;
     record({ id: G + '-7', title: '9: `seen` compartilhado entre páginas evita re-extração global do mesmo recurso', status: ok ? 'PASS' : 'FAIL', detail: `pagina1=${a.length} pagina2=${b.length} seen=${seen.size}` });
+  }
+
+  // E-8: URLs de vídeo diferentes compartilham o mesmo basename "watch".
+  // IDs gerados em chamadas diferentes precisam continuar únicos, pois os arquivos
+  // são gravados na mesma pasta semanal e não podem sobrescrever transcrições.
+  {
+    const seen = new Set();
+    const a = flow.discoverEmbeddedResources({
+      links: [{ text: 'Vídeo A', url: 'https://www.youtube.com/watch?v=AAA11111111' }],
+      iframes: [], sourceUrl: 'page-a', seen,
+    });
+    const b = flow.discoverEmbeddedResources({
+      links: [{ text: 'Vídeo B', url: 'https://www.youtube.com/watch?v=BBB22222222' }],
+      iframes: [], sourceUrl: 'page-b', seen,
+    });
+    const idA = a[0] && a[0].id;
+    const idB = b[0] && b[0].id;
+    const safe = (id) => !!id && !/[\\\\/:*?"<>|]/.test(id);
+    const ok = a.length === 1 && b.length === 1 && idA !== idB && safe(idA) && safe(idB);
+    record({ id: G + '-8', title: '9: recursos com basename repetido geram nomes únicos e seguros (sem sobrescrever arquivos)', status: ok ? 'PASS' : 'FAIL', detail: `idA=${idA} idB=${idB}` });
   }
 
   const failed = results.filter((r) => r.status === 'FAIL');
