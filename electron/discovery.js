@@ -407,6 +407,22 @@ function isIgnoredActivity(text) {
   return stripped === 'inicio' || stripped === 'em sintese';
 }
 
+// Fora do escopo do produto: fóruns e sessões ao vivo não são materiais de
+// estudo a arquivar. Atividades avaliativas também ficam fora do pacote nesta
+// versão; o scraper foca leituras, materiais complementares e videoaulas.
+function isExcludedResourceLabel(text) {
+  const t = String(text || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/\\s+/g, ' ')
+    .trim();
+  if (!t) return false;
+  const stripped = t.replace(/^s\\d+\\s*/, '').trim();
+  return /^atividade avaliativa(?:\\b|$)/.test(stripped) ||
+    /^forum(?: tematico)?(?:\\b|$)/.test(stripped) ||
+    /^live(?: com facilitador)?(?:\\b|$)/.test(stripped);
+}
+
 // Correção E: extrai do texto do âncora do AVA a identificação esperada do
 // material (livro e capítulo) QUANDO o AVA a fornece explicitamente — ex.:
 // "Texto-base - X (Leia o Capítulo 1) | Autor". Nunca inventa capítulo/páginas:
@@ -448,4 +464,4 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   return expected;
 }
 
-module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, classifySelectorOption, parsePeriodRank, mostRecentPeriod, parseCourseCardsFromHtml, scanTags, attrsOf, balancedElement, inferSituacao };
+module.exports = { parseCoursesFromHtml, parseSectionsFromHtml, parseResourcesFromSectionHtml, classifyResource, resolveUrl, parseExpectedFromResource, isIgnoredActivity, isExcludedResourceLabel, classifySelectorOption, parsePeriodRank, mostRecentPeriod, parseCourseCardsFromHtml, scanTags, attrsOf, balancedElement, inferSituacao };
