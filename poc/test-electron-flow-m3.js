@@ -128,6 +128,18 @@ function makeFakeWin(html) {
     record({ id: 'D-2f', title: 'D2: confirmação de sessão repete sondagens transitórias e só expira após tentativas configuradas', status: ok ? 'PASS' : 'FAIL', detail: `recovered=${okAfterRetry} callsToRecover=${callsAll} loggedOut=${remainsLoggedOut} callsWhenLoggedOut=${calls}` });
   }
 
+  // D-2g: segmentos de caminhos são seguros no Windows, inclusive "."/".." e nomes de dispositivo.
+  {
+    const samples = ['..', '.', 'CON', 'NUL.txt', '../../escape', 'C:\\temp\\arquivo'];
+    const safe = samples.map((value) => flow.safeName(value));
+    const ok = safe.every((value) => value && value !== '.' && value !== '..' &&
+      !/[<>:"/\\\\|?*]/.test(value) && !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\\..*)?$/i.test(value)) &&
+      safe[0] === 'recurso' && safe[1] === 'recurso' && safe[2] === '_CON' && safe[3] === '_NUL.txt';
+    const auth = flow.authExpiredEntries([{ url: 'https://www.youtube.com/watch?v=AAA11111111', text: 'video' }], { code: 'ADM1' }, 'Semana 1')[0];
+    const safeFallback = auth.id !== auth.url && !auth.id.includes('/') && !auth.id.includes('\\\\');
+    record({ id: 'D-2g', title: 'D2: nomes de pastas/arquivos bloqueiam traversal e nomes reservados; fallback não usa URL crua', status: ok && safeFallback ? 'PASS' : 'FAIL', detail: `names=${JSON.stringify(safe)} fallback=${auth.id}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
