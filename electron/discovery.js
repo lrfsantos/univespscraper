@@ -403,7 +403,7 @@ function isIgnoredActivity(text) {
     .replace(/\s+/g, ' ')
     .trim();
   if (!t) return false;
-  const stripped = t.replace(/^s\d+\s*/, '').trim();
+  const stripped = t.replace(/^s\d+\s*/, '').replace(/^[-–—:]\s*/, '').trim();
   return stripped === 'inicio' || stripped === 'em sintese';
 }
 
@@ -417,7 +417,7 @@ function isExcludedResourceLabel(text) {
     .replace(/\s+/g, ' ')
     .trim();
   if (!t) return false;
-  const stripped = t.replace(/^s\d+\s*/, '').trim();
+  const stripped = t.replace(/^s\d+\s*/, '').replace(/^[-–—:]\s*/, '').trim();
   return /^atividade avaliativa(?:\b|$)/.test(stripped) ||
     /^forum(?: tematico)?(?:\b|$)/.test(stripped) ||
     /^live(?: com facilitador)?(?:\b|$)/.test(stripped);
