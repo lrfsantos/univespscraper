@@ -165,6 +165,20 @@ const OPF_XML = `<?xml version="1.0"?><package><metadata xmlns:dc="http://purl.o
     record({ id: G + '-10', title: '5: documento do livro traz metadados reais, origem, faixa e páginas capturadas/duplicadas', status: ok ? 'PASS' : 'FAIL', detail: ok ? '' : 'camposAusentes=true' });
   }
 
+  // B-11: janelas auxiliares abertas pelo leitor são fechadas, janela anterior é preservada.
+  {
+    let primaryClosed = 0;
+    let popupAClosed = 0;
+    let popupBClosed = 0;
+    const primary = { close: async () => { primaryClosed++; }, isClosed: () => false };
+    const popupA = { close: async () => { popupAClosed++; }, isClosed: () => false };
+    const popupB = { close: async () => { popupBClosed++; }, isClosed: () => false };
+    const app = { windows: () => [primary, popupA, popupB] };
+    const closedCount = await books.closeWindowsOpenedSince(app, new Set([primary]));
+    const ok = closedCount === 2 && primaryClosed === 0 && popupAClosed === 1 && popupBClosed === 1;
+    record({ id: G + '-11', title: '5: popups do leitor fechados ao terminar; janela principal/preexistente preservada', status: ok ? 'PASS' : 'FAIL', detail: `closedCount=${closedCount} primary=${primaryClosed} popupA=${popupAClosed} popupB=${popupBClosed}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
