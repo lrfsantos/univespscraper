@@ -55,6 +55,18 @@ async function waitForManualLogin(win, { timeoutMs = 60000, interval = 2000 } = 
   return false;
 }
 
+// Confirma a sessão antes de declarar expiração. Uma falha transitória de
+// evaluate()/renderização não deve transformar todos os recursos restantes em
+// inacessíveis. A função de verificação é injetável para teste determinístico.
+async function confirmLoggedIn(win, { attempts = 3, intervalMs = 700, check = isLoggedIn } = {}) {
+  const total = Number.isInteger(attempts) && attempts > 0 ? attempts : 3;
+  for (let i = 0; i < total; i++) {
+    try { if (await check(win)) return true; } catch {}
+    if (i < total - 1) await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+}
+
 // Descoberta de disciplinas (A2): navega para /my/courses.php e usa o parser puro.
 async function discoverCourses(win) {
   await win.goto(`${BASE}/my/courses.php`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -640,6 +652,7 @@ module.exports = {
   BASE,
   isLoggedIn,
   waitForManualLogin,
+  confirmLoggedIn,
   discoverCourses,
   discoverWeeks,
   discoverResourcesFromSection,
