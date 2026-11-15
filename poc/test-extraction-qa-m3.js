@@ -206,8 +206,8 @@ function qaConsistency() {
   // Regenera as amostras pelo pipeline real e compara com os arquivos commitados.
   const r = spawnSync(process.execPath, [path.join(__dirname, 'generate-samples.js')], { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
   const regenOk = r.status === 0;
-  if (!regenOk) { record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: false, detail: (r.stderr || '').slice(0, 200) }); return; }
-  record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: true, detail: 'exit=0' });
+  if (!regenOk) { record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: 'FAIL', detail: (r.stderr || '').slice(0, 200) }); return; }
+  record({ id: G + '-1', title: 'Consistência: geração de amostras termina sem erro', status: 'PASS', detail: 'exit=0' });
 
   const files = [];
   const walk = (dir) => {
@@ -243,6 +243,8 @@ function qaConsistency() {
   qaNegative();
   qaConsistency();
 
+  const invalidStatus = results.filter((r) => r.status !== 'PASS' && r.status !== 'FAIL');
+  if (invalidStatus.length) { console.error('Status de QA inválido:', invalidStatus.map((r) => r.id)); process.exitCode = 1; }
   const failed = results.filter((r) => r.status === 'FAIL');
   // Relatório de qualidade (nunca redigido manualmente — métricas observadas acima).
   reportLines.push('# Relatório de Qualidade de Extração (EXTRACTION_QA)');
