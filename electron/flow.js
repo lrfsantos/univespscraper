@@ -436,6 +436,20 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
   return out;
 }
 
+// Achata a hierarquia de recursos incorporados para progresso/relatórios,
+// preservando as referências do array embedded no objeto original. Cada filho é contado
+// uma única vez, mesmo quando páginas internas contêm outras páginas.
+function flattenEmbeddedEntries(entries, out = []) {
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    if (!entry || typeof entry !== 'object') continue;
+    out.push(entry);
+    if (Array.isArray(entry.embedded) && entry.embedded.length) {
+      flattenEmbeddedEntries(entry.embedded, out);
+    }
+  }
+  return out;
+}
+
 // --- Renderização da estrutura do ZIP (A7) ---
 function safeName(s) {
   let name = String(s || '')
@@ -695,6 +709,7 @@ module.exports = {
   authExpiredEntries,
   discoverEmbeddedResources,
   extractEmbeddedFromPage,
+  flattenEmbeddedEntries,
   normalizeUrlKey,
   resourceIdentityKey,
   MAX_EMBED_DEPTH,
