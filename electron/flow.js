@@ -558,13 +558,18 @@ function renderReport({ course, weeks }) {
 }
 
 // --- ZIP com validação (A6) ---
-function countFiles(dir) {
-  let n = 0;
+function listFiles(dir, root = dir) {
+  const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) n += countFiles(path.join(dir, e.name));
-    else n++;
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...listFiles(full, root));
+    else if (e.isFile()) out.push(path.relative(root, full).split(path.sep).join('/'));
   }
-  return n;
+  return out.sort();
+}
+
+function countFiles(dir) {
+  return listFiles(dir).length;
 }
 
 function createZip(srcDir, destZip) {
@@ -575,8 +580,9 @@ function createZip(srcDir, destZip) {
       const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${srcDir.replace(/'/g, "''")}', '${destZip.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $true)`;
       execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 120000, stdio: 'pipe' });
       const size = fs.statSync(destZip).size;
-      const files = countFiles(srcDir);
-      resolve({ ok: size > 0, bytes: size, files, path: destZip, reason: size > 0 ? null : 'zip-vazio' });
+      const fileList = listFiles(srcDir);
+      const files = fileList.length;
+      resolve({ ok: size > 0, bytes: size, files, fileList, path: destZip, reason: size > 0 ? null : 'zip-vazio' });
     } catch (e) {
       resolve({ ok: false, reason: e.message, path: destZip, bytes: 0, files: 0 });
     }
@@ -590,10 +596,16 @@ function validateZip(zip) {
   if (!st.isFile() || st.size <= 0) return { valid: false, reason: 'arquivo-vazio' };
   try {
     const { execFileSync } = require('child_process');
-    const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('${zip.path.replace(/'/g, "''")}'); try { ($z.Entries | Where-Object { -not $_.FullName.EndsWith('/') -and -not $_.FullName.EndsWith('\\') }).Count } finally { $z.Dispose() }`;
-    const count = parseInt(execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 30000, stdio: 'pipe' }).toString().trim(), 10);
-    if (!Number.isInteger(count) || count < 0) return { valid: false, reason: 'nao-e-zip' };
-    return { valid: true, entries: count, matches: count === zip.files };
+    const script = `Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('${zip.path.replace(/'/g, "''")}'); try { $names=@(); foreach($e in $z.Entries) { if(-not $e.FullName.EndsWith('/') -and -not $e.FullName.EndsWith([char]92)) { $names += $e.FullName.Replace([char]92, '/'); $stream=$e.Open(); try { $stream.CopyTo([System.IO.Stream]::Null) } finally { $stream.Dispose() } } }; @{ names=$names; count=$names.Count } | ConvertTo-Json -Compress } finally { $z.Dispose() }`;
+    const raw = execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { timeout: 60000, stdio: 'pipe' }).toString().trim();
+    const parsed = JSON.parse(raw);
+    const names = Array.isArray(parsed.names) ? parsed.names : (parsed.names ? [parsed.names] : []);
+    const count = Number(parsed.count);
+    if (!Number.isInteger(count) || count < 0 || names.length !== count) return { valid: false, reason: 'nao-e-zip' };
+    const expected = Array.isArray(zip.fileList) ? [...zip.fileList].sort() : null;
+    const actual = [...names].sort();
+    const matches = expected ? JSON.stringify(actual) === JSON.stringify(expected) : count === zip.files;
+    return { valid: true, entries: count, matches, decompressed: count, nameMatch: expected ? matches : null };
   } catch (e) { return { valid: false, reason: 'nao-e-zip' }; }
 }
 
