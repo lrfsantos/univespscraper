@@ -33,6 +33,7 @@ window.api.onStatus((s) => {
       $('nDone').textContent = s.done;
       $('nPending').textContent = s.pending;
       $('nTotal').textContent = s.total;
+      $('nRemaining').textContent = Math.max(0, s.total - s.done - s.pending);
       const pct = s.total ? Math.round(((s.done + s.pending) / s.total) * 100) : 0;
       $('barGeneral').style.width = pct + '%';
       if (s.done + s.pending >= s.total) $('progressStatus').textContent = 'Finalizando...';
@@ -265,7 +266,7 @@ $('btn-extract').addEventListener('click', async () => {
   $('btn-extract').disabled = true;
   $('btn-cancel').disabled = false;
   $('current').textContent = '';
-  $('nDone').textContent = '0'; $('nPending').textContent = '0'; $('nTotal').textContent = '...';
+  $('nDone').textContent = '0'; $('nPending').textContent = '0'; $('nRemaining').textContent = '...'; $('nTotal').textContent = '...';
   $('barGeneral').style.width = '0%';
   $('progressStatus').textContent = 'Extraindo seus materiais. Isso pode levar alguns minutos.';
   show('screen-progress');
