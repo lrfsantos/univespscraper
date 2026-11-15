@@ -221,6 +221,7 @@ const COURSE_HTML = [
   {
     const samples = {
       'S1 Início': true,
+      'S1 - Início': true,
       'S2 inicio': true,
       'início': true,
       'INICIO': true,
@@ -239,8 +240,11 @@ const COURSE_HTML = [
     const ok = Object.entries(samples).every(([label, expectIgnored]) => discovery.isIgnoredActivity(label) === expectIgnored);
     const excluded = {
       'S1 Atividade avaliativa': true,
+      'S1 - Atividade avaliativa': true,
       'S2 Fórum temático': true,
+      'S2 - Fórum temático': true,
       'S3 Live com facilitador': true,
+      'S3 — Live com facilitador': true,
       'forum': true,
       'live': true,
       'S1 Videoaulas': false,
