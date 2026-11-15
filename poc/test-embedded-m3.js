@@ -143,6 +143,22 @@ function record(entry) {
     record({ id: G + '-8', title: '9: recursos com basename repetido geram nomes únicos e seguros (sem sobrescrever arquivos)', status: ok ? 'PASS' : 'FAIL', detail: `idA=${idA} idB=${idB}` });
   }
 
+  // E-9: o escopo do produto também vale para páginas incorporadas.
+  {
+    const found = flow.discoverEmbeddedResources({
+      links: [
+        { text: 'Fórum temático', url: 'https://ava.univesp.br/mod/page/view.php?id=901' },
+        { text: 'Live com facilitador', url: 'https://ava.univesp.br/mod/page/view.php?id=902' },
+        { text: 'Material complementar', url: 'https://ava.univesp.br/mod/page/view.php?id=903' },
+      ],
+      iframes: [],
+      sourceUrl: 'https://ava.univesp.br/mod/page/view.php?id=900',
+      seen: new Set(),
+    });
+    const ok = found.length === 1 && found[0].url.endsWith('id=903');
+    record({ id: G + '-9', title: '9: páginas incorporadas respeitam o escopo e excluem fóruns/lives', status: ok ? 'PASS' : 'FAIL', detail: `capturados=${found.map((r) => r.url).join(',')}` });
+  }
+
   const failed = results.filter((r) => r.status === 'FAIL');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
