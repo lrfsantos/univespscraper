@@ -110,14 +110,14 @@ function discoverResourcesFromSection(section, baseUrl = BASE) {
 function resourceId(r, cls, n) {
   const rawUrl = String((r && r.url) || '');
   const base = rawUrl.split('?')[0].split('#')[0].split('/').filter(Boolean).pop() || 'recurso';
-  const ext = base.includes('.') ? '' : \`.\${cls.kind}\`;
-  const safe = safeName(base + ext).slice(0, 52) || \`recurso-\${n}\`;
+  const ext = base.includes('.') ? '' : '.' + cls.kind;
+  const safe = safeName(base + ext).slice(0, 52) || ('recurso-' + n);
   // O nome visível (watch, index, page etc.) NÃO identifica um recurso.
   // Um hash da identidade estável evita colisões entre vídeos / arquivos
   // homônimos descobertos em chamadas diferentes, sem expor query strings.
   const identity = rawUrl ? resourceIdentityKey(rawUrl) : String((r && r.text) || base);
   const digest = crypto.createHash('sha256').update(identity).digest('hex').slice(0, 10);
-  return \`r\${n}-\${safe}-\${digest}\`;
+  return 'r' + n + '-' + safe + '-' + digest;
 }
 
 // --- Classificação de status honesto do fluxo (A6) ---
