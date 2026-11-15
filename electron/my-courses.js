@@ -190,6 +190,48 @@ async function discoverAllCoursesViaDriver(driver, opts = {}) {
 // global da página (Playwright serializa a própria função para o runtime).
 // Isso permite testar a lógica REAL do driver com nós fake, sem navegador.
 
+// Links de cartões são destinos de navegação, nunca opções do seletor.
+// Restringe âncoras a filtros que permanecem na própria rota /my/courses.php
+// (ou a controles hash) e exclui paginação e controles dentro de cartões.
+function isCourseCardControl(el) {
+  const href = String(el && el.getAttribute ? el.getAttribute('href') || '' : '');
+  if (/\/course\/view\.php(?:[?#]|$)/i.test(href)) return true;
+  const cardSelector = '[class*="course-card"], [class*="course-item"], [class*="course-block"], li[class*="course"]';
+  if (el && typeof el.closest === 'function' && el.closest(cardSelector)) return true;
+  let node = el && el.parentElement;
+  let depth = 0;
+  while (node && depth < 8) {
+    const cls = String(node.className && node.className.baseVal ? node.className.baseVal : node.className || '');
+    if (/course-card|course-item|course-block/i.test(cls) || (String(node.tagName || '').toLowerCase() === 'li' && /course/i.test(cls))) return true;
+    node = node.parentElement;
+    depth++;
+  }
+  return false;
+}
+
+function isPaginationControl(el) {
+  const text = String((el && el.textContent) || '').replace(/\s+/g, ' ').trim();
+  const aria = String(el && el.getAttribute ? el.getAttribute('aria-label') || '' : '');
+  const cls = String(el && el.getAttribute ? el.getAttribute('class') || '' : '');
+  return /pr[oó]xima|anterior|next|previous|p[aá]gina\s*\d|\bpage\s*\d|pagination|paginar/i.test(text + ' ' + aria + ' ' + cls);
+}
+
+function selectorControls(doc) {
+  return [...doc.querySelectorAll('button, [role="tab"], [role="button"], a')].filter((el) => {
+    if (isCourseCardControl(el) || isPaginationControl(el)) return false;
+    if (String(el.tagName || '').toLowerCase() !== 'a') return true;
+    const href = String(el.getAttribute && el.getAttribute('href') || '');
+    if (!href) return false;
+    if (href.startsWith('#')) return true;
+    const currentHref = (doc.location && doc.location.href) || (typeof location !== 'undefined' ? location.href : BASE + '/my/courses.php');
+    try {
+      const current = new URL(currentHref);
+      const target = new URL(href, current);
+      return target.origin === current.origin && target.pathname === current.pathname;
+    } catch { return false; }
+  });
+}
+
 // Coleta as opções do seletor (select/radio/checkbox/abas). Rótulos do DOM real.
 function collectSelectorOptions(D) {
   const doc = D || (typeof document !== 'undefined' ? document : null);
@@ -204,7 +246,7 @@ function collectSelectorOptions(D) {
     const lbl = labelEl ? labelEl.textContent : (el.parentElement ? el.parentElement.textContent : '');
     if (lbl) add(el.value || el.id || lbl, lbl);
   });
-  doc.querySelectorAll('button, [role="tab"], [role="button"], a').forEach((el) => {
+  selectorControls(doc).forEach((el) => {
     const t = (el.textContent || '').replace(/\s+/g, ' ').trim();
     if (t && t.length <= 60 && !/buscar|mostrar|ordena/i.test(t)) add(t, t);
   });
@@ -225,7 +267,7 @@ function applySelectOption(D, value) {
     if ((el.value || el.id || (el.labels && el.labels[0] && el.labels[0].textContent || '').trim()) === value) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); handled = true; }
   });
   if (handled) return true;
-  doc.querySelectorAll('button, [role="tab"], [role="button"], a').forEach((el) => {
+  selectorControls(doc).forEach((el) => {
     if ((el.textContent || '').replace(/\s+/g, ' ').trim() === value) { el.click(); handled = true; }
   });
   return handled;
@@ -365,4 +407,4 @@ async function discoverAllCourses(win, opts = {}) {
   return result;
 }
 
-module.exports = { discoverAllCourses, discoverAllCoursesViaDriver, createMyCoursesDriver, waitListStable, collectSelectorOptions, applySelectOption, readStability, readCards, applyShowAll, applyNextPage, readActiveLabel };
+module.exports = { discoverAllCourses, discoverAllCoursesViaDriver, createMyCoursesDriver, waitListStable, collectSelectorOptions, applySelectOption, readStability, readCards, applyShowAll, applyNextPage, readActiveLabel, isCourseCardControl, isPaginationControl, selectorControls };
