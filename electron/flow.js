@@ -439,14 +439,14 @@ async function extractEmbeddedFromPage({ win, page, sourceUrl, weekDir, app, log
 // --- Renderização da estrutura do ZIP (A7) ---
 function safeName(s) {
   let name = String(s || '')
-    .replace(/[<>:"/\\\\|?*\\x00-\\x1F]/g, '')
-    .replace(/[^\\w\\-. ]+/g, '')
-    .replace(/\\s+/g, '_')
+    .replace(/[<>:"\/\\|?*\x00-\x1F]/g, '')
+    .replace(/[^\w\-. ]+/g, '')
+    .replace(/\s+/g, '_')
     .replace(/[. ]+$/g, '')
     .slice(0, 80);
-  if (!name || /^\\.+$/.test(name)) return 'recurso';
+  if (!name || /^\.+$/.test(name)) return 'recurso';
   // Nomes reservados do Windows continuam inválidos mesmo com extensão.
-  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\\..*)?$/i.test(name)) name = '_' + name;
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i.test(name)) name = '_' + name;
   return name;
 }
 
