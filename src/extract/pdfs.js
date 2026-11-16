@@ -14,6 +14,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const { PDFParse } = require('pdf-parse');
+const ocr = require('./ocr');
 
 // Baixa o PDF via net do Electron (processo principal) — contorna CORS e
 // preserva os bytes originais. Limita tamanho e tempo (5.2): nunca carrega
@@ -219,6 +220,11 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
     result.pagesExtracted = analyze.pages.filter((p) => p.text && p.text.trim().length > 0).length;
     result.printedPagination = detectPrintedPagination(analyze.pages);
     result.error = analyze.error;
+    // Seção 5 (OCR): camada de DECISÃO — identifica páginas escaneadas (sem
+    // camada textual) que precisariam de OCR. A execução real do OCR é
+    // pluggable e NÃO é executada nesta máquina (documentado como pendente);
+    // aqui apenas registramos o plano e a necessidade, sem inventar texto.
+    result.ocr = ocr.planOcr(analyze.pages);
     result.status = statusFor({ ok: true, bytes: result.bytes, analyze, pages: analyze.pages });
   } catch (e) {
     result.error = e.message;

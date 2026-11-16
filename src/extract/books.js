@@ -15,6 +15,7 @@
 
 const crypto = require('crypto');
 const ep = require('./epub-structure');
+const pearson = require('./pearson');
 
 // ---- Constantes / padrões ----
 
@@ -1450,6 +1451,18 @@ async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts 
   // 5) BVirtual/Pearson reconhecido, mas o fluxo ainda não selecionou
   // Beta/Clássico. Não presumir DRM/canvas: isso só pode ser afirmado após
   // entrar no leitor escolhido e observar a estrutura real do conteúdo.
+  // ANTES de devolver o status pendente, tenta a automação Pearson BEST-EFFORT
+  // (seleção Beta/Clássico + navegação por sumário). Se ela não reconhecer a
+  // tela com segurança, retorna null e mantém o status original.
+  if (det.format === 'bvpdf' || det.format === 'bvleitor' || det.format === 'unknown' || det.format === 'reader-selection-required') {
+    const pearsonAttempt = await tryPearsonAutomation({ app, win, expected, opts });
+    if (pearsonAttempt && pearsonAttempt.ok) {
+      return { ...pearsonAttempt, url: launchUrl, readerLoaded: true, validation: validateContent({ text: pearsonAttempt.text, expected, kind: 'epub' }) };
+    }
+    if (pearsonAttempt && pearsonAttempt.attempts && pearsonAttempt.attempts.length) {
+      attempts.push(...pearsonAttempt.attempts.map((a) => 'pearson:' + a));
+    }
+  }
   return failureResult({
     url: launchUrl, format: det.format, failureType: 'reader-selection-required', readerLoaded: true,
     error: 'selecao-de-leitor-pearson-nao-automatizada', expected, attempts,
@@ -1566,6 +1579,135 @@ async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
   return report;
 }
 
+// ---- Pearson (Beta/Clássico) — automação BEST-EFFORT por sumário ----
+//
+// Integração não-rompedora com extractBookWithReader: quando o leitor Pearson é
+// reconhecido (reader-selection-required), tenta automatizar a seleção de leitor
+// (Beta primeiro, fallback Clássico) e a navegação pelo sumário até o capítulo/
+// intervalo indicado. NÃO abre os dois leitores simultaneamente.
+//
+// IMPORTANTE (honestidade): os seletores do DOM real do leitor Pearson só podem
+// ser confirmados com sessão real no AVA. Esta função usa heurísticas marcadas
+// (texto visível/aria/classes genéricas) e, se NÃO reconhecer a tela com
+// segurança, retorna null — o fluxo mantém o status `reader-selection-required`
+// original (não inventa seletores, não classifica como DRM sem evidência).
+//
+// driver: { evaluate(fn) — Playwright page.evaluate; app — instância Electron }
+// expected: { chapter, book, pageRange } — indicação do professor.
+// Retorna { ok, format, text, ... } ou null (não automatizável / não detectado).
+async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
+  const attempts = [];
+  try {
+    if (!win || typeof win.evaluate !== 'function') return null;
+    // 1) Lê o estado da página atual (texto, links, botões) para reconhecer a tela.
+    const page = await win.evaluate(() => {
+      const bodyText = (document.body && document.body.innerText) || '';
+      const links = Array.from(document.querySelectorAll('a')).map((a) => (a.textContent || '').trim()).filter(Boolean).slice(0, 200);
+      const buttons = Array.from(document.querySelectorAll('button, [role="button"]')).map((b) => (b.textContent || '').trim()).filter(Boolean).slice(0, 200);
+      const tocCandidates = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).map((a) => ({ label: (a.textContent || '').trim(), href: a.getAttribute('href') })).filter((x) => x.label).slice(0, 500);
+      return { bodyText: bodyText.slice(0, 20000), links, buttons, tocCandidates, href: location.href };
+    }).catch(() => null);
+    if (!page) return null;
+    attempts.push('pagina-lida');
+
+    // 2) Reconhece a tela de seleção de leitor.
+    const choices = pearson.detectReaderChoices({ bodyText: page.bodyText, links: page.links, buttons: page.buttons });
+    attempts.push('tela-selecao=' + (choices.recognized ? 'sim' : 'nao'));
+    if (!choices.recognized) return null;
+
+    // 3) Detecta formato (pdf/epub) por evidência da página.
+    const fmt = pearson.detectBookFormat({ bodyText: page.bodyText, links: page.links, url: page.href });
+    attempts.push('formato=' + fmt.format);
+
+    // 4) Escolhe o leitor (Beta primeiro; fallback Clássico após falha).
+    const preferred = pearson.chooseReaderPreference(choices);
+    if (!preferred) return null;
+    attempts.push('leitor-preferido=' + preferred);
+
+    const selectReader = async (reader) => {
+      const done = await win.evaluate((name) => {
+        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
+          const t = norm(el.textContent);
+          return t === name || (name === 'beta' && /^leitor\s+beta$/.test(t)) || (name === 'classic' && /^leitor\s+(cl[aá]ssico|classic)$/.test(t));
+        });
+        if (clickable.length) { clickable[0].click(); return true; }
+        return false;
+      }, reader).catch(() => false);
+      return done === true;
+    };
+
+    const selectedBeta = await selectReader('beta');
+    attempts.push('selecionar-beta=' + (selectedBeta ? 'ok' : 'nao'));
+    let reader = preferred;
+    if (!selectedBeta) {
+      const selectedClassic = await selectReader('classic');
+      attempts.push('selecionar-classico=' + (selectedClassic ? 'ok' : 'nao'));
+      if (!selectedClassic) return null;
+      reader = 'classic';
+    }
+
+    // 5) Aguarda o leitor e tenta ler o sumário.
+    const waitMs = opts.waitMs != null ? opts.waitMs : 4000;
+    if (win.waitForTimeout) await win.waitForTimeout(waitMs);
+    const after = await win.evaluate(() => {
+      const tocCandidates = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).map((a) => ({ label: (a.textContent || '').trim(), href: a.getAttribute('href') })).filter((x) => x.label).slice(0, 500);
+      const mainText = (document.body && document.body.innerText) || '';
+      const iframes = Array.from(document.querySelectorAll('iframe')).map((f) => f.src).filter(Boolean);
+      return { tocCandidates, mainText: mainText.slice(0, 20000), iframes };
+    }).catch(() => null);
+    if (!after) return null;
+
+    const toc = pearson.parseToc(after.tocCandidates);
+    attempts.push('sumario-entradas=' + toc.length);
+    const loc = pearson.locateInToc(toc, expected);
+    attempts.push('localizar=' + (loc.found ? 'ok' : loc.reason));
+    if (!loc.found || !loc.entry) {
+      // Sem localização segura: NÃO extrai o livro inteiro (conservador).
+      return { ok: false, format: fmt.format, failureType: 'capitulo-nao-localizado', reader, attempts, chapterLocated: false, tocEntries: toc.length };
+    }
+
+    // 6) Navega para o capítulo no sumário (se houver link) e lê o texto.
+    if (loc.entry.href) {
+      await win.evaluate((href) => {
+        const a = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).find((x) => (x.getAttribute('href') || '') === href);
+        if (a) { a.click(); return true; }
+        return false;
+      }, loc.entry.href).catch(() => false);
+      if (win.waitForTimeout) await win.waitForTimeout(3000);
+    }
+
+    const content = await win.evaluate(() => {
+      const scopes = Array.from(document.querySelectorAll('[class*="content"], [class*="reader"], article, main, [role="main"], body'));
+      let best = '';
+      for (const s of scopes) {
+        const t = (s.innerText || '').trim();
+        if (t.length > best.length) best = t;
+      }
+      return best.slice(0, 200000);
+    }).catch(() => '');
+    const layer = pearson.detectContentLayer({ mainText: content, framesText: '', hasImages: /<img/i.test(page.bodyText) });
+    const validated = pearson.validateExtractedText({ text: content, expected });
+    attempts.push('camada=' + layer.layer + ' validacao=' + (validated.ok ? 'ok' : validated.reason));
+    return {
+      ok: validated.ok === true && layer.hasText,
+      format: fmt.format,
+      reader,
+      readerUrl: page.href,
+      text: validated.ok && layer.hasText ? content : '',
+      chars: validated.ok && layer.hasText ? content.length : 0,
+      status: validated.ok && layer.hasText ? 'integral' : 'partial',
+      layer,
+      chapterLocated: true,
+      tocEntries: toc.length,
+      attempts,
+    };
+  } catch (e) {
+    attempts.push('erro=' + String((e && e.message) || 'desconhecido').slice(0, 120));
+    return { ok: false, failureType: 'pearson-erro', attempts };
+  }
+}
+
 module.exports = {
   extractBook,
   closeWindowsOpenedSince,
@@ -1609,4 +1751,6 @@ module.exports = {
   waitEpubDocChange,
   sanitizeUrlForReport,
   diagnoseReader,
+  tryPearsonAutomation,
+  pearson,
 };
