@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:25:58.346Z",
+  "ts": "2026-11-16T05:54:51.625Z",
   "results": [
     {
       "id": "QA-FID-1",
@@ -70,7 +70,7 @@
     {
       "id": "QA-CONS-1",
       "title": "Consistência: geração de amostras termina sem erro",
-      "status": true,
+      "status": "PASS",
       "detail": "exit=0"
     },
     {

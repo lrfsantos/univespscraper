@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:27:37.728Z",
+  "ts": "2026-11-16T05:56:32.949Z",
   "results": [
     {
       "id": "M-1",
@@ -71,12 +71,18 @@
       "id": "M-12",
       "title": "Meus cursos: funções puras do driver real testadas com document fake (sem navegador)",
       "status": "PASS",
-      "detail": "opts=2 cards=25 loading=false showAll=true next=true label=Legado"
+      "detail": "opts=1 cards=25 loading=false showAll=true next=true label=Legado"
+    },
+    {
+      "id": "M-13",
+      "title": "Meus cursos: links de cartões e paginação excluídos da seleção de filtros",
+      "status": "PASS",
+      "detail": "controls=Legado labels=Legado courseClick=false"
     }
   ],
   "summary": {
-    "total": 12,
-    "passed": 12,
+    "total": 13,
+    "passed": 13,
     "failed": 0
   }
 }

@@ -3,7 +3,7 @@
 > Gerado automaticamente pelos escritores e validações reais. Fixtures sintéticas;
 > nenhum material protegido é reproduzido.
 
-Data: 2026-11-15T21:25:58.345Z
+Data: 2026-11-16T05:54:51.624Z
 Total de verificações: 13 | Aprovadas: 13 | Reprovadas: 0
 
 ## QA-FID-1 — Página: conteúdo, headings, listas e recursos incorporados preservados (não resumido)
@@ -95,12 +95,12 @@ Total de verificações: 13 | Aprovadas: 13 | Reprovadas: 0
 - Decisão: aprovado
 
 ## QA-CONS-1 — Consistência: geração de amostras termina sem erro
-- Status: **true**
+- Status: **PASS**
 - Métricas observadas: `exit=0`
-- Verificações aprovadas: —
+- Verificações aprovadas: todas
 - Verificações reprovadas: nenhuma
 - Limitações: validação determinística sobre fixtures sintéticas; a confirmação com dados reais do AVA/VitalSource depende do proprietário.
-- Decisão: reprovado
+- Decisão: aprovado
 
 ## QA-CONS-2 — Consistência: regeneração não diverge dos arquivos commitados
 - Status: **PASS**

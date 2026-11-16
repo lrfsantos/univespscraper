@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:26:53.781Z",
+  "ts": "2026-11-16T05:55:47.694Z",
   "results": [
     {
       "id": "Z-1",
@@ -54,11 +54,17 @@
       "title": "P0 ZIP: UI só exibe \"verificado\" quando state=validado; falha de validação tem mensagem própria (inspeção)",
       "status": "PASS",
       "detail": "gate=true mensagemFalha=true"
+    },
+    {
+      "id": "Z-10",
+      "title": "ZIP real: nomes exatos e conteúdo de todas as entradas validados; divergência é rejeitada",
+      "status": "PASS",
+      "detail": "created=true entries=2 valid={\"valid\":true,\"entries\":2,\"matches\":true,\"decompressed\":2,\"nameMatch\":true,\"actualNames\":[\"nested/material.md\",\"root.txt\"],\"expectedNames\":[\"nested/material.md\",\"root.txt\"]} altered={\"valid\":true,\"entries\":2,\"matches\":false,\"decompressed\":2,\"nameMatch\":false,\"actualNames\":[\"nested/material.md\",\"root.txt\"],\"expectedNames\":[\"ghost.txt\",\"nested/material.md\",\"root.txt\"]}"
     }
   ],
   "summary": {
-    "total": 9,
-    "passed": 9,
+    "total": 10,
+    "passed": 10,
     "failed": 0
   }
 }

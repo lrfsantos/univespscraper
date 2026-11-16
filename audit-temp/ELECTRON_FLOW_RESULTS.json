@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:26:49.705Z",
+  "ts": "2026-11-16T05:55:42.942Z",
   "results": [
     {
       "id": "D-2a",
@@ -30,11 +30,23 @@
       "title": "D2: limpeza do diretório temporário de trabalho em melhor esforço",
       "status": "PASS",
       "detail": "removed=true"
+    },
+    {
+      "id": "D-2f",
+      "title": "D2: confirmação de sessão repete sondagens transitórias e só expira após tentativas configuradas",
+      "status": "PASS",
+      "detail": "recovered=true callsToRecover=2 loggedOut=false callsWhenLoggedOut=3"
+    },
+    {
+      "id": "D-2g",
+      "title": "D2: nomes de pastas/arquivos bloqueiam traversal e nomes reservados; fallback não usa URL crua",
+      "status": "PASS",
+      "detail": "names=[\"recurso\",\"recurso\",\"_CON\",\"_NUL.txt\",\"....escape\",\"Ctemparquivo\"] fallback=r1-watch.video-591754a8fa"
     }
   ],
   "summary": {
-    "total": 5,
-    "passed": 5,
+    "total": 7,
+    "passed": 7,
     "failed": 0
   }
 }

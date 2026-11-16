@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:26:59.588Z",
+  "ts": "2026-11-16T05:55:54.914Z",
   "results": [
     {
       "id": "V-1",
@@ -36,11 +36,17 @@
       "title": "4.5: leitor paginado BVirtual é diagnosticado sem inventar extração textual",
       "status": "PASS",
       "detail": "classif=unknown evidenciaPdf=nao-observado"
+    },
+    {
+      "id": "V-7",
+      "title": "4.5: Pearson/BVirtual sem seleção do leitor registra pendência de navegação, nunca presume DRM",
+      "status": "PASS",
+      "detail": "format=bvpdf failureType=reader-selection-required error=selecao-de-leitor-pearson-nao-automatizada"
     }
   ],
   "summary": {
-    "total": 6,
-    "passed": 6,
+    "total": 7,
+    "passed": 7,
     "failed": 0
   }
 }

@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:27:37.878Z",
+  "ts": "2026-11-16T05:56:33.093Z",
   "results": [
     {
       "id": "E-1",
@@ -15,9 +15,9 @@
     },
     {
       "id": "E-3",
-      "title": "9: limite de profundidade definido (MAX_EMBED_DEPTH) para recursão em páginas internas",
+      "title": "9: profundidade é propagada e bloqueia níveis acima de MAX_EMBED_DEPTH",
       "status": "PASS",
-      "detail": "MAX_EMBED_DEPTH=3"
+      "detail": "max=3 root=true maxAllowed=true beyond=false recordedDepth=2"
     },
     {
       "id": "E-4",
@@ -42,11 +42,29 @@
       "title": "9: `seen` compartilhado entre páginas evita re-extração global do mesmo recurso",
       "status": "PASS",
       "detail": "pagina1=1 pagina2=0 seen=1"
+    },
+    {
+      "id": "E-8",
+      "title": "9: recursos com basename repetido geram nomes únicos e seguros (sem sobrescrever arquivos)",
+      "status": "PASS",
+      "detail": "idA=r1-watch.video-591754a8fa idB=r1-watch.video-6f186bfdad"
+    },
+    {
+      "id": "E-9",
+      "title": "9: páginas incorporadas respeitam o escopo e excluem fóruns/lives",
+      "status": "PASS",
+      "detail": "capturados=https://ava.univesp.br/mod/page/view.php?id=903"
+    },
+    {
+      "id": "E-10",
+      "title": "9: recursos aninhados aparecem uma vez no relatório e mantêm sua hierarquia de origem",
+      "status": "PASS",
+      "detail": "ids=page-1,video-1,page-2,pdf-1,page-3,book-1,video-2"
     }
   ],
   "summary": {
-    "total": 7,
-    "passed": 7,
+    "total": 10,
+    "passed": 10,
     "failed": 0
   }
 }

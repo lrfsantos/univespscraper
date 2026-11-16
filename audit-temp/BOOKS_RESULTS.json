@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-15T21:26:55.000Z",
+  "ts": "2026-11-16T05:55:48.830Z",
   "results": [
     {
       "id": "B-1",
@@ -60,11 +60,17 @@
       "title": "5: documento do livro traz metadados reais, origem, faixa e páginas capturadas/duplicadas",
       "status": "PASS",
       "detail": ""
+    },
+    {
+      "id": "B-11",
+      "title": "5: popups do leitor fechados ao terminar; janela principal/preexistente preservada",
+      "status": "PASS",
+      "detail": "closedCount=2 primary=0 popupA=1 popupB=1"
     }
   ],
   "summary": {
-    "total": 10,
-    "passed": 10,
+    "total": 11,
+    "passed": 11,
     "failed": 0
   }
 }
