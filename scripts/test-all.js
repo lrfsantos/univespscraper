@@ -1,13 +1,13 @@
 // npm test — executa todas as suítes relevantes em sequência e retorna código
 // diferente de zero se QUALQUER uma falhar.
 //
-// Agregação HONESTA (seção 10): cada suíte grava audit-temp/<SUITE>_RESULTS.json
-// com summary { total, passed, failed }. Este script SOMA esses totais reais dos
-// arquivos gerados na própria execução (não inventa números); suítes sem arquivo
-// entram apenas como "sem-resumo". O exit code vem da falha de execução + contagem.
+// Agregação estrita: cada suíte precisa gerar resumo quantitativo válido na
+// execução atual. Processo verde com casos FAIL, resumo ausente/inconsistente ou
+// JSON antigo não podem produzir um npm test verde.
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { parseSuiteSummary } = require('./test-summary');
 
 const root = path.join(__dirname, '..');
 const auditDir = path.join(root, 'audit-temp');
@@ -21,6 +21,7 @@ const suites = [
   { name: 'poc/test-electron-profile-m3.js', out: 'ELECTRON_PROFILE_RESULTS.json' },
   { name: 'poc/test-workdir-m3.js', out: 'WORKDIR_RESULTS.json' },
   { name: 'poc/test-extraction-qa-m3.js', out: 'EXTRACTION_QA_RESULTS.json' },
+  { name: 'poc/test-test-summary-m3.js', out: 'TEST_SUMMARY_RESULTS.json' },
   { name: 'poc/test-discovery-m3.js', out: 'DISCOVERY_RESULTS.json' },
   { name: 'poc/test-modules12-m3.js', out: 'MODULES12_RESULTS.json' },
   { name: 'poc/test-c-fidelity-m3.js', out: 'CFIDELITY_RESULTS.json' },
@@ -45,29 +46,48 @@ let noSummary = 0;
 
 for (const s of suites) {
   process.stdout.write(`\n=== ${s.name} ===\n`);
+  const file = path.join(auditDir, s.out);
+  // Remove resultados anteriores: nunca reutilizar JSON verde de execução passada.
+  try { fs.rmSync(file, { force: true }); } catch {}
+
   const r = spawnSync(process.execPath, [s.name], { cwd: root, stdio: 'inherit' });
-  if (r.status !== 0) {
-    failed++;
-    console.log(`>>> FALHOU: ${s.name}`);
+  let suiteFailed = Boolean(r.error) || r.status !== 0;
+  if (suiteFailed) {
+    console.log(`>>> FALHOU na execução: ${s.name}`);
+    if (r.error) console.log('    erro:', r.error.message);
+    else console.log('    exit code:', r.status);
   }
-  // Agrega o resumo REAL gravado pela suíte nesta execução. Aceita tanto o formato
-  // `summary: { total, passed, failed }` quanto o top-level `{ total, failed }`.
+
+  // Processo verde não basta: resumo ausente, malformado ou com FAIL também reprova.
   try {
-    const file = path.join(auditDir, s.out);
-    if (fs.existsSync(file)) {
-      const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-      const sum = (json && json.summary) || json || {};
-      const t = Number(sum.total) || 0;
-      const f = Number(sum.failed) != null && !Number.isNaN(Number(sum.failed)) ? Number(sum.failed) : (Number(sum.passed) != null ? Math.max(0, t - Number(sum.passed)) : 0);
-      totalCases += t;
-      totalPassed += Math.max(0, t - f);
-      console.log(`  [resumo da suíte] casos=${t} pass=${Math.max(0, t - f)} fail=${f}`);
-    } else {
+    if (!fs.existsSync(file)) {
       noSummary++;
+      suiteFailed = true;
+      console.log('>>> FALHOU: resumo JSON ausente para', s.name);
+    } else {
+      const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const sum = parseSuiteSummary(json);
+      if (!sum.valid) {
+        noSummary++;
+        suiteFailed = true;
+        console.log(`>>> FALHOU: resumo inválido (${sum.error}) para ${s.name}`);
+      } else {
+        totalCases += sum.total;
+        totalPassed += sum.passed;
+        console.log(`  [resumo da suíte] casos=${sum.total} pass=${sum.passed} fail=${sum.failed}`);
+        if (sum.failed > 0) {
+          suiteFailed = true;
+          console.log(`>>> FALHOU: ${sum.failed} caso(s) reprovado(s) em ${s.name}`);
+        }
+      }
     }
   } catch (e) {
     noSummary++;
+    suiteFailed = true;
+    console.log(`>>> FALHOU: não foi possível ler o resumo de ${s.name}: ${e.message}`);
   }
+
+  if (suiteFailed) failed++;
 }
 
 console.log('\n=== RESUMO npm test ===');

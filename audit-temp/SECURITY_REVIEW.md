@@ -4,7 +4,15 @@
 
 ## 1. Credenciais / segredos
 
-- **Nenhuma senha, token, chave de API, chave privada ou credencial foi commitada.**
+## 1A. Atualização de segurança — 2026-11-16
+
+- Uma revisão independente posterior comparou o segredo informado pelo proprietário com o histórico público. Foi confirmada uma correspondência com o valor de senha em texto claro no commit **`87420125d40ee622622fd345dfa8b46f795a7369`**, no arquivo `docs/AUDIT_2026-11-05.md`. O valor não é reproduzido aqui.
+- O commit **`c82423792b0cb136fea622b78bcd133738386287`** substituiu os valores por marcadores `<REDACTED>` no snapshot posterior. Isso corrigiu a árvore atual, mas **não removeu a exposição do commit anterior**.
+- A varredura do snapshot atual da branch em 2026-11-16 não encontrou os valores informados nos 146 arquivos de texto rastreados. Os logs da execução de CI examinada também não continham esses valores. Isso não equivale a purgar ou auditar cópias/forks/clones externos.
+- **Ação recomendada ao proprietário:** rotacionar a senha comprometida imediatamente. A purga do histórico Git é uma operação separada, com impacto em clones, forks, links e branches; não foi executada sem autorização explícita.
+- O texto integral de livros licenciados mencionado na seção 2 também permanece um risco histórico distinto; a remoção do arquivo da árvore atual não apaga blobs de commits antigos.
+
+- **A afirmação de ausência de credenciais commitadas não é válida para todo o histórico:** veja a atualização de segurança de 2026-11-16 acima.
 - Varredura de todo o histórico (`git rev-list --all`) para padrões de segredo (senha literal, `sk-…`, `AKIA…`, `BEGIN … PRIVATE KEY`, `Authorization: Bearer …`): **0 ocorrências** de credencial.
 - A única ocorrência da string de senha do teste (`<REDACTED>`) no histórico está em `docs/AUDIT_2026-11-05.md`, que **descreve** que a credencial hardcoded foi encontrada e removida (documentação). O valor foi **redigido** nesta auditoria (commits futuros); o histórico anterior contém a menção literal — ver item 3.
 - As credenciais hardcoded em código foram removidas antes do primeiro commit (vêm de `UNIVESP_USERNAME`/`UNIVESP_PASSWORD`); nunca entraram no histórico.
@@ -40,7 +48,7 @@ Mantido: `poc/evidence/test-e2e/build-info.json` (apenas hashes/tamanhos/datas d
 
 | Item | Status |
 |---|---|
-| Credenciais no histórico | Nenhuma commitada |
+| Credenciais no histórico | **Exposição histórica confirmada** no commit `8742012`; snapshot atual corrigido, histórico ainda não purgado |
 | Senha de teste em doc (menção) | Redigida (commit desta auditoria); histórico anterior documentado |
 | Texto integral de livro no histórico | **Sim, em `8742012`** (removido da árvore em `d6cf122`) — decisão de purgar pendente |
 | Evidências futuras | Fora do versionamento (gitignore + `git rm --cached`) |

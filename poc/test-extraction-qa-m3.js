@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { normalizeQaResult, summarizeQaResults } = require('./lib/qa-status');
 const {
   renderPageDocument,
   renderPdfDocument,
@@ -27,9 +28,14 @@ const week = { id: '1', name: 'Semana 1' };
 const results = [];
 const reportLines = [];
 function record(entry) {
-  results.push(entry);
-  console.log('[' + entry.status + '] ' + entry.id + ': ' + entry.title);
-  if (entry.detail) console.log('    ', entry.detail);
+  const normalized = normalizeQaResult(entry);
+  if (normalized.statusValidationError) {
+    process.exitCode = 1;
+    console.error('Status de QA inválido normalizado como FAIL:', normalized.id);
+  }
+  results.push(normalized);
+  console.log('[' + normalized.status + '] ' + normalized.id + ': ' + normalized.title);
+  if (normalized.detail) console.log('    ', normalized.detail);
 }
 
 // Fixture entry reutilizada nos unit tests dos escritores.
@@ -196,6 +202,13 @@ async function qaNegative() {
   const n6 = v.valid === false;
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
   record({ id: G + '-6', title: 'Negativo: ZIP inválido não valida (nunca sucesso)', status: n6 ? 'PASS' : 'FAIL', detail: `valid=${v.valid} reason=${v.reason}` });
+
+  // N7: um status fora do contrato (por exemplo, boolean true) nunca pode ser contado como PASS.
+  const malformed = normalizeQaResult({ id: 'QA-NEG-STATUS', title: 'Status inválido', status: true, detail: 'exit=0' });
+  const malformedSummary = summarizeQaResults([malformed]);
+  const strictStatus = malformed.status === 'FAIL' && malformed.statusValidationError === 'invalid-status' &&
+    malformedSummary.total === 1 && malformedSummary.passed === 0 && malformedSummary.failed === 1;
+  record({ id: G + '-7', title: 'Negativo: status booleano/inválido é reprovado e contabilizado como FAIL', status: strictStatus ? 'PASS' : 'FAIL', detail: `normalized=${malformed.status} passed=${malformedSummary.passed} failed=${malformedSummary.failed}` });
 }
 
 // ==================== QA — CONSISTÊNCIA (regenerar == commitado) ====================
@@ -243,9 +256,10 @@ function qaConsistency() {
   qaNegative();
   qaConsistency();
 
-  const invalidStatus = results.filter((r) => r.status !== 'PASS' && r.status !== 'FAIL');
+  const summary = summarizeQaResults(results);
+  const invalidStatus = results.filter((r) => r.statusValidationError);
   if (invalidStatus.length) { console.error('Status de QA inválido:', invalidStatus.map((r) => r.id)); process.exitCode = 1; }
-  const failed = results.filter((r) => r.status === 'FAIL');
+  const failed = results.filter((r) => r.status !== 'PASS');
   // Relatório de qualidade (nunca redigido manualmente — métricas observadas acima).
   reportLines.push('# Relatório de Qualidade de Extração (EXTRACTION_QA)');
   reportLines.push('');
@@ -253,7 +267,7 @@ function qaConsistency() {
   reportLines.push('> nenhum material protegido é reproduzido.');
   reportLines.push('');
   reportLines.push(`Data: ${new Date().toISOString()}`);
-  reportLines.push(`Total de verificações: ${results.length} | Aprovadas: ${results.length - failed.length} | Reprovadas: ${failed.length}`);
+  reportLines.push(`Total de verificações: ${results.length} | Aprovadas: ${summary.passed} | Reprovadas: ${failed.length}`);
   reportLines.push('');
   for (const r of results) {
     reportLines.push(`## ${r.id} — ${r.title}`);
@@ -267,8 +281,8 @@ function qaConsistency() {
   }
   fs.mkdirSync(path.dirname(QA_MD), { recursive: true });
   fs.writeFileSync(QA_MD, reportLines.join('\n'), 'utf8');
-  fs.writeFileSync(QA_JSON, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
+  fs.writeFileSync(QA_JSON, JSON.stringify({ ts: new Date().toISOString(), results, summary }, null, 2));
   console.log('\n=== RESUMO QUALIDADE DE EXTRAÇÃO ===');
-  console.log('total:', results.length, '| PASS:', results.length - failed.length, '| FAIL:', failed.length);
+  console.log('total:', summary.total, '| PASS:', summary.passed, '| FAIL:', summary.failed);
   if (failed.length) { for (const f of failed) console.log('  -', f.id, f.title, '|', f.detail); process.exitCode = 1; }
 })().catch((e) => { console.error('FATAL', e); process.exit(1); });
