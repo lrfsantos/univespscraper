@@ -64,8 +64,9 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 | Recurso | Tratamento |
 |---|---|
 | Página HTML do AVA | Extração de texto (Módulo 1) + recursos incorporados descobertos (vídeos/PDFs/livros) |
-| PDF | Download do original + texto por página (Módulo 2), SHA-256 e paginação impressa quando identificada |
+| PDF | Download do original + texto por página (Módulo 2), SHA-256 e paginação impressa quando identificada; camada de decisão de OCR para páginas digitalizadas (`src/extract/ocr.js`) |
 | Livro/leitor LTI compatível (Minha Biblioteca) | Extração EPUB/PAGEID (Módulo 3) com capítulo e intervalo de páginas declarados |
+| Livro Biblioteca Pearson (Beta/Clássico) | Camada de navegação best-effort (`src/extract/pearson.js`): seleção Beta→Clássico + navegação por sumário; validação real pendente de sessão AVA |
 | Videoaula (YouTube) | Registro de link, título, transcrição com timestamps quando disponível (sem inventar) |
 | Recurso desconhecido | Registrado como não suportado (nunca ignorado silenciosamente) |
 
@@ -75,10 +76,24 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
   conteúdo. A integração EPUB/PAGEID da Minha Biblioteca foi exercitada; quando
   o conteúdo não monta (limite de sessão/dispositivo), o recurso é registrado
   honestamente como `inaccessible`/`not_found`.
-- A Biblioteca Pearson/BVirtual ainda NÃO possui navegação automatizada entre a
-  escolha do leitor Beta e do leitor Clássico. A classificação atual pode
-  reconhecer a plataforma, mas não seleciona um leitor nem extrai seu conteúdo;
-  essa integração depende de mapear a navegação real e validar a extraibilidade.
+- A Biblioteca Pearson/BVirtual possui uma camada de navegação automatizada
+  (seleção Beta → fallback Clássico e navegação pelo sumário) implementada em
+  `src/extract/pearson.js`, ligada ao fluxo de livros. Ela é **best-effort**: usa
+  heurísticas sobre o DOM (texto visível, aria, classes genéricas) e, se a tela de
+  seleção não for reconhecida com segurança, mantém o status
+  `reader-selection-required` sem inventar seletores nem classificar como DRM.
+  A validação REAL da tela do leitor Pearson e da extração efetiva depende de
+  sessão autenticada no AVA e está documentada como **pendente** (não declarada
+  como concluída).
+- PDFs digitalizados (sem camada textual) passam por uma camada de **decisão de
+  OCR** (`src/extract/ocr.js`): identifica páginas escaneadas, planeja quais
+  precisam de OCR e valida a qualidade do texto reconhecido (vazio, curto,
+  ilegível, substituição, repetição, confiança). A execução real de um motor de
+  OCR no aplicativo empacotado ainda **não** foi validada nesta máquina
+  (documentado como pendente); nenhum texto é inventado para trechos ilegíveis.
+- O `integral` de PDF significa que o texto extraível foi obtido de todas as
+  páginas — **não** que diagramas foram interpretados, imagens reconhecidas ou
+  que houve OCR (a camada de OCR é decisão/qualidade; a execução real é pendente).
 - O scraper captura a transcrição de videoaulas quando a plataforma a
   disponibiliza, preservando segmentos e timestamps. Não baixa o arquivo de
   áudio/vídeo; quando não há transcrição acessível, registra a pendência.
@@ -87,7 +102,7 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
   deliberadamente excluídos da extração.
 - O `integral` de PDF significa que o texto extraível foi obtido de todas as
   páginas — **não** que diagramas foram interpretados, imagens reconhecidas ou
-  que houve OCR.
+  que houve OCR (a camada de OCR é decisão/qualidade; a execução real é pendente).
 - O histórico do repositório pode conter conteúdo antigo não removido (ver
   pendências no relatório da auditoria).
 
