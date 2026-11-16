@@ -1,0 +1,82 @@
+{
+  "ts": "2026-11-16T05:56:33.193Z",
+  "results": [
+    {
+      "id": "O-1",
+      "title": "OCR: PDF com camada textual em todas as páginas não requer OCR",
+      "status": "PASS",
+      "detail": "{\"toOcr\":[],\"needsOcr\":false,\"withText\":2}"
+    },
+    {
+      "id": "O-2",
+      "title": "OCR: PDF totalmente digitalizado identificado (todas as páginas precisam OCR)",
+      "status": "PASS",
+      "detail": "{\"toOcr\":[1,2,3],\"allScanned\":true}"
+    },
+    {
+      "id": "O-3",
+      "title": "OCR: PDF parcialmente digitalizado — só páginas sem/insuficiente texto vão para OCR",
+      "status": "PASS",
+      "detail": "{\"toOcr\":[2,4],\"withText\":2}"
+    },
+    {
+      "id": "O-4",
+      "title": "OCR: página vazia após OCR marcada como FAIL",
+      "status": "PASS",
+      "detail": "{\"status\":\"FAIL\",\"reason\":\"pagina-vazia\"}"
+    },
+    {
+      "id": "O-5",
+      "title": "OCR: texto curto demais é PARTIAL (nunca PASS)",
+      "status": "PASS",
+      "detail": "{\"status\":\"PARTIAL\",\"reason\":\"texto-curto\",\"chars\":3}"
+    },
+    {
+      "id": "O-6",
+      "title": "OCR: caracteres de substituição detectados (PARTIAL)",
+      "status": "PASS",
+      "detail": "{\"status\":\"PARTIAL\",\"reason\":\"caracteres-de-substituicao\",\"replacement\":12}"
+    },
+    {
+      "id": "O-7",
+      "title": "OCR: texto ilegível (quase sem letras) identificado como PARTIAL",
+      "status": "PASS",
+      "detail": "{\"status\":\"PARTIAL\",\"reason\":\"poucas-letras-ilegivel\",\"alpha\":0,\"total\":74}"
+    },
+    {
+      "id": "O-8",
+      "title": "OCR: repetição anormal de linhas detectada (PARTIAL)",
+      "status": "PASS",
+      "detail": "{\"status\":\"PARTIAL\",\"reason\":\"repeticao-anormal-de-linhas\",\"count\":1}"
+    },
+    {
+      "id": "O-9",
+      "title": "OCR: confiança baixa registrada como PARTIAL",
+      "status": "PASS",
+      "detail": "{\"status\":\"PARTIAL\",\"reason\":\"confianca-baixa\",\"confidence\":0.3}"
+    },
+    {
+      "id": "O-10",
+      "title": "OCR: texto reconhecido com boa qualidade é PASS",
+      "status": "PASS",
+      "detail": "{\"status\":\"PASS\",\"confidence\":0.9}"
+    },
+    {
+      "id": "O-11",
+      "title": "OCR: composição preserva a ordem das páginas",
+      "status": "PASS",
+      "detail": "ordem=[página 1]\nPrimeir | [página 2]\nSegunda | [página 3]\nTerceir"
+    },
+    {
+      "id": "O-12",
+      "title": "OCR: separação entre páginas preservada (marcadores)",
+      "status": "PASS",
+      "detail": "\"[página 1]\\nA\\n\\n[página 2]\\nB\""
+    }
+  ],
+  "summary": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "ts": "2026-11-16T05:56:33.143Z",
+  "results": [
+    {
+      "id": "P-1",
+      "title": "Pearson: tela de seleção de leitor reconhecida (Beta e Clássico)",
+      "status": "PASS",
+      "detail": "{\"recognized\":true,\"beta\":true,\"classic\":true,\"reason\":\"selecao\"}"
+    },
+    {
+      "id": "P-2",
+      "title": "Pearson: página sem hint de leitor não é tratada como seleção",
+      "status": "PASS",
+      "detail": "{\"recognized\":false,\"beta\":false,\"classic\":false,\"reason\":\"sem-hint-de-leitor\"}"
+    },
+    {
+      "id": "P-3",
+      "title": "Pearson: formato PDF identificado por evidência",
+      "status": "PASS",
+      "detail": "{\"format\":\"pdf\",\"evidence\":\"pdf\"}"
+    },
+    {
+      "id": "P-4",
+      "title": "Pearson: formato EPUB identificado por evidência (sumário/navegação)",
+      "status": "PASS",
+      "detail": "{\"format\":\"epub\",\"evidence\":\"epub\"}"
+    },
+    {
+      "id": "P-5",
+      "title": "Pearson: Beta escolhido primeiro; fallback único para Clássico",
+      "status": "PASS",
+      "detail": "pref=beta fallback=classic"
+    },
+    {
+      "id": "P-6",
+      "title": "Pearson: sem novo fallback após Clássico (evita loop)",
+      "status": "PASS",
+      "detail": "afterClassic=null"
+    },
+    {
+      "id": "P-7",
+      "title": "Pearson: sumário hierárquico preservado (profundidade e ordem)",
+      "status": "PASS",
+      "detail": "[{\"l\":\"Parte I\",\"d\":0},{\"l\":\"Capítulo 1\",\"d\":1},{\"l\":\"Capítulo 2\",\"d\":1},{\"l\":\"Capítulo 3\",\"d\":1}]"
+    },
+    {
+      "id": "P-8",
+      "title": "Pearson: capítulo localizado no sumário por número",
+      "status": "PASS",
+      "detail": "{\"found\":true,\"entry\":{\"label\":\"Capítulo 2\",\"depth\":0,\"href\":null,\"normalized\":\"capitulo 2\"},\"reason\":\"capitulo-numerico\"}"
+    },
+    {
+      "id": "P-9",
+      "title": "Pearson: capítulo inexistente registrado como não localizado (sem escolha arbitrária)",
+      "status": "PASS",
+      "detail": "{\"found\":false,\"reason\":\"capitulo-nao-localizado-no-sumario\"}"
+    },
+    {
+      "id": "P-10",
+      "title": "Pearson: intervalo de páginas não vira extração do livro inteiro (conservador)",
+      "status": "PASS",
+      "detail": "{\"found\":false,\"reason\":\"capitulo-nao-localizado-no-sumario\"}"
+    },
+    {
+      "id": "P-11",
+      "title": "Pearson: camada textual no DOM identificada",
+      "status": "PASS",
+      "detail": "{\"layer\":\"dom\",\"hasText\":true,\"needsOcr\":false}"
+    },
+    {
+      "id": "P-12",
+      "title": "Pearson: conteúdo em imagem detectado como candidato a OCR (não DRM)",
+      "status": "PASS",
+      "detail": "{\"layer\":\"image\",\"hasText\":false,\"needsOcr\":true}"
+    },
+    {
+      "id": "P-13",
+      "title": "Pearson: texto de menu/navegação não é aceito como conteúdo",
+      "status": "PASS",
+      "detail": "{\"ok\":false,\"reason\":\"apenas-menu-ou-navegacao\"}"
+    },
+    {
+      "id": "P-14",
+      "title": "Pearson: conteúdo acadêmico válido aceito",
+      "status": "PASS",
+      "detail": "{\"ok\":true,\"chars\":641}"
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0
+  }
+}
