@@ -28,6 +28,10 @@ function record(id, title, ok, detail) {
   const r = parseSuiteSummary({ results: [] });
   record('TS-5', 'Rejeita arquivo sem resumo quantitativo', !r.valid, JSON.stringify(r));
 }
+{
+  const r = parseSuiteSummary({ summary: { total: 0, passed: 0, failed: 0 } });
+  record('TS-6', 'Rejeita suíte que declara zero casos', !r.valid && r.error === 'total-ausente-ou-invalido', JSON.stringify(r));
+}
 
 const failed = results.filter((r) => r.status !== 'PASS').length;
 const summary = { total: results.length, passed: results.length - failed, failed };

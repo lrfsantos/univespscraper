@@ -2,12 +2,7 @@
 'use strict';
 
 function count(value) {
-  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return value;
-  if (typeof value === 'string' && /^\\d+$/.test(value.trim())) {
-    const n = Number(value);
-    if (Number.isSafeInteger(n) && n >= 0) return n;
-  }
-  return null;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 function parseSuiteSummary(payload) {
@@ -18,7 +13,8 @@ function parseSuiteSummary(payload) {
     ? payload.summary
     : payload;
   const total = count(summary.total);
-  if (total == null) return { valid: false, error: 'total-ausente-ou-invalido' };
+  // Uma suíte sem casos também não comprova que qualquer verificação foi executada.
+  if (total == null || total === 0) return { valid: false, error: 'total-ausente-ou-invalido' };
 
   const hasPassed = Object.prototype.hasOwnProperty.call(summary, 'passed');
   const hasFailed = Object.prototype.hasOwnProperty.call(summary, 'failed');
