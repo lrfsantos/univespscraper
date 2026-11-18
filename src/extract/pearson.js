@@ -24,11 +24,22 @@
 
 // Identifica, a partir do texto/DOM da página, se estamos diante da tela que
 // oferece "Leitor Beta" e/ou "Leitor Clássico". Puro e testável.
-function detectReaderChoices({ bodyText = '', links = [], buttons = [] }) {
+//
+// ATUALIZAÇÃO (descobertas reais 2026-11-18): a tela de seleção REAL tem os
+// botões `#pdf-novo` (Beta) e `#pdf` (Clássico). A presença desses ids é a
+// evidência mais forte; o texto continua como fallback (e para testes).
+// Parâmetro `ids`: ids de elementos presentes na página (array de strings).
+function detectReaderChoices({ bodyText = '', links = [], buttons = [], ids = [] } = {}) {
+  const idsNorm = (Array.isArray(ids) ? ids : []).map((x) => String(x)).filter(Boolean);
+  const hasBetaId = idsNorm.indexOf('pdf-novo') !== -1;
+  const hasClassicId = idsNorm.indexOf('pdf') !== -1;
   const text = String(bodyText || '').toLowerCase();
   const all = text + ' ' + links.map((l) => String(l || '')).join(' ').toLowerCase() + ' ' + buttons.map((b) => String(b || '')).join(' ').toLowerCase();
   const beta = /\bbeta\b/i.test(all);
   const clas = /cl[aá]ssico|classic/i.test(all);
+  if (hasBetaId || hasClassicId) {
+    return { recognized: true, beta: hasBetaId || beta, classic: hasClassicId || clas, reason: 'selecao-ids-reais' };
+  }
   const hasSelectionHint = /leitor|ler\s+(?:no|com)|escolha|selecione|acesse|abrir/i.test(all) || beta || clas;
   if (!hasSelectionHint) return { recognized: false, beta: false, classic: false, reason: 'sem-hint-de-leitor' };
   return { recognized: true, beta, classic: clas, reason: beta || clas ? 'selecao' : 'hint-sem-botoes' };
@@ -73,20 +84,82 @@ function normalizeHeading(s) {
 
 // Extrai capítulos/seções de uma representação de sumário (lista de {label}).
 // Mantém hierarquia (profundidade por indentação ou por níveis explícitos).
+// Campos opcionais preservados quando presentes na entrada:
+//   - summaryItemIndex: índice N do botão real `#summary-item-N` (leitor Beta);
+//   - dataPagina: página PDF do item `li.box-capt[data-pagina]` (leitor Clássico);
+//   - active: item atual do sumário (marcador `SummaryItem_active`).
 function parseToc(entries) {
   const out = [];
   for (const e of entries || []) {
     const label = String(e.label || '').replace(/\s+/g, ' ').trim();
     if (!label) continue;
-    out.push({ label, depth: Number(e.depth) || 0, href: e.href || null, normalized: normalizeHeading(label) });
+    const item = { label, depth: Number(e.depth) || 0, href: e.href || null, normalized: normalizeHeading(label) };
+    if (e.summaryItemIndex != null) item.summaryItemIndex = e.summaryItemIndex;
+    if (e.dataPagina != null) item.dataPagina = e.dataPagina;
+    if (e.active) item.active = true;
+    out.push(item);
   }
   return out;
+}
+
+// ---- Sumários com os seletores REAIS (descobertas 2026-11-18) ----
+
+// Leitor Beta: itens são botões `button#summary-item-N` cujo texto visível pode
+// vir truncado ("...") — o nome completo está em `aria-label`. Entrada real:
+// [{ id: 'summary-item-0', text, aria, active }].
+function parseTocFromSummaryItems(items) {
+  const entries = [];
+  for (const it of items || []) {
+    const id = String((it && it.id) || '');
+    const m = id.match(/^summary-item-(\d+)$/);
+    const label = String((it && (it.aria || it.text)) || '').replace(/\s+/g, ' ').trim();
+    if (!m || !label) continue;
+    entries.push({ label, summaryItemIndex: parseInt(m[1], 10), active: !!(it && it.active), normalized: normalizeHeading(label) });
+  }
+  return parseToc(entries);
+}
+
+// Leitor Clássico: itens são `li.box-capt[data-pagina]` com `p[id]` = nome da
+// seção e `p[aria-label="Acesse {nome}"]`. Entrada real:
+// [{ dataPagina: 12, label: 'Unidade 1: Empreendedorismo' }].
+function parseTocClassic(items) {
+  const entries = [];
+  for (const it of items || []) {
+    const pagina = Number(it && it.dataPagina);
+    const label = String((it && it.label) || '').replace(/\s+/g, ' ').trim();
+    if (!Number.isFinite(pagina) || !label) continue;
+    entries.push({ label, dataPagina: pagina, normalized: normalizeHeading(label) });
+  }
+  return parseToc(entries);
+}
+
+// Fronteira de fim do capítulo: o PRÓXIMO item do sumário com rótulo DIFERENTE
+// (ignora entradas duplicadas do mesmo rótulo — ex.: unidades divididas em duas
+// entradas). Retorna { index, endPage } — endPage é a página PDF inicial do
+// próximo capítulo (Clássico, `dataPagina`) ou null quando desconhecido (Beta),
+// caso em que o chamador aplica limite duro e status honesto.
+function chapterEndBoundary(toc, entry) {
+  const idx = (toc || []).indexOf(entry);
+  if (!entry || idx === -1) return { index: (toc || []).length, endPage: null };
+  for (let i = idx + 1; i < toc.length; i++) {
+    const t = toc[i];
+    if (t.normalized !== entry.normalized) {
+      return { index: i, endPage: t.dataPagina != null ? t.dataPagina : null };
+    }
+  }
+  return { index: toc.length, endPage: null };
 }
 
 // Localiza um capítulo/intervalo no sumário.
 // expected.chapter: número do capítulo (ex.: 2) ou rótulo ("Capítulo 2").
 // expected.pageRange: { start, end } — quando só páginas são indicadas.
 // Retorna { found: boolean, entry?, reason } — NUNCA escolhe capítulo arbitrário.
+//
+// ATUALIZAÇÃO (descobertas reais 2026-11-18): os livros reais da UNIVESP usam
+// "Unidade N: {título}" (não "Capítulo N"). A numeração por Unidade é reconhecida
+// DEPOIS da numeração por Capítulo (compatibilidade com testes existentes).
+// Com `pageRange` e um sumário do Clássico (itens com `dataPagina`), a localização
+// usa a fronteira de página real; sem isso, falha fechada (sem escolha arbitrária).
 function locateInToc(toc, expected = {}) {
   if (!toc || !toc.length) return { found: false, reason: 'sumario-vazio' };
   let chapterNum = null;
@@ -108,10 +181,20 @@ function locateInToc(toc, expected = {}) {
     if (exact) return { found: true, entry: exact, reason: 'capitulo-numerico' };
     const byNum = toc.find((t) => /(?:cap[ií]tulo|cap\.)\s*\d+|\b\d+\s*[-–—]\s*\d+\b/i.test(t.label) && t.normalized.includes(' ' + num + ' ') && /cap[ií]tulo/.test(t.normalized));
     if (byNum) return { found: true, entry: byNum, reason: 'capitulo-rotulo-com-numero' };
+    // Livros reais UNIVESP/Pearson: "Unidade N: {título}".
+    const byUnidade = toc.find((t) => new RegExp('^unidade\\s+' + num + '\\b', 'i').test(t.label));
+    if (byUnidade) return { found: true, entry: byUnidade, reason: 'unidade-numerica' };
   }
   if (chapterLabel) {
     const byLabel = toc.find((t) => t.normalized.includes(chapterLabel));
     if (byLabel) return { found: true, entry: byLabel, reason: 'capitulo-por-rotulo' };
+  }
+  // Intervalo de páginas com sumário que tem páginas reais (Clássico, `dataPagina`).
+  // Exigência de fronteira EXATA: sem mapeamento real, não escolhe.
+  if (!wantChapter && expected.pageRange && expected.pageRange.start != null) {
+    const start = expected.pageRange.start;
+    const byPage = toc.find((t) => t.dataPagina != null && t.dataPagina === start);
+    if (byPage) return { found: true, entry: byPage, reason: 'paginas-data-pagina' };
   }
   return { found: false, reason: 'capitulo-nao-localizado-no-sumario' };
 }
@@ -147,6 +230,9 @@ module.exports = {
   chooseReaderPreference,
   nextReaderAfterFailure,
   parseToc,
+  parseTocFromSummaryItems,
+  parseTocClassic,
+  chapterEndBoundary,
   locateInToc,
   detectContentLayer,
   validateExtractedText,

@@ -1595,28 +1595,53 @@ async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
 // driver: { evaluate(fn) — Playwright page.evaluate; app — instância Electron }
 // expected: { chapter, book, pageRange } — indicação do professor.
 // Retorna { ok, format, text, ... } ou null (não automatizável / não detectado).
+// ---- Automação Pearson (leitor Beta e Clássico) — seletores REAIS ----
+//
+// driver: { evaluate(fn, arg?) — Playwright page.evaluate (1 argumento,
+// promessas são aguardadas); win.waitForTimeout(ms); app — instância Electron }
+//
+// Seletores reais capturados em sessão real (2026-11-18; ver
+// DESCOBERTAS-PEARSON-2026-11-18.md):
+//   - Tela de seleção: `#pdf-novo` (Beta) / `#pdf` (Clássico).
+//   - Beta: sumário `button#summary-btn` → `button#summary-item-N` (nome completo
+//     em aria-label); conteúdo em img[class^="PdfImageView_pageImage"] com `alt`
+//     = texto da página (vendor OCR); navegação por input#input-navigate-read.
+//   - Clássico: sumário `a.menu-links.btn-sumario` → `section.sumario` →
+//     `li.box-capt[data-pagina]` com `p[id]` = nome da seção; o texto da página
+//     NÃO está no DOM (canvas fabric.js) — chega no XHR /Leitor/pagination
+//     (#divBookMark[aria-label]); imagem em #page-canvas[data-src] (URL assinada,
+//     NUNCA registrada em logs/relatórios).
+//   - Diálogo "continuar leitura": clicar sempre "Página atual".
+//   - O tradutor automático pode reescrever o DOM ao vivo (inclusive aria-label):
+//     decisões de navegação por ids/estrutura; texto real extraído de alt/XHR.
 async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
   const attempts = [];
+  const maxPages = Number(opts.pearsonMaxPages) > 0 ? Number(opts.pearsonMaxPages) : 120;
+  const maxChars = Number(opts.pearsonMaxChars) > 0 ? Number(opts.pearsonMaxChars) : 500000;
+  const pageWaitMs = Number(opts.pearsonPageWaitMs) > 0 ? Number(opts.pearsonPageWaitMs) : 1200;
   try {
     if (!win || typeof win.evaluate !== 'function') return null;
-    // 1) Lê o estado da página atual (texto, links, botões) para reconhecer a tela.
+
+    // 1) Lê o estado da página (ids reais + texto) para reconhecer a tela.
     const page = await win.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[id]')).map((e) => e.id).filter(Boolean);
       const bodyText = (document.body && document.body.innerText) || '';
-      const links = Array.from(document.querySelectorAll('a')).map((a) => (a.textContent || '').trim()).filter(Boolean).slice(0, 200);
-      const buttons = Array.from(document.querySelectorAll('button, [role="button"]')).map((b) => (b.textContent || '').trim()).filter(Boolean).slice(0, 200);
-      const tocCandidates = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).map((a) => ({ label: (a.textContent || '').trim(), href: a.getAttribute('href') })).filter((x) => x.label).slice(0, 500);
-      return { bodyText: bodyText.slice(0, 20000), links, buttons, tocCandidates, href: location.href };
+      return {
+        bodyText: bodyText.slice(0, 20000),
+        href: location.href,
+        ids: ids.filter((id) => /^(pdf(-novo)?$|summary|input-navigate|page-canvas|ExibicaoAtual|divBookMark)/.test(id)).slice(0, 60),
+      };
     }).catch(() => null);
     if (!page) return null;
     attempts.push('pagina-lida');
 
-    // 2) Reconhece a tela de seleção de leitor.
-    const choices = pearson.detectReaderChoices({ bodyText: page.bodyText, links: page.links, buttons: page.buttons });
-    attempts.push('tela-selecao=' + (choices.recognized ? 'sim' : 'nao'));
+    // 2) Reconhece a tela de seleção de leitor (ids reais primeiro; texto como fallback).
+    const choices = pearson.detectReaderChoices({ bodyText: page.bodyText, ids: page.ids });
+    attempts.push('tela-selecao=' + (choices.recognized ? String(choices.reason) : 'nao'));
     if (!choices.recognized) return null;
 
     // 3) Detecta formato (pdf/epub) por evidência da página.
-    const fmt = pearson.detectBookFormat({ bodyText: page.bodyText, links: page.links, url: page.href });
+    const fmt = pearson.detectBookFormat({ bodyText: page.bodyText, url: page.href });
     attempts.push('formato=' + fmt.format);
 
     // 4) Escolhe o leitor (Beta primeiro; fallback Clássico após falha).
@@ -1624,82 +1649,240 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     if (!preferred) return null;
     attempts.push('leitor-preferido=' + preferred);
 
-    const selectReader = async (reader) => {
-      const done = await win.evaluate((name) => {
-        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
-          const t = norm(el.textContent);
-          return t === name || (name === 'beta' && /^leitor\s+beta$/.test(t)) || (name === 'classic' && /^leitor\s+(cl[aá]ssico|classic)$/.test(t));
-        });
-        if (clickable.length) { clickable[0].click(); return true; }
-        return false;
-      }, reader).catch(() => false);
-      return done === true;
-    };
+    // Seleção por IDs reais (#pdf-novo = Beta, #pdf = Clássico); fallback textual
+    // (labels podem aparecer traduzidos pelo tradutor automático do leitor).
+    const selectReader = async (readerName) => win.evaluate((name) => {
+      const id = name === 'beta' ? 'pdf-novo' : 'pdf';
+      const byId = document.getElementById(id);
+      if (byId) { byId.click(); return 'id:' + id; }
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
+        const t = norm(el.textContent);
+        return (name === 'beta' && /beta/.test(t)) || (name === 'classic' && /(cl[aá]ssico|classic)/.test(t));
+      });
+      if (clickable.length) { clickable[0].click(); return 'texto'; }
+      return false;
+    }, readerName).catch(() => false);
 
     const selectedBeta = await selectReader('beta');
-    attempts.push('selecionar-beta=' + (selectedBeta ? 'ok' : 'nao'));
+    attempts.push('selecionar-beta=' + (selectedBeta || 'nao'));
     let reader = preferred;
     if (!selectedBeta) {
       const selectedClassic = await selectReader('classic');
-      attempts.push('selecionar-classico=' + (selectedClassic ? 'ok' : 'nao'));
+      attempts.push('selecionar-classico=' + (selectedClassic || 'nao'));
       if (!selectedClassic) return null;
       reader = 'classic';
     }
 
-    // 5) Aguarda o leitor e tenta ler o sumário.
-    const waitMs = opts.waitMs != null ? opts.waitMs : 4000;
+    // 5) Aguarda o leitor carregar.
+    const waitMs = opts.waitMs != null ? opts.waitMs : 5000;
     if (win.waitForTimeout) await win.waitForTimeout(waitMs);
-    const after = await win.evaluate(() => {
-      const tocCandidates = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).map((a) => ({ label: (a.textContent || '').trim(), href: a.getAttribute('href') })).filter((x) => x.label).slice(0, 500);
-      const mainText = (document.body && document.body.innerText) || '';
-      const iframes = Array.from(document.querySelectorAll('iframe')).map((f) => f.src).filter(Boolean);
-      return { tocCandidates, mainText: mainText.slice(0, 20000), iframes };
-    }).catch(() => null);
-    if (!after) return null;
 
-    const toc = pearson.parseToc(after.tocCandidates);
+    // 6) Diálogo "continuar leitura": SEMPRE "Página atual". Se só existir
+    //    "Última página lida", NÃO clica (conservador).
+    const dialogAction = await win.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button, [role="button"], a'));
+      const label = (b) => ((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || ''));
+      const current = btns.find((b) => /p[aá]gina\s+atual|current\s+page/i.test(label(b)));
+      if (current) { current.click(); return 'pagina-atual'; }
+      return btns.some((b) => /[uú]ltima\s+p[aá]gina|last\s+page/i.test(label(b))) ? 'dialogo-sem-botao-seguro' : 'sem-dialogo';
+    }).catch(() => 'erro');
+    attempts.push('dialogo-continuar=' + dialogAction);
+
+    // 7) Leitura do SUMÁRIO com os seletores reais do leitor escolhido.
+    //    Beta: abrir #summary-btn e ler button[id^="summary-item-"].
+    //    Clássico: abrir a.btn-sumario e ler section.sumario li.box-capt[data-pagina].
+    const readToc = async (isBeta) => {
+      const first = await win.evaluate((beta) => {
+        const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
+          id: b.id,
+          text: (b.textContent || '').trim(),
+          aria: b.getAttribute('aria-label') || '',
+          active: /active/i.test(b.className || ''),
+        }));
+        const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
+          const p = li.querySelector('p');
+          return {
+            dataPagina: li.getAttribute('data-pagina'),
+            label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim(),
+          };
+        });
+        const items = beta ? readBetaItems() : readClassicItems();
+        if (items.length) return { ok: true, items };
+        const opener = beta
+          ? (document.querySelector('#summary-btn') || document.querySelector('button[aria-label="Sumário" i]'))
+          : (document.querySelector('a.btn-sumario') || document.querySelector('button#acess-btn-sumario'));
+        if (!opener) return { ok: false, reason: beta ? 'sem-sumario-beta' : 'sem-sumario-classico' };
+        opener.click();
+        return { ok: false, reason: 'sumario-precisa-reabrir' };
+      }, isBeta).catch(() => null);
+      if (first && first.ok) return first.items;
+      if (first && first.reason === 'sumario-precisa-reabrir') {
+        if (win.waitForTimeout) await win.waitForTimeout(1500);
+        const second = await win.evaluate((beta) => {
+          const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
+            id: b.id, text: (b.textContent || '').trim(), aria: b.getAttribute('aria-label') || '', active: /active/i.test(b.className || ''),
+          }));
+          const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
+            const p = li.querySelector('p');
+            return { dataPagina: li.getAttribute('data-pagina'), label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim() };
+          });
+          return beta ? readBetaItems() : readClassicItems();
+        }, isBeta).catch(() => null);
+        if (second && second.length) return second;
+        attempts.push('sumario-motivo=' + (first.reason || 'vazio-apos-abrir'));
+        return null;
+      }
+      attempts.push('sumario-motivo=' + ((first && first.reason) || 'erro'));
+      return null;
+    };
+
+    const tocRaw = await readToc(reader === 'beta');
+    const toc = reader === 'beta' ? pearson.parseTocFromSummaryItems(tocRaw || []) : pearson.parseTocClassic(tocRaw || []);
     attempts.push('sumario-entradas=' + toc.length);
     const loc = pearson.locateInToc(toc, expected);
-    attempts.push('localizar=' + (loc.found ? 'ok' : loc.reason));
+    attempts.push('localizar=' + loc.reason);
     if (!loc.found || !loc.entry) {
       // Sem localização segura: NÃO extrai o livro inteiro (conservador).
       return { ok: false, format: fmt.format, failureType: 'capitulo-nao-localizado', reader, attempts, chapterLocated: false, tocEntries: toc.length };
     }
+    const entry = loc.entry;
 
-    // 6) Navega para o capítulo no sumário (se houver link) e lê o texto.
-    if (loc.entry.href) {
-      await win.evaluate((href) => {
-        const a = Array.from(document.querySelectorAll('nav a, [class*="toc"] a, [class*="sumario"] a, [role="treeitem"]')).find((x) => (x.getAttribute('href') || '') === href);
-        if (a) { a.click(); return true; }
-        return false;
-      }, loc.entry.href).catch(() => false);
-      if (win.waitForTimeout) await win.waitForTimeout(3000);
+    // 8) Navega pelo SUMÁRIO até o capítulo e descobre a fronteira final
+    //    (próximo rótulo distinto). NUNCA "próxima página" repetida.
+    const clickTocEntry = async (tocIndexValue) => win.evaluate(({ reader, n }) => {
+      const el = reader === 'beta'
+        ? document.getElementById('summary-item-' + n)
+        : Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).find((li) => li.getAttribute('data-pagina') === String(n));
+      if (!el) return false;
+      el.click();
+      return true;
+    }, { reader, n: tocIndexValue }).catch(() => false);
+
+    const clickedTarget = await clickTocEntry(reader === 'beta' ? entry.summaryItemIndex : entry.dataPagina);
+    attempts.push('navegar-sumario=' + (clickedTarget ? 'ok' : 'nao'));
+    if (win.waitForTimeout) await win.waitForTimeout(2000);
+
+    // Página atual exibida pelo leitor (input numérico; fallback texto de progresso).
+    const readCurrentPage = async () => win.evaluate(() => {
+      const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
+      const v = inp ? parseInt(inp.value, 10) : NaN;
+      if (Number.isFinite(v)) return { page: v, source: 'input' };
+      const m = ((document.body && document.body.innerText) || '').match(/p[aá]gina\s+(\d+)/i);
+      return m ? { page: parseInt(m[1], 10), source: 'texto-progresso' } : { page: null, source: 'indefinido' };
+    }).catch(() => null);
+
+    const boundary = pearson.chapterEndBoundary(toc, entry);
+    let startPage = null;
+    let endPage = null;
+    if (reader === 'beta') {
+      const cur = await readCurrentPage();
+      startPage = cur && cur.page != null ? cur.page : null;
+      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
+      if (boundary.index < toc.length && toc[boundary.index] && toc[boundary.index].summaryItemIndex != null) {
+        await clickTocEntry(toc[boundary.index].summaryItemIndex);
+        if (win.waitForTimeout) await win.waitForTimeout(2000);
+        const end = await readCurrentPage();
+        endPage = end && end.page != null ? end.page : null;
+        attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
+      }
+    } else {
+      startPage = entry.dataPagina != null ? entry.dataPagina : null;
+      endPage = boundary.endPage;
+      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
+      attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
     }
 
-    const content = await win.evaluate(() => {
-      const scopes = Array.from(document.querySelectorAll('[class*="content"], [class*="reader"], article, main, [role="main"], body'));
-      let best = '';
-      for (const s of scopes) {
-        const t = (s.innerText || '').trim();
-        if (t.length > best.length) best = t;
+    // 9) Extração do intervalo [startPage, endPage) com limites estruturais duros.
+    let pages = [];
+    let stoppedBy = null;
+    if (startPage != null) {
+      if (endPage == null) stoppedBy = 'sem-fronteira';
+      const lastPage = endPage != null ? Math.min(endPage - 1, startPage + maxPages - 1) : (startPage + maxPages - 1);
+      if (reader === 'beta') {
+        // Beta: navega pelo campo de página e lê o alt das imagens de página.
+        for (let p = startPage; p <= lastPage; p++) {
+          const nav = await win.evaluate((n) => {
+            const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
+            if (!inp) return false;
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            setter.call(inp, String(n));
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+          }, p).catch(() => false);
+          if (!nav) { attempts.push('navegacao-falhou-pagina=' + p); break; }
+          if (win.waitForTimeout) await win.waitForTimeout(pageWaitMs);
+          const alts = await win.evaluate(() => Array.from(document.querySelectorAll('img[class^="PdfImageView_pageImage"]')).map((i) => i.getAttribute('alt') || '')).catch(() => []);
+          const t = (alts || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim();
+          pages.push({ page: p, text: t });
+          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
+        }
+      } else {
+        // Clássico: texto vem do XHR de paginação (aria-label de #divBookMark).
+        // A URL assinada da imagem (#page-canvas[data-src]) NÃO é registrada —
+        // só o fato de existir (para diagnóstico honesto).
+        for (let p = startPage; p <= lastPage; p++) {
+          const r = await win.evaluate((n) => new Promise((resolve) => {
+            const u = new URL(location.href);
+            const code = u.searchParams.get('code');
+            if (!code) { resolve({ ok: false, reason: 'sem-code' }); return; }
+            const xh = new XMLHttpRequest();
+            xh.open('GET', '/Leitor/pagination?code=' + encodeURIComponent(code) + '&page=' + n + '&paginaAnteriorId=0', true);
+            xh.withCredentials = true;
+            xh.onload = () => {
+              try {
+                const doc = new DOMParser().parseFromString(xh.responseText, 'text/html');
+                const fig = doc.querySelector('#divBookMark');
+                const canvas = doc.querySelector('#page-canvas');
+                resolve({
+                  ok: true,
+                  text: fig ? (fig.getAttribute('aria-label') || '') : '',
+                  hasImageUrl: !!(canvas && canvas.getAttribute('data-src')),
+                });
+              } catch (e) { resolve({ ok: false, reason: 'parse' }); }
+            };
+            xh.onerror = () => resolve({ ok: false, reason: 'rede' });
+            xh.send();
+          }), p).catch(() => ({ ok: false, reason: 'erro-evaluate' }));
+          if (!r || !r.ok) { attempts.push('paginacao-falhou-pagina=' + p + ' motivo=' + ((r && r.reason) || 'erro')); break; }
+          pages.push({ page: p, text: String(r.text || '').trim(), hasImageUrl: !!r.hasImageUrl });
+          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
+        }
       }
-      return best.slice(0, 200000);
-    }).catch(() => '');
-    const layer = pearson.detectContentLayer({ mainText: content, framesText: '', hasImages: /<img/i.test(page.bodyText) });
-    const validated = pearson.validateExtractedText({ text: content, expected });
-    attempts.push('camada=' + layer.layer + ' validacao=' + (validated.ok ? 'ok' : validated.reason));
+    }
+    if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
+    else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
+    const pagesWithoutText = pages.filter((p) => !p.text).length;
+    const text = pages.map((p) => p.text).filter(Boolean).join('\n\n');
+    attempts.push('paginas-extraidas=' + pages.length + ' sem-texto=' + pagesWithoutText + ' parada=' + stoppedBy);
+
+    // 10) Validação honesta (fail-closed): texto plausível, sem repetições e
+    //     com fronteira conhecida para declarar 'integral'.
+    const layer = pearson.detectContentLayer({ mainText: text, framesText: '', hasImages: false });
+    const validated = pearson.validateExtractedText({ text, expected });
+    const dups = detectRepetitions(text);
+    const boundaryKnown = endPage != null;
+    const ok = validated.ok === true && layer.hasText && pagesWithoutText === 0 && dups.length === 0 && boundaryKnown;
+    attempts.push('camada=' + layer.layer + ' validacao=' + (validated.ok ? 'ok' : validated.reason) + ' repeticoes=' + dups.length);
     return {
-      ok: validated.ok === true && layer.hasText,
+      ok,
       format: fmt.format,
       reader,
       readerUrl: page.href,
-      text: validated.ok && layer.hasText ? content : '',
-      chars: validated.ok && layer.hasText ? content.length : 0,
-      status: validated.ok && layer.hasText ? 'integral' : 'partial',
+      text: ok ? text : '',
+      chars: ok ? text.length : 0,
+      status: ok ? 'integral' : 'partial',
       layer,
       chapterLocated: true,
       tocEntries: toc.length,
+      pageStart: startPage,
+      pageEnd: endPage,
+      pagesExtracted: pages.length,
+      pagesWithoutText,
+      repetitions: dups.length,
+      stoppedBy,
+      boundaryKnown,
       attempts,
     };
   } catch (e) {

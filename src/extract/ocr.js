@@ -6,6 +6,18 @@
 // evidência de que um motor empacotado no Electron/Windows funcione aqui). O
 // relatório marca a execução real como PENDENTE (seção 12 do prompt).
 //
+// CAMINHO PRIMÁRIO PARA OS LEITORES PEARSON (descobertas reais 2026-11-18,
+// ver DESCOBERTAS-PEARSON-2026-11-18.md): o "vendor OCR" já embutido nos
+// próprios leitores é a fonte primária de texto —
+//   - Beta: `alt` de img[class^="PdfImageView_pageImage"];
+//   - Clássico: `aria-label` de #divBookMark na resposta do XHR /Leitor/pagination.
+// Ambos cobrem texto comum e tabelas (fórmulas matemáticas saem corrompidas no
+// `alt` — limitação do próprio leitor). tesseract.js sobre a imagem da página
+// (`page-N.jpg`, URL assinada do CDN) é o FALLBACK para páginas sem vendor OCR
+// suficiente. SEM soluções pagas. Este módulo segue sendo APENAS decisão/
+// qualidade: identify pages without text layer, validate quality; NÃO contém
+// motor de reconhecimento.
+//
 // Decisões implementadas (puras e testáveis):
 //   - identificar páginas SEM camada textual (candidatas a OCR);
 //   - decidir QUAIS páginas precisam de OCR (evitar OCR desnecessário);

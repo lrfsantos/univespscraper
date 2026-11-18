@@ -444,6 +444,15 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
     expected.chapter = parseInt(capM[1], 10);
     expected.hasChapter = true;
   }
+  // Livros UNIVESP reais usam "Unidade N" (ex.: "Leia a Unidade 1 'Empreendedorismo'").
+  // Capturado com a MESMA honestidade do capítulo: só quando o AVA declara.
+  if (!expected.hasChapter) {
+    const uniM = t.match(/unidade\s*(\d+)/i);
+    if (uniM) {
+      expected.chapter = parseInt(uniM[1], 10);
+      expected.hasChapter = true;
+    }
+  }
   const pagM = t.match(/(?:p[aá]ginas?|p\.)\s*(\d+)\s*(?:[-–—aà]\s*(\d+))?/i);
   if (pagM) {
     expected.pageRange = { start: parseInt(pagM[1], 10), end: pagM[2] ? parseInt(pagM[2], 10) : null };
@@ -452,6 +461,7 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   let book = t.split('|')[0].trim();
   book = book.replace(/^(texto[- ]base|leitura|material)\s*[-–—:]\s*/i, '').trim();
   book = book.replace(/\(\s*leia\s+o\s+cap[ií]tulo\s+\d+\s*\)\s*$/i, '').trim();
+  book = book.replace(/\(\s*leia\s+(?:a\s+|o\s+)?unidade\s+\d+[^)]*\)\s*$/i, '').trim();
   book = book.replace(/\(\s*p[aá]ginas?\s+[\d\s\-–—aà]+\s*\)\s*$/i, '').trim();
   book = book.replace(/[-–—]\s*leia\s+(?:o\s+cap[ií]tulo\s+\d+|as\s+p[aá]ginas?\s+[\d\s\-–—aà]+)\s*$/i, '').trim();
   if (book) expected.book = book;

@@ -66,7 +66,7 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 | Página HTML do AVA | Extração de texto (Módulo 1) + recursos incorporados descobertos (vídeos/PDFs/livros) |
 | PDF | Download do original + texto por página (Módulo 2), SHA-256 e paginação impressa quando identificada; camada de decisão de OCR para páginas digitalizadas (`src/extract/ocr.js`) |
 | Livro/leitor LTI compatível (Minha Biblioteca) | Extração EPUB/PAGEID (Módulo 3) com capítulo e intervalo de páginas declarados |
-| Livro Biblioteca Pearson (Beta/Clássico) | Camada de navegação best-effort (`src/extract/pearson.js`): seleção Beta→Clássico + navegação por sumário; validação real pendente de sessão AVA |
+| Livro Biblioteca Pearson (Beta/Clássico) | Navegação pelo sumário com seletores REAIS validados em sessão real (2026-11-18; ver `DESCOBERTAS-PEARSON-2026-11-18.md`): seleção `#pdf-novo` (Beta)/`#pdf` (Clássico); Beta extrai o `alt` de `img[class^="PdfImageView_pageImage"]`; Clássico extrai o texto do XHR `/Leitor/pagination` (`#divBookMark[aria-label]`); fallback Clássico após falha do Beta |
 | Videoaula (YouTube) | Registro de link, título, transcrição com timestamps quando disponível (sem inventar) |
 | Recurso desconhecido | Registrado como não suportado (nunca ignorado silenciosamente) |
 
@@ -78,13 +78,20 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
   honestamente como `inaccessible`/`not_found`.
 - A Biblioteca Pearson/BVirtual possui uma camada de navegação automatizada
   (seleção Beta → fallback Clássico e navegação pelo sumário) implementada em
-  `src/extract/pearson.js`, ligada ao fluxo de livros. Ela é **best-effort**: usa
-  heurísticas sobre o DOM (texto visível, aria, classes genéricas) e, se a tela de
-  seleção não for reconhecida com segurança, mantém o status
-  `reader-selection-required` sem inventar seletores nem classificar como DRM.
-  A validação REAL da tela do leitor Pearson e da extração efetiva depende de
-  sessão autenticada no AVA e está documentada como **pendente** (não declarada
-  como concluída).
+  `src/extract/pearson.js` e `src/extract/books.js`, ligada ao fluxo de livros.
+  Os seletores foram **validados em sessão real no AVA (2026-11-18)**: tela de
+  seleção `#pdf-novo`/`#pdf`, sumário do Beta `button#summary-item-N`, sumário do
+  Clássico `section.sumario li.box-capt[data-pagina]`, conteúdo do Beta no `alt`
+  das imagens de página e do Clássico no XHR de paginação. Continua **best-effort
+  e conservador**: se a tela não for reconhecida com segurança, mantém o status
+  `reader-selection-required`/`capitulo-nao-localizado` sem inventar seletores nem
+  classificar como DRM. Pendente de validação REAL: execução end-to-end com a
+  sessão do usuário no fluxo empacotado (Electron) e múltiplos livros/offsets de
+  paginação variáveis.
+- O tradutor automático embutido no leitor Pearson (gtranslate) e a tradução
+  nativa do navegador podem reescrever o DOM ao vivo (inclusive `aria-label`).
+  O extrator decide navegação por ids/estrutura e extrai texto de fontes não
+  traduzidas (`alt` e XHR); a extração em PT-BR não depende do DOM traduzido.
 - PDFs digitalizados (sem camada textual) passam por uma camada de **decisão de
   OCR** (`src/extract/ocr.js`): identifica páginas escaneadas, planeja quais
   precisam de OCR e valida a qualidade do texto reconhecido (vazio, curto,
