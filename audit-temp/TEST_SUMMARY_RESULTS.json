@@ -1,0 +1,46 @@
+{
+  "ts": "2026-11-18T15:17:13.808Z",
+  "results": [
+    {
+      "id": "TS-1",
+      "title": "Aceita resumo aninhado válido",
+      "status": "PASS",
+      "detail": "{\"valid\":true,\"total\":5,\"passed\":5,\"failed\":0}"
+    },
+    {
+      "id": "TS-2",
+      "title": "Aceita formato legado e deriva passed corretamente",
+      "status": "PASS",
+      "detail": "{\"valid\":true,\"total\":8,\"passed\":6,\"failed\":2}"
+    },
+    {
+      "id": "TS-3",
+      "title": "Rejeita contagens que não fecham com o total",
+      "status": "PASS",
+      "detail": "{\"valid\":false,\"error\":\"contagens-inconsistentes\",\"total\":4,\"passed\":4,\"failed\":1}"
+    },
+    {
+      "id": "TS-4",
+      "title": "Rejeita booleano usado como quantidade",
+      "status": "PASS",
+      "detail": "{\"valid\":false,\"error\":\"total-ausente-ou-invalido\"}"
+    },
+    {
+      "id": "TS-5",
+      "title": "Rejeita arquivo sem resumo quantitativo",
+      "status": "PASS",
+      "detail": "{\"valid\":false,\"error\":\"total-ausente-ou-invalido\"}"
+    },
+    {
+      "id": "TS-6",
+      "title": "Rejeita suíte que declara zero casos",
+      "status": "PASS",
+      "detail": "{\"valid\":false,\"error\":\"total-ausente-ou-invalido\"}"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}
