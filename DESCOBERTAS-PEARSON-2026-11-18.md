@@ -110,3 +110,65 @@ retorna **HTML** (`text/html; charset=utf-8`, 200) contendo:
 3. `ocr.js`: manter como camada de decisão/qualidade; primário = vendor OCR
    (Beta `alt` / Clássico `aria-label` do XHR); fallback = tesseract.js na imagem
    assinada (`data-src`), sem soluções pagas.
+
+## 10. Minha Biblioteca / VitalSource (nova exploração 2026-11-18)
+
+### Acesso (SSO obrigatório — sem login direto)
+- `app.minhabiblioteca.com.br` NÃO aceita login direto: redireciona para
+  `login.vitalsource.com` e mostra "ingresse novamente pelo sistema da sua
+  Instituição" em loop. O acesso é SEMPRE via LTI do AVA.
+- Caminho real: `ava.univesp.br/mod/lti/view.php?id=X` → botão/link
+  **"Abrir em uma nova janela"** → `app.minhabiblioteca.com.br/reader/books/{isbn}/pageid/{N}`
+  (auto-login via LTI, sessão do SSO UNIVESP).
+- Livro explorado: CIN200 (Metodologias ágeis) S1 Texto-base 1
+  `9788571441002` "Gestão eficaz de projetos". LTI id=160557 (e 160558/160566/
+  160574/160607/160608 para as outras semanas).
+- Como distinguir no AVA: LTIs do Pearson usam o ícone
+  `staticbv.bvirtual.com.br/icon-50x50.png`; os da Minha Biblioteca usam o ícone
+  padrão do Moodle (`theme/image.php/.../lti/.../monologo`). Todos os 104 links
+  de livro: 98 Pearson (bv) + 6 Minha Biblioteca (mesmo livro, 6 semanas).
+
+### ⚠️ Restrição de navegador (importante para o produto)
+- O leitor VitalSource "jigsaw" recusa a UA de automação
+  (UA contém `OpenCode/... Electron/...`) → mostra "Browser Not Supported".
+- Precisa de navegador real (Edge). RISCO para o app empacotado (Electron
+  também carrega UA Chromium com sufixo eletrônico) — testar no fluxo real.
+
+### Estrutura do leitor (app.minhabiblioteca.com.br/reader/books/{isbn}/pageid/{N})
+- Sumário abre com **`button[aria-label="Sumário"]`**; itens são
+  **`button[aria-label^="Acesse "]`** com `"Acesse {TÍTULO}, página {P}"`;
+  subitens/collapse **`button[aria-label^="Itens em "]`**.
+- Item atual: `aria-current="true"` no último item selecionado via TOC
+  (reflete a ÚLTIMA SELEÇÃO, não a posição de leitura — útil para localizar
+  capítulo, não para saber a página atual).
+- Navegação: caixa texto "Ir para Página" (`input.InputControl__input...`)
+  → preencher com **página impressa absoluta** + Enter → navega.
+  (Botão "Seguinte"/"Anterior" não avançou nesta instância — não confiar.)
+- Conteúdo fica em cadeia de iframes SAME-ORIGIN:
+  1. topo: `iframe jigsaw.minhabiblioteca.com.br/mosaic/wrapper.html?uuid=...`
+  2. dentro, custom element **`<mosaic-book>` com shadowRoot**
+  3. no shadowRoot, 2 iframes:
+     - `/books/{isbn}/pageid/{pageid}?brand=vitalsource&create=true` (shell)
+     - `/books/{isbn}/pages/{pageRef}/content?brand=vitalsource&create=true`
+       (**CONTEÚDO**) — texto completo em **`#pdf-ax-text`** →
+       `div.comment{pageRef}` → `<p class="comment{pageRef}">` (camada de
+       acessibilidade; PT-BR, parágrafos completos, ~3.000+ chars/página).
+       Imagem da página em `#pbk-page` (URL assinada — nunca registrar).
+- **`pageRef` incrementa exatamente +1 por página impressa**
+  (535709884→885→886) → ótimo sinal de unicidade/ordem contra repetição.
+
+### Mapeamento página impressa ↔ fronteira
+- TOC "página {P}" = página impressa. Navegar para a página do PRÓXIMO capítulo
+  cai exatamente no início dele (validado: navegar a 68 → "3 O que são os Grupos
+  de Processos..."). Mesma estratégia de fronteira do Pearson (próximo rótulo
+  distinto do sumário).
+- Extração: iterar páginas impressas `[start, boundary)` via "Ir para Página",
+  ler `#pdf-ax-text`; `pageRef` confere ordem/unicidade; status `integral` só com
+  fronteira conhecida + texto validado + sem repetições (fail-closed, igual ao
+  Pearson).
+
+### Candidatos reais de código (futuro passo 6.3.1)
+- pipeline `tryMinhaBibliotecaAutomation` em `books.js` (ou reuso do Pearson com
+  format `mb`): tratar iframe + shadowRoot, navegação por input absoluto.
+- `parseExpectedFromResource` já captura "Unidade N"/"Capítulo N"; a Minha
+  Biblioteca também pode usar "página P" da âncora do AVA para fronteira.

@@ -112,7 +112,18 @@ npm test → suites=27 falhas=0 casosAgregados=350 pass=350 fail=0
 - Execução end-to-end com o aplicativo empacotado (Electron) usando a sessão
   real do usuário (os fluxos desta sessão foram validados no browser de
   automação; o caminho Electron usa os mesmos seletores via driver).
-- Minha Biblioteca / VitalSource contra o leitor real (passo 6.3 do handoff —
-  não explorado nesta sessão).
+- **Minha Biblioteca / VitalSource — EXPLORADO nesta sessão (2026-11-18)** no
+  leitor real (via Edge/AVA, LTI 160557, livro 9788571441002):
+  - TEXTO COMPLETO em camada de acessibilidade `#pdf-ax-text` (iframe
+    `jigsaw.../pages/{pageRef}/content` dentro de `<mosaic-book>` shadow DOM);
+    `pageRef` +1 por página impressa (unicidade); TOC
+    `button[aria-label^="Acesse "]` "Acesse {título}, página {P}"; navegação por
+    "Ir para Página" (página impressa absoluta) + Enter; fronteira = próxima
+    entrada do TOC (validado: pág. 68 → cap. 3). Acesso só via LTI do AVA
+    (sem login direto). **Risco**: leitor recusa UA de automação
+    ("Browser Not Supported") — precisou do Edge real; testar no Electron.
+  - Código de integração (pipeline `mb`) AINDA NÃO implementado — descobertas
+    em `DESCOBERTAS-PEARSON-2026-11-18.md` §10; extração da Minha Biblioteca só
+    com o próximo passo de código.
 - Fallback tesseract.js com sessão real (baixar página assinada → OCR).
 - Múltiplos livros (offsets diferentes; EPUB vs PDF).
