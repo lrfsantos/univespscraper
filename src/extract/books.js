@@ -1571,6 +1571,7 @@ async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
     format: 'pageid',
     source: 'vitalsource-axtext',
     url: null,
+    ok: evalRes.status === 'integral',
     status: evalRes.status,
     text: evalRes.text ? text : '',
     chars: evalRes.text ? text.trim().length : 0,
@@ -1892,6 +1893,269 @@ function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }
     layer,
   };
 }
+// Leitura do SUMÁRIO na página real (adaptador): Beta abre #summary-btn e lê
+// button[id^="summary-item-"]; Clássico abre a.btn-sumario e lê
+// section.sumario li.box-capt[data-pagina]. Tolerante ao tradutor automático.
+async function readPearsonTocFromPage(win, isBeta, attempts) {
+  const first = await win.evaluate((beta) => {
+    const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
+      id: b.id,
+      text: (b.textContent || '').trim(),
+      aria: b.getAttribute('aria-label') || '',
+      active: /active/i.test(b.className || ''),
+    }));
+    const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
+      const p = li.querySelector('p');
+      return {
+        dataPagina: li.getAttribute('data-pagina'),
+        label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim(),
+      };
+    });
+    const items = beta ? readBetaItems() : readClassicItems();
+    if (items.length) return { ok: true, items };
+    const opener = beta
+      ? (document.querySelector('#summary-btn') || document.querySelector('button[aria-label="Sumário" i]'))
+      : (document.querySelector('a.btn-sumario') || document.querySelector('button#acess-btn-sumario'));
+    if (!opener) return { ok: false, reason: beta ? 'sem-sumario-beta' : 'sem-sumario-classico' };
+    opener.click();
+    return { ok: false, reason: 'sumario-precisa-reabrir' };
+  }, isBeta).catch(() => null);
+  if (first && first.ok) return first.items;
+  if (first && first.reason === 'sumario-precisa-reabrir') {
+    if (win.waitForTimeout) await win.waitForTimeout(1500);
+    const second = await win.evaluate((beta) => {
+      const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
+        id: b.id, text: (b.textContent || '').trim(), aria: b.getAttribute('aria-label') || '', active: /active/i.test(b.className || ''),
+      }));
+      const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
+        const p = li.querySelector('p');
+        return { dataPagina: li.getAttribute('data-pagina'), label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim() };
+      });
+      return beta ? readBetaItems() : readClassicItems();
+    }, isBeta).catch(() => null);
+    if (second && second.length) return second;
+    attempts.push('sumario-motivo=' + (first.reason || 'vazio-apos-abrir'));
+    return null;
+  }
+  attempts.push('sumario-motivo=' + ((first && first.reason) || 'erro'));
+  return null;
+}
+
+// Orquestrador PURO da automação Pearson (produção; testável com drivers falsos
+// — auditoria §9). Executa UM leitor de ponta a ponta (seleção → carregamento →
+// diálogo → sumário → localização → extração do intervalo) e aplica o fallback
+// ÚNICO Beta->Clássico após falha comprovada (auditoria §3): sem loop, sem
+// reabrir a mesma URL, sem os dois leitores simultaneamente. Falha de seleção
+// inicial NÃO é declarada como fallback. `integral` com os critérios fail-closed
+// de evaluatePageSequence (auditoria §2).
+//
+// driver: {
+//   selectReader(name)       -> false | string ('id:...' | 'texto')
+//   waitFor(ms)
+//   handleDialog()           -> string
+//   readToc(isBeta)          -> items[] | null
+//   clickTocEntry(reader, n) -> boolean
+//   readCurrentPage()        -> { page, source } | null
+//   navigateToPage(p)        -> boolean                (Beta)
+//   readNavState()           -> { input, shown } | null (Beta)
+//   readPageAlts()           -> string[]                (Beta)
+//   fetchPaginationPage(p)   -> { ok, text, hasImageUrl?, reason? } (Clássico)
+// }
+async function extractPearsonViaDriver(driver, expected, opts = {}) {
+  const attempts = Array.isArray(opts.attempts) ? opts.attempts : [];
+  const maxPages = Number(opts.maxPages) > 0 ? Number(opts.maxPages) : 120;
+  const maxChars = Number(opts.maxChars) > 0 ? Number(opts.maxChars) : 500000;
+  const pageWaitMs = Number(opts.pageWaitMs) > 0 ? Number(opts.pageWaitMs) : 1200;
+  const fmtFormat = opts.format || 'pdf';
+  const readerUrl = opts.readerUrl || null;
+  const preferred = opts.preferred || 'beta';
+
+  // Extração do intervalo [startPage, endPage) para UM leitor (passos 8-10).
+  const extractPearsonRange = async (reader, toc, entry) => {
+    // 8) Navega pelo SUMÁRIO até o capítulo e descobre a fronteira final
+    //    (próximo item de MESMO nível estrutural). NUNCA "próxima página".
+    const clickedTarget = await driver.clickTocEntry(reader, reader === 'beta' ? entry.summaryItemIndex : entry.dataPagina);
+    attempts.push('navegar-sumario=' + (clickedTarget ? 'ok' : 'nao'));
+    await driver.waitFor(2000);
+
+    const boundary = pearson.chapterEndBoundary(toc, entry);
+    let startPage = null;
+    let endPage = null;
+    if (reader === 'beta') {
+      const cur = await driver.readCurrentPage();
+      startPage = cur && cur.page != null ? cur.page : null;
+      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
+      if (boundary.index < toc.length && toc[boundary.index] && toc[boundary.index].summaryItemIndex != null) {
+        await driver.clickTocEntry(reader, toc[boundary.index].summaryItemIndex);
+        await driver.waitFor(2000);
+        const end = await driver.readCurrentPage();
+        endPage = end && end.page != null ? end.page : null;
+        attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
+      }
+    } else {
+      startPage = entry.dataPagina != null ? entry.dataPagina : null;
+      endPage = boundary.endPage;
+      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
+      attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
+    }
+
+    // 9) Extração do intervalo [startPage, endPage) com limites estruturais duros.
+    const pages = [];
+    let stoppedBy = null;
+    if (startPage != null) {
+      if (endPage == null) stoppedBy = 'sem-fronteira';
+      const lastPage = endPage != null ? Math.min(endPage - 1, startPage + maxPages - 1) : (startPage + maxPages - 1);
+      if (reader === 'beta') {
+        // Beta: navega pelo campo de página; a página só é aceita quando o
+        // ESTADO do leitor confirma a navegação (valor do input == página
+        // solicitada; #ExibicaoAtual quando presente) e o conteúdo é DISTINTO
+        // do anterior (auditoria §5 — disparar input/change não prova navegação).
+        let prevAltsSig = null;
+        for (let p = startPage; p <= lastPage; p++) {
+          const nav = await driver.navigateToPage(p);
+          if (!nav) { attempts.push('navegacao-falhou-pagina=' + p); stoppedBy = stoppedBy || 'falha-de-navegacao'; break; }
+          // Espera o estado REAL do leitor confirmar a página solicitada
+          // (poll limitado a pageWaitMs — tempo fixo nunca é prova).
+          const navAttempts = Math.max(1, Math.ceil(pageWaitMs / 300));
+          let confirmed = false;
+          for (let k = 0; k < navAttempts; k++) {
+            await driver.waitFor(300);
+            const st = await driver.readNavState();
+            if (st && (st.input === p || st.shown === p)) { confirmed = true; break; }
+          }
+          if (!confirmed) { attempts.push('pagina-nao-confirmada-solicitada=' + p); stoppedBy = stoppedBy || 'pagina-nao-confirmada'; break; }
+          const alts = await driver.readPageAlts();
+          const t = (alts || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim();
+          // Conteúdo antigo/repetido: assinatura idêntica à página anterior.
+          const sig = t || '<vazio>';
+          if (prevAltsSig !== null && sig === prevAltsSig) {
+            attempts.push('conteudo-repetido-pagina=' + p);
+            stoppedBy = stoppedBy || 'conteudo-repetido';
+            break;
+          }
+          prevAltsSig = sig;
+          pages.push({ page: p, text: t });
+          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
+        }
+      } else {
+        // Clássico: texto vem do XHR de paginação (aria-label de #divBookMark).
+        // Proteções (auditoria §4): timeout, HTTP != 200, redirecionamento para
+        // login, sessão expirada, resposta sem a estrutura esperada e texto
+        // vazio são falhas registradas POR PÁGINA (razões sanitizadas — nunca
+        // code/cookies/URLs assinadas). O timeout vive no adaptador (evaluate
+        // só aceita 1 argumento) e nunca deixa a requisição pendente.
+        for (let p = startPage; p <= lastPage; p++) {
+          const r = await driver.fetchPaginationPage(p);
+          if (!r || !r.ok) { attempts.push('paginacao-falhou-pagina=' + p + ' motivo=' + ((r && r.reason) || 'erro')); stoppedBy = stoppedBy || 'falha-de-paginacao'; break; }
+          pages.push({ page: p, text: String(r.text || '').trim(), hasImageUrl: !!r.hasImageUrl });
+          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
+        }
+      }
+    }
+    if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
+    else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
+    attempts.push('paginas-extraidas=' + pages.length + ' sem-texto=' + pages.filter((p) => !p.text).length + ' parada=' + stoppedBy);
+
+    // 10) Validação honesta fail-closed (núcleo compartilhado, auditoria §2).
+    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
+    attempts.push('camada=' + evalRes.layer.layer + ' status=' + evalRes.status + ' parada=' + stoppedBy + ' sequencia=' + (evalRes.sequenceOk ? 'ok' : 'ausentes=' + evalRes.missingPages + ',duplicadas=' + evalRes.duplicatePages) + ' fronteira=' + (evalRes.boundaryReached ? 'alcancada' : 'nao-alcancada'));
+    return {
+      ok: evalRes.ok,
+      format: fmtFormat,
+      reader,
+      readerUrl,
+      text: evalRes.text,
+      chars: evalRes.chars,
+      status: evalRes.status,
+      validation: evalRes.validation,
+      layer: evalRes.layer,
+      chapterLocated: true,
+      tocEntries: toc.length,
+      pageStart: startPage,
+      pageEnd: endPage,
+      pagesExtracted: pages.length,
+      pagesWithoutText: evalRes.pagesWithoutText,
+      pagesMissing: evalRes.missingPages,
+      duplicatePages: evalRes.duplicatePages,
+      repetitions: evalRes.repetitions,
+      stoppedBy,
+      boundaryKnown: evalRes.boundaryKnown,
+      attempts,
+    };
+  };
+
+  // Executa UM leitor de ponta a ponta e devolve o estágio onde falhou
+  // (auditoria §3: verificação real de seleção, carregamento, sumário,
+  // localização e extração — nunca presumir sucesso).
+  const runReader = async (readerName) => {
+    const selected = await driver.selectReader(readerName);
+    attempts.push('selecionar-' + readerName + '=' + (selected || 'nao'));
+    if (!selected) return { stage: 'select' };
+
+    // 5) Aguarda o leitor carregar.
+    await driver.waitFor(opts.waitMs != null ? opts.waitMs : 5000);
+
+    // 6) Diálogo "continuar leitura": SEMPRE "Página atual". Se só existir
+    //    "Última página lida", NÃO clica (conservador).
+    const dialogAction = await driver.handleDialog();
+    attempts.push('dialogo-continuar=' + dialogAction);
+
+    // 7) Leitura do SUMÁRIO com os seletores reais do leitor escolhido.
+    const tocRaw = await driver.readToc(readerName === 'beta');
+    const toc = readerName === 'beta' ? pearson.parseTocFromSummaryItems(tocRaw || []) : pearson.parseTocClassic(tocRaw || []);
+    attempts.push('sumario-entradas=' + toc.length);
+    if (!toc.length) return { stage: 'toc', tocEntries: 0 };
+    const loc = pearson.locateInToc(toc, expected);
+    attempts.push('localizar=' + loc.reason + (loc.ambiguous ? ' (ambiguo:' + loc.matches + ')' : ''));
+    if (!loc.found || !loc.entry) {
+      // Sem localização segura: NÃO extrai o livro inteiro (conservador).
+      return { stage: 'locate', tocEntries: toc.length, loc };
+    }
+    const extraction = await extractPearsonRange(readerName, toc, loc.entry);
+    const usable = !!(extraction && extraction.text && extraction.text.trim().length > 0);
+    return { stage: usable ? 'done' : 'extract-fail', tocEntries: toc.length, loc, result: extraction };
+  };
+
+  let reader = preferred;
+  let out = await runReader(reader);
+  if (out.stage === 'select') {
+    // Falha na SELEÇÃO inicial: tenta o OUTRO leitor uma única vez — isto é a
+    // escolha do primeiro leitor disponível, NÃO um fallback de conteúdo
+    // (auditoria §3: não declarar fallback quando só a seleção falhou).
+    const other = reader === 'beta' ? 'classic' : 'beta';
+    attempts.push('selecao-inicial-falhou-tentar=' + other);
+    reader = other;
+    out = await runReader(reader);
+  } else if (out.stage !== 'done') {
+    // Fallback ÚNICO (auditoria §3): o leitor foi selecionado, mas falhou em
+    // carregar, no sumário, na localização ou na extração → o outro leitor
+    // UMA vez. Sem loop, sem reabrir a mesma URL, sem os dois leitores
+    // abertos simultaneamente (um por vez; janelas fechadas pelo chamador).
+    const nxt = pearson.nextReaderAfterFailure(preferred, reader);
+    if (nxt) {
+      attempts.push('fallback-unico=' + nxt + ' motivo=' + out.stage + '-falhou-no-' + reader);
+      reader = nxt;
+      out = await runReader(reader);
+    }
+  }
+  if (out.stage !== 'done') {
+    // Ambos falharam (ou fallback indisponível): causa real registrada.
+    attempts.push('pearson-sem-extracao-causa=' + out.stage);
+    return {
+      ok: false,
+      format: fmtFormat,
+      failureType: 'pearson-falhou-' + out.stage,
+      reader,
+      attempts,
+      chapterLocated: false,
+      tocEntries: out.tocEntries || 0,
+      locateReason: out.loc ? out.loc.reason : undefined,
+      locAmbiguous: !!(out.loc && out.loc.ambiguous),
+    };
+  }
+  return out.result;
+}
+
 
 // ---- Pearson (Beta/Clássico) — automação BEST-EFFORT por sumário ----
 //
@@ -1964,339 +2228,105 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     attempts.push('leitor-preferido=' + preferred);
 
     // Seleção por IDs reais (#pdf-novo = Beta, #pdf = Clássico); fallback textual
-    // (labels podem aparecer traduzidos pelo tradutor automático do leitor).
-    const selectReader = async (readerName) => win.evaluate((name) => {
-      const id = name === 'beta' ? 'pdf-novo' : 'pdf';
-      const byId = document.getElementById(id);
-      if (byId) { byId.click(); return 'id:' + id; }
-      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-      const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
-        const t = norm(el.textContent);
-        return (name === 'beta' && /beta/.test(t)) || (name === 'classic' && /(cl[aá]ssico|classic)/.test(t));
-      });
-      if (clickable.length) { clickable[0].click(); return 'texto'; }
-      return false;
-    }, readerName).catch(() => false);
-
-    let reader = preferred;
-
-    // 7) Leitura do SUMÁRIO com os seletores reais do leitor escolhido.
-    //    Beta: abrir #summary-btn e ler button[id^="summary-item-"].
-    //    Clássico: abrir a.btn-sumario e ler section.sumario li.box-capt[data-pagina].
-    const readToc = async (isBeta) => {
-      const first = await win.evaluate((beta) => {
-        const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
-          id: b.id,
-          text: (b.textContent || '').trim(),
-          aria: b.getAttribute('aria-label') || '',
-          active: /active/i.test(b.className || ''),
-        }));
-        const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
-          const p = li.querySelector('p');
-          return {
-            dataPagina: li.getAttribute('data-pagina'),
-            label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim(),
-          };
+    // Adaptador REAL (win.evaluate) do contrato de driver — a lógica de
+    // produção está em extractPearsonViaDriver (pura; testável com drivers
+    // falsos, auditoria §9). Seletores reais (DESCOBERTAS 2026-11-18).
+    const driver = {
+      selectReader: (readerName) => win.evaluate((name) => {
+        const id = name === 'beta' ? 'pdf-novo' : 'pdf';
+        const byId = document.getElementById(id);
+        if (byId) { byId.click(); return 'id:' + id; }
+        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
+          const t = norm(el.textContent);
+          return (name === 'beta' && /beta/.test(t)) || (name === 'classic' && /(cl[aá]ssico|classic)/.test(t));
         });
-        const items = beta ? readBetaItems() : readClassicItems();
-        if (items.length) return { ok: true, items };
-        const opener = beta
-          ? (document.querySelector('#summary-btn') || document.querySelector('button[aria-label="Sumário" i]'))
-          : (document.querySelector('a.btn-sumario') || document.querySelector('button#acess-btn-sumario'));
-        if (!opener) return { ok: false, reason: beta ? 'sem-sumario-beta' : 'sem-sumario-classico' };
-        opener.click();
-        return { ok: false, reason: 'sumario-precisa-reabrir' };
-      }, isBeta).catch(() => null);
-      if (first && first.ok) return first.items;
-      if (first && first.reason === 'sumario-precisa-reabrir') {
-        if (win.waitForTimeout) await win.waitForTimeout(1500);
-        const second = await win.evaluate((beta) => {
-          const readBetaItems = () => Array.from(document.querySelectorAll('button[id^="summary-item-"]')).map((b) => ({
-            id: b.id, text: (b.textContent || '').trim(), aria: b.getAttribute('aria-label') || '', active: /active/i.test(b.className || ''),
-          }));
-          const readClassicItems = () => Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).map((li) => {
-            const p = li.querySelector('p');
-            return { dataPagina: li.getAttribute('data-pagina'), label: p ? (p.id || (p.getAttribute('aria-label') || '').replace(/^Acesse\s+/i, '')) : (li.textContent || '').trim() };
-          });
-          return beta ? readBetaItems() : readClassicItems();
-        }, isBeta).catch(() => null);
-        if (second && second.length) return second;
-        attempts.push('sumario-motivo=' + (first.reason || 'vazio-apos-abrir'));
-        return null;
-      }
-      attempts.push('sumario-motivo=' + ((first && first.reason) || 'erro'));
-      return null;
-    };
-
-    // Extração do intervalo [startPage, endPage) para UM leitor (passos 8-10).
-    // O parâmetro `reader` sombreia a variável externa de propósito: a função é
-    // autocontida por leitor (auditoria §3).
-    const extractPearsonRange = async (reader, toc, entry) => {
-
-    // 8) Navega pelo SUMÁRIO até o capítulo e descobre a fronteira final
-    //    (próximo rótulo distinto). NUNCA "próxima página" repetida.
-    const clickTocEntry = async (tocIndexValue) => win.evaluate(({ reader, n }) => {
-      const el = reader === 'beta'
-        ? document.getElementById('summary-item-' + n)
-        : Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).find((li) => li.getAttribute('data-pagina') === String(n));
-      if (!el) return false;
-      el.click();
-      return true;
-    }, { reader, n: tocIndexValue }).catch(() => false);
-
-    const clickedTarget = await clickTocEntry(reader === 'beta' ? entry.summaryItemIndex : entry.dataPagina);
-    attempts.push('navegar-sumario=' + (clickedTarget ? 'ok' : 'nao'));
-    if (win.waitForTimeout) await win.waitForTimeout(2000);
-
-    // Página atual exibida pelo leitor (input numérico; fallback texto de progresso).
-    const readCurrentPage = async () => win.evaluate(() => {
-      const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
-      const v = inp ? parseInt(inp.value, 10) : NaN;
-      if (Number.isFinite(v)) return { page: v, source: 'input' };
-      const m = ((document.body && document.body.innerText) || '').match(/p[aá]gina\s+(\d+)/i);
-      return m ? { page: parseInt(m[1], 10), source: 'texto-progresso' } : { page: null, source: 'indefinido' };
-    }).catch(() => null);
-
-    const boundary = pearson.chapterEndBoundary(toc, entry);
-    let startPage = null;
-    let endPage = null;
-    if (reader === 'beta') {
-      const cur = await readCurrentPage();
-      startPage = cur && cur.page != null ? cur.page : null;
-      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
-      if (boundary.index < toc.length && toc[boundary.index] && toc[boundary.index].summaryItemIndex != null) {
-        await clickTocEntry(toc[boundary.index].summaryItemIndex);
-        if (win.waitForTimeout) await win.waitForTimeout(2000);
-        const end = await readCurrentPage();
-        endPage = end && end.page != null ? end.page : null;
-        attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
-      }
-    } else {
-      startPage = entry.dataPagina != null ? entry.dataPagina : null;
-      endPage = boundary.endPage;
-      attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
-      attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
-    }
-
-    // 9) Extração do intervalo [startPage, endPage) com limites estruturais duros.
-    let pages = [];
-    let stoppedBy = null;
-    if (startPage != null) {
-      if (endPage == null) stoppedBy = 'sem-fronteira';
-      const lastPage = endPage != null ? Math.min(endPage - 1, startPage + maxPages - 1) : (startPage + maxPages - 1);
-      if (reader === 'beta') {
-        // Beta: navega pelo campo de página; a página só é aceita quando o
-        // ESTADO do leitor confirma a navegação (valor do input == página
-        // solicitada; #ExibicaoAtual quando presente) e o conteúdo é DISTINTO
-        // do anterior (auditoria §5 — disparar input/change não prova navegação).
-        let prevAltsSig = null;
-        for (let p = startPage; p <= lastPage; p++) {
-          const nav = await win.evaluate((n) => {
-            const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
-            if (!inp) return false;
-            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            setter.call(inp, String(n));
-            inp.dispatchEvent(new Event('input', { bubbles: true }));
-            inp.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
-          }, p).catch(() => false);
-          if (!nav) { attempts.push('navegacao-falhou-pagina=' + p); stoppedBy = stoppedBy || 'falha-de-navegacao'; break; }
-          // Espera o estado REAL do leitor confirmar a página solicitada
-          // (poll limitado a pageWaitMs — tempo fixo nunca é prova).
-          const navAttempts = Math.max(1, Math.ceil(pageWaitMs / 300));
-          let confirmed = false;
-          for (let k = 0; k < navAttempts; k++) {
-            if (win.waitForTimeout) await win.waitForTimeout(300);
-            const st = await win.evaluate(() => {
-              const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
-              const v = inp ? parseInt(inp.value, 10) : NaN;
-              const ex = document.getElementById('ExibicaoAtual');
-              const s = ex ? parseInt((ex.textContent || '').replace(/\D+/g, ''), 10) : NaN;
-              return { input: Number.isFinite(v) ? v : null, shown: Number.isFinite(s) ? s : null };
-            }).catch(() => null);
-            if (st && (st.input === p || st.shown === p)) { confirmed = true; break; }
-          }
-          if (!confirmed) { attempts.push('pagina-nao-confirmada-solicitada=' + p); stoppedBy = stoppedBy || 'pagina-nao-confirmada'; break; }
-          const alts = await win.evaluate(() => Array.from(document.querySelectorAll('img[class^="PdfImageView_pageImage"]')).map((i) => i.getAttribute('alt') || '')).catch(() => []);
-          const t = (alts || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim();
-          // Conteúdo antigo/repetido: assinatura idêntica à página anterior.
-          const sig = t || '<vazio>';
-          if (prevAltsSig !== null && sig === prevAltsSig) {
-            attempts.push('conteudo-repetido-pagina=' + p);
-            stoppedBy = stoppedBy || 'conteudo-repetido';
-            break;
-          }
-          prevAltsSig = sig;
-          pages.push({ page: p, text: t });
-          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
-        }
-      } else {
-        // Clássico: texto vem do XHR de paginação (aria-label de #divBookMark).
-        // A URL assinada da imagem (#page-canvas[data-src]) NÃO é registrada —
-        // só o fato de existir (para diagnóstico honesto).
-        // Proteções (auditoria §4): timeout explícito, HTTP != 200, redireci-
-        // onamento para login, sessão expirada, resposta sem a estrutura
-        // esperada e texto vazio são falhas registradas POR PÁGINA (razões
-        // sanitizadas — nunca code/cookies/URLs assinadas). Timeout FIXO de 15s
-        // (evaluate só aceita 1 argumento) + fallback de 30s: nunca fica
-        // pendente indefinidamente.
-        for (let p = startPage; p <= lastPage; p++) {
-          const r = await win.evaluate((n) => new Promise((resolve) => {
-            const u = new URL(location.href);
-            const code = u.searchParams.get('code');
-            if (!code) { resolve({ ok: false, reason: 'sem-code' }); return; }
-            const xh = new XMLHttpRequest();
-            let settled = false;
-            const done = (v) => { if (!settled) { settled = true; resolve(v); } };
-            xh.open('GET', '/Leitor/pagination?code=' + encodeURIComponent(code) + '&page=' + n + '&paginaAnteriorId=0', true);
-            xh.withCredentials = true;
-            xh.timeout = 15000;
-            xh.onload = () => {
-              try {
-                if (xh.status !== 200) { done({ ok: false, reason: 'http-' + xh.status }); return; }
-                const finalUrl = String(xh.responseURL || '');
-                if (/login|logon|autentic/i.test(finalUrl)) { done({ ok: false, reason: 'redirecionamento-login' }); return; }
-                const body = String(xh.responseText || '');
-                if (/sess[ãa]o expirada|fa[çc]a login/i.test(body.slice(0, 2000))) { done({ ok: false, reason: 'sessao-expirada' }); return; }
-                const doc = new DOMParser().parseFromString(body, 'text/html');
-                const fig = doc.querySelector('#divBookMark');
-                if (!fig) { done({ ok: false, reason: 'resposta-sem-divbookmark' }); return; }
-                const text = (fig.getAttribute('aria-label') || '').trim();
-                if (!text) { done({ ok: false, reason: 'texto-vazio' }); return; }
-                const canvas = doc.querySelector('#page-canvas');
-                done({ ok: true, text, hasImageUrl: !!(canvas && canvas.getAttribute('data-src')) });
-              } catch (e) { done({ ok: false, reason: 'parse' }); }
-            };
-            xh.ontimeout = () => done({ ok: false, reason: 'timeout' });
-            xh.onerror = () => done({ ok: false, reason: 'rede' });
-            xh.onabort = () => done({ ok: false, reason: 'abortado' });
-            setTimeout(() => done({ ok: false, reason: 'timeout' }), 30000);
-            xh.send();
-          }), p).catch(() => ({ ok: false, reason: 'erro-evaluate' }));
-          if (!r || !r.ok) { attempts.push('paginacao-falhou-pagina=' + p + ' motivo=' + ((r && r.reason) || 'erro')); stoppedBy = stoppedBy || 'falha-de-paginacao'; break; }
-          pages.push({ page: p, text: String(r.text || '').trim(), hasImageUrl: !!r.hasImageUrl });
-          if (pages.reduce((acc, x) => acc + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
-        }
-      }
-    }
-    if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
-    else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
-    const pagesWithoutText = pages.filter((p) => !p.text).length;
-    const text = pages.map((p) => p.text).filter(Boolean).join('\n\n');
-    attempts.push('paginas-extraidas=' + pages.length + ' sem-texto=' + pagesWithoutText + ' parada=' + stoppedBy);
-
-    // 10) Validação honesta (fail-closed) — auditoria §2:
-    //   - `integral` exige fronteira do próximo item ALCANÇADA (não apenas
-    //     conhecida) — `stoppedBy === 'fim-do-capitulo'`;
-    //   - sequência verificável: sem páginas ausentes e sem páginas duplicadas
-    //     no intervalo [startPage, endPage);
-    //   - limite de páginas/caracteres, falha de navegação, página não
-    //     confirmada ou conteúdo repetido → NUNCA integral (partial);
-    //   - texto útil porém incompleto é preservado como `partial`.
-    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
-    attempts.push('camada=' + evalRes.layer.layer + ' status=' + evalRes.status + ' parada=' + stoppedBy + ' sequencia=' + (evalRes.sequenceOk ? 'ok' : 'ausentes=' + evalRes.missingPages + ',duplicadas=' + evalRes.duplicatePages) + ' fronteira=' + (evalRes.boundaryReached ? 'alcancada' : 'nao-alcancada'));
-    return {
-      ok: evalRes.ok,
-      format: fmt.format,
-      reader,
-      readerUrl: page.href,
-      text: evalRes.text,
-      chars: evalRes.chars,
-      status: evalRes.status,
-      validation: evalRes.validation,
-      layer: evalRes.layer,
-      chapterLocated: true,
-      tocEntries: toc.length,
-      pageStart: startPage,
-      pageEnd: endPage,
-      pagesExtracted: pages.length,
-      pagesWithoutText: evalRes.pagesWithoutText,
-      pagesMissing: evalRes.missingPages,
-      duplicatePages: evalRes.duplicatePages,
-      repetitions: evalRes.repetitions,
-      stoppedBy,
-      boundaryKnown,
-      attempts,
-    };
-    };
-
-    // Executa UM leitor de ponta a ponta e devolve o estágio onde falhou
-    // (auditoria §3: verificação real de seleção, carregamento, sumário,
-    // localização e extração — nunca presumir sucesso).
-    const runReader = async (readerName) => {
-      const selected = await selectReader(readerName);
-      attempts.push('selecionar-' + readerName + '=' + (selected || 'nao'));
-      if (!selected) return { stage: 'select' };
-
-      // 5) Aguarda o leitor carregar.
-      const waitMs = opts.waitMs != null ? opts.waitMs : 5000;
-      if (win.waitForTimeout) await win.waitForTimeout(waitMs);
-
-      // 6) Diálogo "continuar leitura": SEMPRE "Página atual". Se só existir
-      //    "Última página lida", NÃO clica (conservador).
-      const dialogAction = await win.evaluate(() => {
+        if (clickable.length) { clickable[0].click(); return 'texto'; }
+        return false;
+      }, readerName).catch(() => false),
+      waitFor: (ms) => (win.waitForTimeout ? win.waitForTimeout(ms) : Promise.resolve()),
+      handleDialog: () => win.evaluate(() => {
         const btns = Array.from(document.querySelectorAll('button, [role="button"], a'));
         const label = (b) => ((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || ''));
         const current = btns.find((b) => /p[aá]gina\s+atual|current\s+page/i.test(label(b)));
         if (current) { current.click(); return 'pagina-atual'; }
         return btns.some((b) => /[uú]ltima\s+p[aá]gina|last\s+page/i.test(label(b))) ? 'dialogo-sem-botao-seguro' : 'sem-dialogo';
-      }).catch(() => 'erro');
-      attempts.push('dialogo-continuar=' + dialogAction);
-
-      // 7) Leitura do SUMÁRIO com os seletores reais do leitor escolhido.
-      //    Beta: abrir #summary-btn e ler button[id^="summary-item-"].
-      //    Clássico: abrir a.btn-sumario e ler section.sumario li.box-capt[data-pagina].
-      const tocRaw = await readToc(readerName === 'beta');
-      const toc = readerName === 'beta' ? pearson.parseTocFromSummaryItems(tocRaw || []) : pearson.parseTocClassic(tocRaw || []);
-      attempts.push('sumario-entradas=' + toc.length);
-      if (!toc.length) return { stage: 'toc', tocEntries: 0 };
-      const loc = pearson.locateInToc(toc, expected);
-      attempts.push('localizar=' + loc.reason + (loc.ambiguous ? ' (ambiguo:' + loc.matches + ')' : ''));
-      if (!loc.found || !loc.entry) {
-        // Sem localização segura: NÃO extrai o livro inteiro (conservador).
-        return { stage: 'locate', tocEntries: toc.length, loc };
-      }
-      const extraction = await extractPearsonRange(readerName, toc, loc.entry);
-      const usable = !!(extraction && extraction.text && extraction.text.trim().length > 0);
-      return { stage: usable ? 'done' : 'extract-fail', tocEntries: toc.length, loc, result: extraction };
+      }).catch(() => 'erro'),
+      readToc: (isBeta) => readPearsonTocFromPage(win, isBeta, attempts),
+      clickTocEntry: (readerName, n) => win.evaluate(({ reader, n }) => {
+        const el = reader === 'beta'
+          ? document.getElementById('summary-item-' + n)
+          : Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).find((li) => li.getAttribute('data-pagina') === String(n));
+        if (!el) return false;
+        el.click();
+        return true;
+      }, { reader: readerName, n }).catch(() => false),
+      readCurrentPage: () => win.evaluate(() => {
+        const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
+        const v = inp ? parseInt(inp.value, 10) : NaN;
+        if (Number.isFinite(v)) return { page: v, source: 'input' };
+        const m = ((document.body && document.body.innerText) || '').match(/p[aá]gina\s+(\d+)/i);
+        return m ? { page: parseInt(m[1], 10), source: 'texto-progresso' } : { page: null, source: 'indefinido' };
+      }).catch(() => null),
+      navigateToPage: (p) => win.evaluate((n) => {
+        const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
+        if (!inp) return false;
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(inp, String(n));
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      }, p).catch(() => false),
+      readNavState: () => win.evaluate(() => {
+        const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
+        const v = inp ? parseInt(inp.value, 10) : NaN;
+        const ex = document.getElementById('ExibicaoAtual');
+        const s = ex ? parseInt((ex.textContent || '').replace(/\D+/g, ''), 10) : NaN;
+        return { input: Number.isFinite(v) ? v : null, shown: Number.isFinite(s) ? s : null };
+      }).catch(() => null),
+      readPageAlts: () => win.evaluate(() => Array.from(document.querySelectorAll('img[class^="PdfImageView_pageImage"]')).map((i) => i.getAttribute('alt') || '')).catch(() => []),
+      // XHR /Leitor/pagination com proteções (auditoria §4): timeout fixo 15s +
+      // fallback 30s (nunca pendente), HTTP != 200, redirecionamento para login,
+      // sessão expirada, resposta sem #divBookMark e texto vazio. Razões
+      // sanitizadas — code/cookies/URLs assinadas nunca são registradas.
+      fetchPaginationPage: (p) => win.evaluate((n) => new Promise((resolve) => {
+        const u = new URL(location.href);
+        const code = u.searchParams.get('code');
+        if (!code) { resolve({ ok: false, reason: 'sem-code' }); return; }
+        const xh = new XMLHttpRequest();
+        let settled = false;
+        const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+        xh.open('GET', '/Leitor/pagination?code=' + encodeURIComponent(code) + '&page=' + n + '&paginaAnteriorId=0', true);
+        xh.withCredentials = true;
+        xh.timeout = 15000;
+        xh.onload = () => {
+          try {
+            if (xh.status !== 200) { done({ ok: false, reason: 'http-' + xh.status }); return; }
+            const finalUrl = String(xh.responseURL || '');
+            if (/login|logon|autentic/i.test(finalUrl)) { done({ ok: false, reason: 'redirecionamento-login' }); return; }
+            const body = String(xh.responseText || '');
+            if (/sess[ãa]o expirada|fa[çc]a login/i.test(body.slice(0, 2000))) { done({ ok: false, reason: 'sessao-expirada' }); return; }
+            const doc = new DOMParser().parseFromString(body, 'text/html');
+            const fig = doc.querySelector('#divBookMark');
+            if (!fig) { done({ ok: false, reason: 'resposta-sem-divbookmark' }); return; }
+            const text = (fig.getAttribute('aria-label') || '').trim();
+            if (!text) { done({ ok: false, reason: 'texto-vazio' }); return; }
+            const canvas = doc.querySelector('#page-canvas');
+            done({ ok: true, text, hasImageUrl: !!(canvas && canvas.getAttribute('data-src')) });
+          } catch (e) { done({ ok: false, reason: 'parse' }); }
+        };
+        xh.ontimeout = () => done({ ok: false, reason: 'timeout' });
+        xh.onerror = () => done({ ok: false, reason: 'rede' });
+        xh.onabort = () => done({ ok: false, reason: 'abortado' });
+        setTimeout(() => done({ ok: false, reason: 'timeout' }), 30000);
+        xh.send();
+      }), p).catch(() => ({ ok: false, reason: 'erro-evaluate' })),
     };
 
-    let out = await runReader(reader);
-    if (out.stage === 'select') {
-      // Falha na SELEÇÃO inicial: tenta o OUTRO leitor uma única vez — isto é a
-      // escolha do primeiro leitor disponível, NÃO um fallback de conteúdo
-      // (auditoria §3: não declarar fallback quando só a seleção falhou).
-      const other = reader === 'beta' ? 'classic' : 'beta';
-      attempts.push('selecao-inicial-falhou-tentar=' + other);
-      reader = other;
-      out = await runReader(reader);
-    } else if (out.stage !== 'done') {
-      // Fallback ÚNICO (auditoria §3): o leitor foi selecionado, mas falhou em
-      // carregar, no sumário, na localização ou na extração → o outro leitor
-      // UMA vez. Sem loop, sem reabrir a mesma URL, sem os dois leitores
-      // abertos simultaneamente (um por vez; janelas fechadas pelo chamador).
-      const nxt = pearson.nextReaderAfterFailure(preferred, reader);
-      if (nxt) {
-        attempts.push('fallback-unico=' + nxt + ' motivo=' + out.stage + '-falhou-no-' + reader);
-        reader = nxt;
-        out = await runReader(reader);
-      }
-    }
-    if (out.stage !== 'done') {
-      // Ambos falharam (ou fallback indisponível): causa real registrada.
-      attempts.push('pearson-sem-extracao-causa=' + out.stage);
-      return {
-        ok: false,
-        format: fmt.format,
-        failureType: 'pearson-falhou-' + out.stage,
-        reader,
-        attempts,
-        chapterLocated: false,
-        tocEntries: out.tocEntries || 0,
-        locateReason: out.loc ? out.loc.reason : undefined,
-        locAmbiguous: !!(out.loc && out.loc.ambiguous),
-      };
-    }
+    return await extractPearsonViaDriver(driver, expected, {
+      attempts, maxPages, maxChars, pageWaitMs, preferred,
+      format: fmt.format, readerUrl: page.href,
+    });
     return out.result;
   } catch (e) {
     attempts.push('erro=' + String((e && e.message) || 'desconhecido').slice(0, 120));
@@ -2348,6 +2378,8 @@ module.exports = {
   sanitizeUrlForReport,
   diagnoseReader,
   tryPearsonAutomation,
+  extractPearsonViaDriver,
+  readPearsonTocFromPage,
   evaluatePageSequence,
   createVitalsourceDriver,
   extractVitalsourceViaDriver,
