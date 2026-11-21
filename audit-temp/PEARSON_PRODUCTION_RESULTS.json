@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-21T06:29:34.646Z",
+  "summary": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "P1",
+      "title": "Beta integral: fronteira alcançada + sequência completa",
+      "status": "PASS",
+      "detail": "status=integral stoppedBy=fim-do-capitulo pages=5 endOk=true"
+    },
+    {
+      "id": "P2",
+      "title": "Beta limite de paginas -> partial com texto preservado",
+      "status": "PASS",
+      "detail": "status=partial stoppedBy=limite-de-paginas chars=694"
+    },
+    {
+      "id": "P3",
+      "title": "Beta pagina nao confirmada pelo estado -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=pagina-nao-confirmada"
+    },
+    {
+      "id": "P4",
+      "title": "Beta conteudo repetido interrompe",
+      "status": "PASS",
+      "detail": "stoppedBy=conteudo-repetido pages=3"
+    },
+    {
+      "id": "P5",
+      "title": "Beta pagina vazia -> partial",
+      "status": "PASS",
+      "detail": "status=partial sem-texto=1"
+    },
+    {
+      "id": "P6",
+      "title": "Classico integral via paginacao",
+      "status": "PASS",
+      "detail": "status=integral pages=5"
+    },
+    {
+      "id": "P7",
+      "title": "Classico falha de paginacao -> partial com texto",
+      "status": "PASS",
+      "detail": "stoppedBy=falha-de-paginacao attempts=paginacao-falhou-pagina=5 motivo=http-500"
+    },
+    {
+      "id": "P8",
+      "title": "Classico sessao expirada resolve sem pendencia",
+      "status": "PASS",
+      "detail": "stoppedBy=undefined ms=0"
+    },
+    {
+      "id": "P9",
+      "title": "Selecao inicial falhou -> outro leitor (nao e fallback)",
+      "status": "PASS",
+      "detail": "reader=classic attempts=selecao-inicial-falhou-tentar=classic"
+    },
+    {
+      "id": "P10",
+      "title": "Fallback unico Beta->Classico apos sumario vazio",
+      "status": "PASS",
+      "detail": "reader=classic"
+    },
+    {
+      "id": "P11",
+      "title": "Ambos leitores falham -> causa real registrada",
+      "status": "PASS",
+      "detail": "failureType=pearson-falhou-toc"
+    },
+    {
+      "id": "P12",
+      "title": "TOC duplicado -> ambiguo, sem escolha arbitraria",
+      "status": "PASS",
+      "detail": "failureType=pearson-falhou-locate ambiguo=true"
+    },
+    {
+      "id": "P13",
+      "title": "Beta navegacao falhou -> stoppedBy correto",
+      "status": "PASS",
+      "detail": "stoppedBy=falha-de-navegacao"
+    }
+  ]
+}

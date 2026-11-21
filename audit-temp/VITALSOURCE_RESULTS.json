@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-21T06:29:34.711Z",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "V1",
+      "title": "VitalSource integral (offset pageRef = 1)",
+      "status": "PASS",
+      "detail": "status=integral pages=10 offset=1 stoppedBy=fim-do-capitulo"
+    },
+    {
+      "id": "V2",
+      "title": "Sem camada #pdf-ax-text -> inaccessible",
+      "status": "PASS",
+      "detail": "status=inaccessible error=camada-ax-text-indisponivel"
+    },
+    {
+      "id": "V3",
+      "title": "Sumario indisponivel -> inaccessible",
+      "status": "PASS",
+      "detail": "status=inaccessible error=sumario-indisponivel"
+    },
+    {
+      "id": "V4",
+      "title": "Capitulo nao localizado -> not_found",
+      "status": "PASS",
+      "detail": "status=not_found error=capitulo-nao-localizado"
+    },
+    {
+      "id": "V5",
+      "title": "pageRef diverge -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=pageref-diverge"
+    },
+    {
+      "id": "V6",
+      "title": "pageRef nao avanca -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=pageref-nao-avancou"
+    },
+    {
+      "id": "V7",
+      "title": "Conteudo repetido -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=conteudo-repetido pages=3"
+    },
+    {
+      "id": "V8",
+      "title": "Pagina vazia -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=pagina-vazia"
+    },
+    {
+      "id": "V9",
+      "title": "Limite de paginas -> partial com texto",
+      "status": "PASS",
+      "detail": "stoppedBy=limite-de-paginas chars=612"
+    },
+    {
+      "id": "V10",
+      "title": "Fronteira ambigua (sem proximo item) -> partial",
+      "status": "PASS",
+      "detail": "stoppedBy=sem-fronteira"
+    },
+    {
+      "id": "V11",
+      "title": "Falha de navegacao -> partial com motivo",
+      "status": "PASS",
+      "detail": "stoppedBy=falha-de-navegacao"
+    }
+  ]
+}
