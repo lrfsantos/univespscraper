@@ -133,27 +133,68 @@ function parseTocClassic(items) {
   return parseToc(entries);
 }
 
-// Fronteira de fim do capítulo: o PRÓXIMO item do sumário com rótulo DIFERENTE
-// (ignora entradas duplicadas do mesmo rótulo — ex.: unidades divididas em duas
-// entradas). Retorna { index, endPage } — endPage é a página PDF inicial do
-// próximo capítulo (Clássico, `dataPagina`) ou null quando desconhecido (Beta),
-// caso em que o chamador aplica limite duro e status honesto.
-function chapterEndBoundary(toc, entry) {
-  const idx = (toc || []).indexOf(entry);
-  if (!entry || idx === -1) return { index: (toc || []).length, endPage: null };
-  for (let i = idx + 1; i < toc.length; i++) {
-    const t = toc[i];
-    if (t.normalized !== entry.normalized) {
-      return { index: i, endPage: t.dataPagina != null ? t.dataPagina : null };
-    }
-  }
-  return { index: toc.length, endPage: null };
+// Classifica o NÍVEL ESTRUTURAL de um rótulo de sumário a partir de EVIDÊNCIA
+// de numeração no próprio rótulo — nunca inventa profundidade (auditoria §6).
+//   'unidade'     "Unidade N: {título}"
+//   'capitulo'    "Capítulo N" / "Cap. N"
+//   'subcapitulo' "N.M {título}" (numeração hierárquica sob o capítulo N)
+//   'outro'       sem numeração reconhecida ("Referências", títulos livres).
+// Retorna { level, num, subnum }. Puro e testável.
+function classifyTocLevel(label) {
+  const s = String(label || '').trim();
+  let m = s.match(/^unidade\s+(\d+)\b/i);
+  if (m) return { level: 'unidade', num: parseInt(m[1], 10), subnum: null };
+  m = s.match(/^cap[ií]tulo\s+(\d+)\b/i) || s.match(/^cap\.\s*(\d+)\b/i);
+  if (m) return { level: 'capitulo', num: parseInt(m[1], 10), subnum: null };
+  m = s.match(/^(\d+)\.(\d+)\b/);
+  if (m) return { level: 'subcapitulo', num: parseInt(m[1], 10), subnum: parseInt(m[2], 10) };
+  return { level: 'outro', num: null, subnum: null };
 }
 
-// Localiza um capítulo/intervalo no sumário.
+// Fronteira de fim do capítulo: o PRÓXIMO item do sumário no MESMO nível
+// estrutural (respeita a hierarquia — auditoria §6). Regras (evidência de
+// numeração em classifyTocLevel; sem hierarquia disponível no DOM real, nada é
+// inventado):
+//   - subcapítulos "N.M" NUNCA encerram o capítulo "N" ao qual pertencem;
+//   - capítulos/subcapítulos NUNCA encerram a unidade que os contém;
+//   - entradas repetidas do mesmo rótulo (unidade dividida) são ignoradas;
+//   - se a hierarquia não pode ser determinada, retorna `ambiguous: true` —
+//     o chamador NÃO pode declarar extração integral (fail-closed).
+// Retorna { index, endPage, ambiguous?, reason? } — endPage é a página PDF
+// inicial do próximo item de fronteira (Clássico, `dataPagina`) ou null
+// (Beta/indeterminado), caso em que o chamador aplica limite duro e status
+// honesto.
+function chapterEndBoundary(toc, entry) {
+  const list = toc || [];
+  const idx = list.indexOf(entry);
+  if (!entry || idx === -1) return { index: list.length, endPage: null, ambiguous: true, reason: 'entrada-fora-do-sumario' };
+  const self = classifyTocLevel(entry.label);
+  for (let i = idx + 1; i < list.length; i++) {
+    const t = list[i];
+    if (t.normalized === entry.normalized) continue; // mesmo rótulo repetido
+    const lv = classifyTocLevel(t.label);
+    // Subcapítulo "N.M" pertence ao capítulo "N" atual: não é fronteira.
+    if (self.level === 'capitulo' && lv.level === 'subcapitulo' && lv.num === self.num) continue;
+    // Capítulo/subcapítulo pertence à unidade atual: não é fronteira dela.
+    if (self.level === 'unidade' && (lv.level === 'capitulo' || lv.level === 'subcapitulo')) continue;
+    return { index: i, endPage: t.dataPagina != null ? t.dataPagina : null, ambiguous: false };
+  }
+  // Sem item de fronteira: pode ser fim do livro OU hierarquia indeterminada.
+  // Em ambos os casos a completude não fica comprovada — nunca integral.
+  return { index: list.length, endPage: null, ambiguous: true, reason: self.level === 'outro' ? 'hierarquia-indeterminada' : 'sem-proximo-item-distinto' };
+}
+
+// Localiza um capítulo/intervalo no sumário SEM escolher arbitrariamente
+// (auditoria §6): reúne TODAS as correspondências e decide por evidência —
+//   - correspondência EXATA única → found;
+//   - 2+ correspondências do mesmo critério (títulos duplicados, capítulos com
+//     numeração semelhante, unidade e capítulo coincidentes) → `ambiguous`,
+//     NUNCA a primeira ocorrência silenciosa;
+//   - rótulos parcialmente semelhantes são marcados `approximate: true` (o
+//     chamador trata como evidência mais fraca).
 // expected.chapter: número do capítulo (ex.: 2) ou rótulo ("Capítulo 2").
 // expected.pageRange: { start, end } — quando só páginas são indicadas.
-// Retorna { found: boolean, entry?, reason } — NUNCA escolhe capítulo arbitrário.
+// Retorna { found: boolean, entry?, reason, ambiguous?, matches? }.
 //
 // ATUALIZAÇÃO (descobertas reais 2026-11-18): os livros reais da UNIVESP usam
 // "Unidade N: {título}" (não "Capítulo N"). A numeração por Unidade é reconhecida
@@ -174,27 +215,33 @@ function locateInToc(toc, expected = {}) {
   if (!wantChapter && !(expected.pageRange && expected.pageRange.start != null)) {
     return { found: false, reason: 'sem-indicacao-de-capitulo-ou-paginas' };
   }
+  const ambiguous = (reason, n) => ({ found: false, ambiguous: true, reason, matches: n });
   // Busca por capítulo (numérico primeiro, depois por rótulo normalizado).
   if (chapterNum != null) {
     const num = String(chapterNum);
-    const exact = toc.find((t) => t.label === 'Capítulo ' + num || t.label === 'Cap. ' + num || new RegExp('^cap[ií]tulo\\s+' + num + '\\b', 'i').test(t.label));
-    if (exact) return { found: true, entry: exact, reason: 'capitulo-numerico' };
-    const byNum = toc.find((t) => /(?:cap[ií]tulo|cap\.)\s*\d+|\b\d+\s*[-–—]\s*\d+\b/i.test(t.label) && t.normalized.includes(' ' + num + ' ') && /cap[ií]tulo/.test(t.normalized));
-    if (byNum) return { found: true, entry: byNum, reason: 'capitulo-rotulo-com-numero' };
+    const exact = toc.filter((t) => t.label === 'Capítulo ' + num || t.label === 'Cap. ' + num || new RegExp('^cap[ií]tulo\\s+' + num + '\\b', 'i').test(t.label));
+    if (exact.length === 1) return { found: true, entry: exact[0], reason: 'capitulo-numerico' };
+    if (exact.length > 1) return ambiguous('capitulo-duplicado-no-sumario', exact.length);
+    const byNum = toc.filter((t) => /(?:cap[ií]tulo|cap\.)\s*\d+|\b\d+\s*[-–—]\s*\d+\b/i.test(t.label) && t.normalized.includes(' ' + num + ' ') && /cap[ií]tulo/.test(t.normalized));
+    if (byNum.length === 1) return { found: true, entry: byNum[0], reason: 'capitulo-rotulo-com-numero', approximate: true };
+    if (byNum.length > 1) return ambiguous('capitulo-ambiguo-no-sumario', byNum.length);
     // Livros reais UNIVESP/Pearson: "Unidade N: {título}".
-    const byUnidade = toc.find((t) => new RegExp('^unidade\\s+' + num + '\\b', 'i').test(t.label));
-    if (byUnidade) return { found: true, entry: byUnidade, reason: 'unidade-numerica' };
+    const byUnidade = toc.filter((t) => new RegExp('^unidade\\s+' + num + '\\b', 'i').test(t.label));
+    if (byUnidade.length === 1) return { found: true, entry: byUnidade[0], reason: 'unidade-numerica' };
+    if (byUnidade.length > 1) return ambiguous('unidade-duplicada-no-sumario', byUnidade.length);
   }
   if (chapterLabel) {
-    const byLabel = toc.find((t) => t.normalized.includes(chapterLabel));
-    if (byLabel) return { found: true, entry: byLabel, reason: 'capitulo-por-rotulo' };
+    const byLabel = toc.filter((t) => t.normalized.includes(chapterLabel));
+    if (byLabel.length === 1) return { found: true, entry: byLabel[0], reason: 'capitulo-por-rotulo', approximate: true };
+    if (byLabel.length > 1) return ambiguous('titulo-duplicado-no-sumario', byLabel.length);
   }
   // Intervalo de páginas com sumário que tem páginas reais (Clássico, `dataPagina`).
   // Exigência de fronteira EXATA: sem mapeamento real, não escolhe.
   if (!wantChapter && expected.pageRange && expected.pageRange.start != null) {
     const start = expected.pageRange.start;
-    const byPage = toc.find((t) => t.dataPagina != null && t.dataPagina === start);
-    if (byPage) return { found: true, entry: byPage, reason: 'paginas-data-pagina' };
+    const byPage = toc.filter((t) => t.dataPagina != null && t.dataPagina === start);
+    if (byPage.length === 1) return { found: true, entry: byPage[0], reason: 'paginas-data-pagina' };
+    if (byPage.length > 1) return ambiguous('pagina-duplicada-no-sumario', byPage.length);
   }
   return { found: false, reason: 'capitulo-nao-localizado-no-sumario' };
 }
@@ -232,6 +279,7 @@ module.exports = {
   parseToc,
   parseTocFromSummaryItems,
   parseTocClassic,
+  classifyTocLevel,
   chapterEndBoundary,
   locateInToc,
   detectContentLayer,
