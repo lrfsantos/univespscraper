@@ -1,12 +1,12 @@
 # RELATÓRIO DE AUDITORIA — Pearson/OCR (2026-11-18)
 
 > **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
-> HEAD `ca0b9f2`; `npm test`: **30 suítes / 398 casos / 0 falhas**. Correções
+> HEAD `0f4358e`; `npm test`: **30 suítes / 398 casos / 0 falhas**. Correções
 > P1/P2 da auditoria anterior em `d2494b9`/`f58c85a`; rodada de fidelidade
 > (TOC N.M.K, fronteira §6-B, pageRange §2 com fim declarado pelo AVA, testes de
-> adaptador DOM) em `ca0b9f2`. Seções abaixo: **HISTÓRICO** (inclui pendências
+> adaptador DOM) em `c47543b`. Seções abaixo: **HISTÓRICO** (inclui pendências
 > já fechadas — ver registros de fechamento no fim); em conflito, prevalece este
-> bloco. Validação real no Electron e OCR Tesseract.js: PENDENTES.
+> bloco. Validação real executada (ver seção final); OCR Tesseract.js: PENDENTE.
 
 Relatório honesto da sessão de integração/validação. Nenhuma credencial, token,
 cookie ou URL assinada é incluída (regra da sessão).
@@ -173,7 +173,7 @@ FULL AUDIT da IA auditora (achados P1/P2) endereçados:
   snapshot e revalida contra a URL do driver (corrida eliminada).
 Bateria: 29 suítes, 381 casos, 0 falhas. OCR tesseract.js segue PENDENTE.
 
-## Terceira rodada — adaptadores (2026-11-21, HEAD ca0b9f2)
+## Terceira rodada — adaptadores (2026-11-21, HEAD 0f4358e)
 
 Achados P1/P2 da auditoria do GPT sobre `25361d5` corrigidos:
 - Baseline de janelas Pearson capturado ANTES da seleção (não no fallback), com
@@ -187,4 +187,35 @@ Achados P1/P2 da auditoria do GPT sobre `25361d5` corrigidos:
 Bateria final: 30 suítes, 398 casos, 0 falhas. **Validação real no Electron
 autenticado: BLOQUEADA** — depende de sessão humana (login manual no AVA); OCR
 Tesseract.js e rotação da credencial histórica seguem PENDENTES.
+
+## Validação real executada (2026-11-21, código 0f4358e)
+
+Credenciais fornecidas localmente pelo titular em arquivo ignorado pelo Git,
+carregadas em memória; nenhum valor foi exibido, versionado ou registrado.
+Ferramentas: `poc/real-inventory.js`, `poc/real-detect.js`,
+`poc/real-pearson.js`, `poc/real-beta-probe.js` (somente metadados/contagens).
+
+- `npm run test:live`: login real OK; módulo 1 (4 páginas HTML) integral;
+  módulo 2 (3 PDFs de slides) integrais; módulo 3: PDF integral, EPUB `partial`
+  (limite estrutural não confirmado — fail-closed) e leitor VitalSource
+  `inaccessible`/reader-auth (sem simulação). Critério `expectedResourcesIntegral`
+  do módulo 3 falhou por esses dois resultados honestos — não por exceção.
+- Inventário real: 10 disciplinas, dezenas de recursos LTI de livro; formatos
+  detectados: `bvpdf` com `#pdf-novo`/`#pdf` (Pearson), `pageid` (VitalSource) e
+  `reader-auth`.
+- Pearson Clássico real: extração **integral**, 28 páginas, fronteira alcançada.
+- Fallback real (Beta bloqueado de forma controlada): **integral** no Clássico,
+  28 páginas; uma janela antes, durante e depois (nenhum popup órfão).
+- Fallback real após falha de extração do Beta: o adaptador agora volta à tela
+  de seleção antes de escolher o Clássico; resultado **integral**, 28 páginas.
+- Limitação REAL descoberta: o leitor Beta atual
+  (`leitor.bvirtual.com.br/reader/...`) não expõe `#summary-item-N`,
+  `#input-navigate-read` nem `#ExibicaoAtual` no documento superior nem nos
+  frames observados (conteúdo em `about:blank`). O extrator Beta falha fechado
+  (`partial`) em vez de inventar seletores — Nova seleção real pendente.
+- Intervalo declarado pelo AVA com TOC duplicada: `ambiguous` → nenhuma
+  extração (fail-closed correto).
+
+Categoria real: Electron executado ✓; sessão autenticada ✓; Pearson Clássico e
+fallback ✓; Pearson Beta ✗ (DOM do leitor mudou); VitalSource ✗ (reader-auth).
 

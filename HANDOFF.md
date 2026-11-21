@@ -1,11 +1,12 @@
 # HANDOFF — Sessão Pearson/OCR (2026-11-18)
 
 > **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
-> HEAD `ca0b9f2`; `npm test`: **30 suítes / 398 casos / 0 falhas**.
-> Validado SINTETICAMENTE: orquestradores Pearson/VitalSource + adaptadores DOM
-> (`poc/test-pearson-adapter-m3.js`, seletores simulados — NÃO é sessão real).
-> PENDENTE: validação autenticada no Electron (Beta/Clássico/fallback/janelas,
-> VitalSource/LTI), OCR Tesseract.js, rotação da credencial histórica exposta.
+> HEAD `0f4358e`; `npm test`: **30 suítes / 398 casos / 0 falhas**.
+> Validado REAL (sessão autenticada, ver AUDIT §final): módulos 1/2; Pearson
+> Clássico e fallback integrais; Beta falha fechada (DOM do leitor mudou);
+> VitalSource reader-auth. SINTÉTICO: orquestradores + adaptadores DOM/frames.
+> PENDENTE: novos seletores do Beta real, VitalSource/LTI, OCR Tesseract.js e
+> rotação da credencial histórica exposta.
 > As seções abaixo são **HISTÓRICO**; em conflito, prevalece este bloco.
 
 Este documento foi escrito ao fechar a sessão anterior (contexto quase cheio + restart).
