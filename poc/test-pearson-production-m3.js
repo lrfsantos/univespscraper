@@ -212,8 +212,8 @@ function classicDriver({ toc, entryPages, failFrom, failReason }) {
     record({ id: 'P13', title: 'Beta navegacao falhou -> stoppedBy correto', status: ok(good), detail: `stoppedBy=${r.stoppedBy}` });
   }
 
-  fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), results }, null, 2));
   const fails = results.filter((r) => r.status !== 'PASS').length;
+  fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
   console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
   process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });
