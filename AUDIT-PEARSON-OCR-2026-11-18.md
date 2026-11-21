@@ -1,5 +1,13 @@
 # RELATÓRIO DE AUDITORIA — Pearson/OCR (2026-11-18)
 
+> **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
+> HEAD `c47543b`; `npm test`: **30 suítes / 391 casos / 0 falhas**. Correções
+> P1/P2 da auditoria anterior em `d2494b9`/`f58c85a`; rodada de fidelidade
+> (TOC N.M.K, fronteira §6-B, pageRange §2 com fim declarado pelo AVA, testes de
+> adaptador DOM) em `c47543b`. Seções abaixo: **HISTÓRICO** (inclui pendências
+> já fechadas — ver registros de fechamento no fim); em conflito, prevalece este
+> bloco. Validação real no Electron e OCR Tesseract.js: PENDENTES.
+
 Relatório honesto da sessão de integração/validação. Nenhuma credencial, token,
 cookie ou URL assinada é incluída (regra da sessão).
 

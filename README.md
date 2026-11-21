@@ -109,9 +109,6 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 - O escopo desta versão limita-se a leituras, materiais complementares e
   videoaulas. Fóruns, lives com facilitador e atividades avaliativas são
   deliberadamente excluídos da extração.
-- O `integral` de PDF significa que o texto extraível foi obtido de todas as
-  páginas — **não** que diagramas foram interpretados, imagens reconhecidas ou
-  que houve OCR (a camada de OCR é decisão/qualidade; a execução real é pendente).
 - O histórico do repositório pode conter conteúdo antigo não removido (ver
   pendências no relatório da auditoria).
 

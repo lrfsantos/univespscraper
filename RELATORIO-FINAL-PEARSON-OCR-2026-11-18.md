@@ -1,5 +1,13 @@
 # RELATÓRIO FINAL — Pearson / OCR / Minha Biblioteca (2026-11-18)
 
+> **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
+> HEAD `c47543b`; `npm test`: **30 suítes / 391 casos / 0 falhas**. CI: conferir
+> Actions no SHA `c47543b`. Validado SINTETICAMENTE: orquestradores + adaptadores
+> DOM simulados. NÃO validado em sessão real: Electron/Pearson Beta e Clássico,
+> fallback com janelas, VitalSource/LTI. OCR Tesseract.js segue PENDENTE (sem
+> motor instalado, sem simulação). Seções abaixo: **HISTÓRICO** — em conflito,
+> prevalece este bloco.
+
 Relatório consolidado do fechamento da sessão de integração e validação.
 Nenhuma credencial, token, cookie ou URL assinada aparece neste arquivo (regra de segurança).
 
