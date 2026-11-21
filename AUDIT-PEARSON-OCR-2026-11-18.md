@@ -127,3 +127,16 @@ npm test → suites=27 falhas=0 casosAgregados=350 pass=350 fail=0
     com o próximo passo de código.
 - Fallback tesseract.js com sessão real (baixar página assinada → OCR).
 - Múltiplos livros (offsets diferentes; EPUB vs PDF).
+
+## Registro de fechamento (2026-11-21)
+
+A auditoria independente posterior gerou 14 seções de correções, executadas no
+branch `integration/pearson-ocr-master` (commits `d98162c` §6, `4172b08`
+§2/§4/§5, `d034995` §7, `7e56cef` §10, `8467b26` §9 — detalhes em HANDOFF §10 e
+RELATORIO-FINAL §8). Itens acima que deixaram de valer como pendência:
+- Código de integração da Minha Biblioteca (VitalSource): IMPLEMENTADO (§7) —
+  camada `#pdf-ax-text`, "Ir para Página" + Enter com página impressa absoluta,
+  offset pageRef por livro. Validação em sessão real no Electron continua
+  PENDENTE (UA de automação pode ser recusada — sem contornar SSO/UA).
+- Fallback tesseract.js: segue PENDENTE e inequívoco (motor não instalado;
+  `ocr.js` continua camada de decisão/qualidade, sem simulação).

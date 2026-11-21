@@ -66,7 +66,8 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
 | Página HTML do AVA | Extração de texto (Módulo 1) + recursos incorporados descobertos (vídeos/PDFs/livros) |
 | PDF | Download do original + texto por página (Módulo 2), SHA-256 e paginação impressa quando identificada; camada de decisão de OCR para páginas digitalizadas (`src/extract/ocr.js`) |
 | Livro/leitor LTI compatível (Minha Biblioteca) | Extração EPUB/PAGEID (Módulo 3) com capítulo e intervalo de páginas declarados |
-| Livro Biblioteca Pearson (Beta/Clássico) | Navegação pelo sumário com seletores REAIS validados em sessão real (2026-11-18; ver `DESCOBERTAS-PEARSON-2026-11-18.md`): seleção `#pdf-novo` (Beta)/`#pdf` (Clássico); Beta extrai o `alt` de `img[class^="PdfImageView_pageImage"]`; Clássico extrai o texto do XHR `/Leitor/pagination` (`#divBookMark[aria-label]`); fallback Clássico após falha do Beta |
+| Livro Biblioteca Pearson (Beta/Clássico) | Navegação pelo sumário com seletores REAIS validados em sessão real (2026-11-18; ver `DESCOBERTAS-PEARSON-2026-11-18.md`): seleção `#pdf-novo` (Beta)/`#pdf` (Clássico); Beta extrai o `alt` de `img[class^="PdfImageView_pageImage"]` com confirmação do estado do leitor; Clássico extrai o texto do XHR `/Leitor/pagination` (`#divBookMark[aria-label]`, protegido contra timeout/HTTP≠200/login); fallback único após falha comprovada; `integral` só com fronteira do capítulo alcançada e sequência completa |
+| Livro VitalSource (Minha Biblioteca) | Camada textual `#pdf-ax-text` em iframe `/books/{isbn}/pages/{pageRef}/content`; TOC `button[aria-label^="Acesse "]` ("Acesse {título}, página P"); navegação por "Ir para Página" + Enter com página impressa absoluta; pageRef +1 por página impressa (offset por livro); critérios `integral` fail-closed iguais ao Pearson |
 | Videoaula (YouTube) | Registro de link, título, transcrição com timestamps quando disponível (sem inventar) |
 | Recurso desconhecido | Registrado como não suportado (nunca ignorado silenciosamente) |
 
@@ -96,8 +97,9 @@ semana, data, status, versão do extrator). Exemplos em `poc/fixtures/generated-
   OCR** (`src/extract/ocr.js`): identifica páginas escaneadas, planeja quais
   precisam de OCR e valida a qualidade do texto reconhecido (vazio, curto,
   ilegível, substituição, repetição, confiança). A execução real de um motor de
-  OCR no aplicativo empacotado ainda **não** foi validada nesta máquina
-  (documentado como pendente); nenhum texto é inventado para trechos ilegíveis.
+  OCR no aplicativo empacotado ainda **não** foi validada nesta máquina:
+  o motor previsto é **Tesseract.js** (não instalado como dependência —
+  documentado como pendente); nenhum texto é inventado para trechos ilegíveis.
 - O `integral` de PDF significa que o texto extraível foi obtido de todas as
   páginas — **não** que diagramas foram interpretados, imagens reconhecidas ou
   que houve OCR (a camada de OCR é decisão/qualidade; a execução real é pendente).

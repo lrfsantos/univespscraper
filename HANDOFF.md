@@ -229,3 +229,22 @@ sessão real.
 Regras de segurança da sessão:
 - Não commitar nada dos arquivos de modais de auditoria sem revisar.
 - Não incluir URLs assinadas/tokens/cookies em outputs ou relatórios.
+
+---
+
+## 10. REGISTRO PÓS-AUDITORIA (2026-11-21) — rodada de correções das 14 seções
+
+Branch `integration/pearson-ocr-master`; nenhum commit reescrito; sem PR/merge.
+Commits desta rodada (em ordem):
+- `d98162c` fix: respect TOC hierarchy and ambiguity in Pearson summaries (§6: `classifyTocLevel`, `chapterEndBoundary`, `locateInToc` sem pegar o primeiro silenciosamente)
+- `4172b08` fix: prevent incomplete Pearson chapters from passing as integral (§2: `integral` só com fronteira ALCANÇADA + sequência completa; §4: XHR /Leitor/pagination com timeout fixo 15s + fallback 30s, HTTP≠200, redirecionamento-login, sessão-expirada, resposta-sem-divbookmark, texto-vazio; §5: Beta só aceita página com confirmação do ESTADO do leitor e conteúdo distinto do anterior)
+- `d034995` feat: integrate VitalSource accessibility text navigation (§7: `#pdf-ax-text` em iframe `/books/{isbn}/pages/{pageRef}/content`, TOC `button[aria-label^="Acesse "]`, navegação "Ir para Página" + Enter com página impressa absoluta, offset pageRef = pageRef − página impressa; pipeline pageid HTML preservado)
+- `7e56cef` ci: run tests on integration branches (§10: gatilho `integration/**`)
+- `8467b26` test: cover production Pearson and VitalSource automation (§9: `extractPearsonViaDriver` extraído do `tryPearsonAutomation` — mesmo código de produção — e `extractVitalsourceViaDriver` puro; 13 casos Pearson + 11 VitalSource registrados em `scripts/test-all.js`)
+
+Classificação de evidência (§11): seletores/limitações VitalSource = observação REAL no Edge (2026-11-18); código = implementado e revisado; testes = sintéticos com drivers falsos sobre o orquestrador REAL; validação Electron com sessão real (Pearson/VitalSource/OCR) = PENDENTE.
+
+Limitações honestas:
+- OCR: camada de decisão/qualidade; motor previsto Tesseract.js PENDENTE (não instalado; nenhum texto simulado).
+- Minha Biblioteca/VitalSource recusa UA de automação ("Browser Not Supported") — SEM contornar SSO/UA.
+- Extração Pearson real em Electron ainda não reexecutada após estas mudanças (próximo passo).

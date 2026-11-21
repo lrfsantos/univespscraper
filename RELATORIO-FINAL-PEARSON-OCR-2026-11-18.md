@@ -118,3 +118,26 @@ tesseract.js sobre imagens assinadas; múltiplos livros (offsets diferentes; EPU
 - `DESCOBERTAS-PEARSON-2026-11-18.md` — fatos observados (seletores reais por leitor).
 - `AUDIT-PEARSON-OCR-2026-11-18.md` — auditoria (funciona/não funciona/pendentes).
 - `RELATORIO-FINAL-PEARSON-OCR-2026-11-18.md` — este consolidado.
+
+## 8. Registro pós-auditoria (2026-11-21)
+
+Auditoria independente gerou 14 seções de correções, executadas no branch
+`integration/pearson-ocr-master` (commits `d98162c`, `4172b08`, `d034995`,
+`7e56cef`, `8467b26` — detalhes no HANDOFF §10). Resumo:
+- §2 `integral` Pearson agora exige fronteira do próximo item ALCANÇADA e
+  sequência completa; limites → `partial` com texto preservado.
+- §4 XHR de paginação Clássico protegido (timeout fixo, HTTP≠200,
+  redirecionamento-login, sessão expirada, resposta sem `#divBookMark`,
+  texto vazio) — nunca pendente.
+- §5 navegação Beta só aceita página com confirmação do estado do leitor e
+  conteúdo distinto do anterior.
+- §6 sumário: hierarquia (subcapítulo não encerra capítulo/unidade) e
+  ambiguidade nunca resolvidas pela primeira ocorrência silenciosa.
+- §3 fallback único Beta→Clássico só após falha comprovada (seleção ≠ fallback).
+- §7 VitalSource: camada `#pdf-ax-text` com "Ir para Página" + Enter, offset
+  pageRef, dedup por repetição — integrado com pipeline pageid preservado.
+- §9 novos testes do código de PRODUÇÃO (13 Pearson + 11 VitalSource).
+- §10 CI agora dispara em `integration/**`.
+- Pendências mantidas: OCR real (Tesseract.js pendente), validação em sessão
+  real no Electron após estas mudanças, UA do VitalSource ("Browser Not
+  Supported").
