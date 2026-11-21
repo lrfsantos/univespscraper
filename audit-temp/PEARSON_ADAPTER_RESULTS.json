@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-21T16:52:37.505Z",
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "A1",
+      "title": "readPearsonTocFromPage (Beta) le os itens reais do sumario",
+      "status": "PASS",
+      "detail": "items=2"
+    },
+    {
+      "id": "A2",
+      "title": "readPearsonTocFromPage abre o sumario e relê (duas etapas)",
+      "status": "PASS",
+      "detail": "items=2 abriu=true"
+    },
+    {
+      "id": "A3",
+      "title": "Adaptador real (tryPearsonAutomation): fluxo Beta completo integral",
+      "status": "PASS",
+      "detail": "status=integral failure=undefined pages=5 attempts=[\"pagina-lida\",\"tela-selecao=selecao-ids-reais\",\"formato=unknown\",\"leitor-preferido=beta\",\"selecionar-beta=id:pdf-novo\",\"dialogo-continuar=sem-dialogo\",\"sumario-entradas=2\",\"localizar=unidade-numerica\",\"navegar-sumario=ok\",\"pagina-inicial=3\",\"fronteira=8\",\"paginas-extraidas=5 sem-texto=0 parada=fim-do-capitulo\",\"camada=dom status=integral parada=fim-do-capitulo sequencia=ausentes=0,duplicadas=false fronteira=alcancada\"]"
+    },
+    {
+      "id": "A4",
+      "title": "Adaptador real Clássico: XHR pagination + #divBookMark integral",
+      "status": "PASS",
+      "detail": "status=integral failure=undefined pages=4 reader=classic"
+    }
+  ]
+}

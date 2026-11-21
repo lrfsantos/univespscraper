@@ -268,6 +268,88 @@ function classicDriver({ toc, entryPages, failFrom, failReason }) {
     record({ id: 'P18', title: 'Sem chapterKind, Capitulo N tem prioridade (compat.)', status: ok(good), detail: `status=${r.status}` });
   }
 
+  // P19 — §2: intervalo SEM capítulo (Clássico): fronteira pela paginação real.
+  {
+    const toc = ['Seção A', 'Seção B'];
+    const r = await books.extractPearsonViaDriver(classicDriver({ toc, entryPages: { 0: 5, 1: 12 } }), { hasPageRange: true, pageRange: { start: 5, end: 8 } }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'integral' && r.pageStart === 5 && r.pageEnd === 9 && r.pagesExtracted === 4
+      && r.attempts.some((a) => a.startsWith('localizar=paginas-data-pagina'));
+    record({ id: 'P19', title: 'Intervalo sem capitulo -> extrai exatamente o intervalo', status: ok(good), detail: `status=${r.status} janela=${r.pageStart}..${r.pageEnd - 1}` });
+  }
+
+  // P20 — §5: #ExibicaoAtual DESATUALIZADO (mostra página anterior) não é
+  // confirmado nem pelo input nem pelo conteúdo — fail-closed.
+  {
+    const toc = ['Unidade 1: Fundamentos', 'Unidade 2: Prática'];
+    const d = betaDriver({ toc, entryPages: { 0: 3, 1: 40 } });
+    let lastReq = null;
+    const origNav = d.navigateToPage;
+    d.navigateToPage = async (p) => { lastReq = p; return origNav(p); };
+    d.readNavState = async () => ({ input: lastReq, shown: lastReq != null && lastReq > 3 ? lastReq - 1 : null }); // shown defasado
+    d.readPageAlts = async () => (lastReq != null ? [TXT(lastReq)] : []); // conteúdo REAL atualizou
+    const r = await books.extractPearsonViaDriver(d, { chapter: 1 }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'partial' && r.stoppedBy === 'pagina-nao-confirmada'
+      && r.attempts.some((a) => a.startsWith('pagina-nao-confirmada-solicitada=4'));
+    record({ id: 'P20', title: 'Estado desatualizado (shown antigo) -> partial mesmo com conteudo novo', status: ok(good), detail: `stoppedBy=${r.stoppedBy} pages=${r.pagesExtracted}` });
+  }
+
+  // P21 — §3: fallback fecha janelas abertas pela tentativa anterior (adaptador).
+  {
+    const d = betaDriver({ toc: [], entryPages: {} });
+    const cd = classicDriver({ toc: ['Unidade 1: Fundamentos', 'Unidade 2: Prática'], entryPages: { 0: 3, 1: 8 } });
+    let closedCount = 0;
+    const hybrid = {
+      selectReader: async (n) => (n === 'beta' ? 'id:pdf-novo' : 'id:pdf'),
+      waitFor: async () => {}, handleDialog: async () => 'pagina-atual',
+      readToc: async (isBeta) => (isBeta ? await d.readToc() : await cd.readToc()),
+      clickTocEntry: async (n) => cd.clickTocEntry(n),
+      readCurrentPage: async () => cd.readCurrentPage(),
+      navigateToPage: async (p) => cd.navigateToPage(p),
+      readNavState: async () => cd.readNavState(),
+      readPageAlts: async () => cd.readPageAlts(),
+      fetchPaginationPage: (p) => cd.fetchPaginationPage(p),
+      closeNewWindows: async () => { closedCount++; return 1; },
+    };
+    const r = await books.extractPearsonViaDriver(hybrid, { chapter: 1 }, { preferred: 'beta', format: 'pdf' });
+    const good = r.status === 'integral' && closedCount === 1
+      && r.attempts.some((a) => a === 'janelas-fechadas-antes-fallback=1')
+      && r.attempts.some((a) => a.startsWith('fallback-unico=classic'));
+    record({ id: 'P21', title: 'Fallback fecha janelas da tentativa anterior antes de trocar de leitor', status: ok(good), detail: `closed=${closedCount} reader=${r.reader}` });
+  }
+
+  // P22 — §6-A: kind declarado 'capitulo' mas o sumário só tem Unidade 2 ->
+  // NÃO encontra (conservador; nunca converte Unidade em Capítulo).
+  {
+    const toc = ['Unidade 2: Correto'];
+    const d = betaDriver({ toc, entryPages: {} });
+    d.selectReader = async () => 'id:falso';
+    const r = await books.extractPearsonViaDriver(d, { chapter: 2, chapterKind: 'capitulo' }, { preferred: 'beta', format: 'pdf' });
+    const good = r.ok === false
+      && r.attempts.some((a) => a.startsWith('localizar=capitulo-nao-localizado-no-sumario'));
+    record({ id: 'P22', title: 'Kind capitulo nao encontra Unidade no sumario (conservador)', status: ok(good), detail: `failureType=${r.failureType} attempts=${r.attempts.filter((a) => a.startsWith('localizar')).join(' | ')}` });
+  }
+
+  // P23 — §6-B: numeração multinível (1.1, 1.1.1, 1.2) NÃO encerra o Capítulo 1;
+  // "Referências" (sem numeração) como fronteira -> partial, nunca integral.
+  {
+    const toc = ['Capítulo 1: X', '1.1 Introdução', '1.1.1 Objetivos', '1.2 Planejamento', 'Referências', 'Unidade 2: Y'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 0: 3, 4: 30 } }), { chapter: 1 }, { maxPages: 40, format: 'pdf' });
+    const good = r.status === 'partial' && r.stoppedBy === 'fim-do-capitulo'
+      && r.validation.boundaryAmbiguous === true && r.pagesExtracted === 27
+      && !(r.text || '').includes('Pagina 30:');
+    record({ id: 'P23', title: 'Multinivel nao encerra capitulo; Referencias -> partial', status: ok(good), detail: `status=${r.status} pages=${r.pagesExtracted} ambigua=${r.validation.boundaryAmbiguous}` });
+  }
+
+  // P24 — §6-B: títulos livres DENTRO do capítulo ("Introdução", "Desenvolvimento",
+  // "Conclusão") NUNCA encerram o capítulo silenciosamente -> partial.
+  {
+    const toc = ['Capítulo 1: X', 'Introdução', 'Desenvolvimento', 'Conclusão', 'Capítulo 2: Y'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 0: 3, 1: 5 } }), { chapter: 1 }, { maxPages: 40, format: 'pdf' });
+    const good = r.status === 'partial' && r.validation.boundaryAmbiguous === true
+      && r.pagesExtracted === 2 && (r.text || '').includes('Pagina 3:') && (r.text || '').includes('Pagina 4:');
+    record({ id: 'P24', title: 'Titulos livres no capitulo -> fronteira ambigua (partial)', status: ok(good), detail: `status=${r.status} pages=${r.pagesExtracted}` });
+  }
+
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
   console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);

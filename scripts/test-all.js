@@ -39,6 +39,7 @@ const suites = [
   { name: 'poc/test-embedded-m3.js', out: 'EMBEDDED_RESULTS.json' },
   { name: 'poc/test-pearson-m3.js', out: 'PEARSON_RESULTS.json' },
   { name: 'poc/test-pearson-production-m3.js', out: 'PEARSON_PRODUCTION_RESULTS.json' },
+  { name: 'poc/test-pearson-adapter-m3.js', out: 'PEARSON_ADAPTER_RESULTS.json' },
   { name: 'poc/test-vitalsource-m3.js', out: 'VITALSOURCE_RESULTS.json' },
   { name: 'poc/test-ocr-m3.js', out: 'OCR_RESULTS.json' },
 ];

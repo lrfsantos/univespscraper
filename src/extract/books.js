@@ -1526,9 +1526,16 @@ async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
   // → reqEnd + 1 exclusivo).
   const reqStart = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)) ? Number(expected.pageRange.start) : null;
   const reqEnd = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.end)) ? Number(expected.pageRange.end) : null;
+  // §2: fim efetivo declarado pelo AVA → completude provada pela paginação
+  // real (ambiguidade do item do TOC deixa de ser decisiva).
+  let endFromAva = false;
   if (reqStart != null || reqEnd != null) {
+    const endBefore = endPage;
     if (startPage != null && reqStart != null && reqStart > startPage) startPage = reqStart;
-    if (reqEnd != null) endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+    if (reqEnd != null) {
+      endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+      endFromAva = endBefore == null || reqEnd + 1 <= endBefore;
+    }
     attempts.push('janela-intervalo-ava=' + (startPage != null ? startPage : '?') + '..' + (endPage != null ? endPage - 1 : '?'));
   }
   attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida') + ' fronteira=' + (endPage != null ? endPage : (boundary.ambiguous ? 'ambigua' : 'indefinida')));
@@ -1579,7 +1586,7 @@ async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
   if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
   else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
 
-  const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !!(boundary && boundary.ambiguous) });
+  const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !endFromAva && !!(boundary && boundary.ambiguous) });
   attempts.push('paginas=' + pages.length + ' parada=' + stoppedBy + ' status=' + evalRes.status);
   const text = pages.map((p) => `\n[PÁGINA impressa ${p.page} | pageRef ${p.pageRef != null ? p.pageRef : '?'}]\n${p.text}`).filter((s) => !/\]\n$/.test(s)).join('\n\n');
   return {
@@ -2029,9 +2036,17 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     // (endPage é EXCLUSIVO; o intervalo do AVA é inclusivo → reqEnd + 1).
     const reqStart = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)) ? Number(expected.pageRange.start) : null;
     const reqEnd = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.end)) ? Number(expected.pageRange.end) : null;
+    // §2: quando o FIM efetivo é declarado pelo AVA (reqEnd), a completude do
+    // intervalo é provada pela paginação real — a ambiguidade do item do TOC
+    // como fronteira (§6-B) deixa de ser o critério decisivo.
+    let endFromAva = false;
     if (reqStart != null || reqEnd != null) {
+      const endBefore = endPage;
       if (startPage != null && reqStart != null && reqStart > startPage) startPage = reqStart;
-      if (reqEnd != null) endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+      if (reqEnd != null) {
+        endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+        endFromAva = endBefore == null || reqEnd + 1 <= endBefore;
+      }
       attempts.push('janela-intervalo-ava=' + (startPage != null ? startPage : '?') + '..' + (endPage != null ? endPage - 1 : '?'));
     }
 
@@ -2102,7 +2117,7 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     attempts.push('paginas-extraidas=' + pages.length + ' sem-texto=' + pages.filter((p) => !p.text).length + ' parada=' + stoppedBy);
 
     // 10) Validação honesta fail-closed (núcleo compartilhado, auditoria §2).
-    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !!(boundary && boundary.ambiguous) });
+    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !endFromAva && !!(boundary && boundary.ambiguous) });
     attempts.push('camada=' + evalRes.layer.layer + ' status=' + evalRes.status + ' parada=' + stoppedBy + ' sequencia=' + (evalRes.sequenceOk ? 'ok' : 'ausentes=' + evalRes.missingPages + ',duplicadas=' + evalRes.duplicatePages) + ' fronteira=' + (evalRes.boundaryReached ? 'alcancada' : 'nao-alcancada'));
     return {
       ok: evalRes.ok,

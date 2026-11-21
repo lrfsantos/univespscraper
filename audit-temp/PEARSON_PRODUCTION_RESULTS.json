@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-21T11:26:56.412Z",
+  "date": "2026-11-21T16:52:37.338Z",
   "summary": {
-    "total": 18,
-    "passed": 18,
+    "total": 24,
+    "passed": 24,
     "failed": 0
   },
   "results": [
@@ -113,6 +113,42 @@
       "title": "Sem chapterKind, Capitulo N tem prioridade (compat.)",
       "status": "PASS",
       "detail": "status=integral"
+    },
+    {
+      "id": "P19",
+      "title": "Intervalo sem capitulo -> extrai exatamente o intervalo",
+      "status": "PASS",
+      "detail": "status=integral janela=5..8"
+    },
+    {
+      "id": "P20",
+      "title": "Estado desatualizado (shown antigo) -> partial mesmo com conteudo novo",
+      "status": "PASS",
+      "detail": "stoppedBy=pagina-nao-confirmada pages=1"
+    },
+    {
+      "id": "P21",
+      "title": "Fallback fecha janelas da tentativa anterior antes de trocar de leitor",
+      "status": "PASS",
+      "detail": "closed=1 reader=classic"
+    },
+    {
+      "id": "P22",
+      "title": "Kind capitulo nao encontra Unidade no sumario (conservador)",
+      "status": "PASS",
+      "detail": "failureType=pearson-falhou-toc attempts=localizar=capitulo-nao-localizado-no-sumario"
+    },
+    {
+      "id": "P23",
+      "title": "Multinivel nao encerra capitulo; Referencias -> partial",
+      "status": "PASS",
+      "detail": "status=partial pages=27 ambigua=true"
+    },
+    {
+      "id": "P24",
+      "title": "Titulos livres no capitulo -> fronteira ambigua (partial)",
+      "status": "PASS",
+      "detail": "status=partial pages=2"
     }
   ]
 }

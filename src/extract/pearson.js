@@ -137,7 +137,8 @@ function parseTocClassic(items) {
 // de numeração no próprio rótulo — nunca inventa profundidade (auditoria §6).
 //   'unidade'     "Unidade N: {título}"
 //   'capitulo'    "Capítulo N" / "Cap. N"
-//   'subcapitulo' "N.M {título}" (numeração hierárquica sob o capítulo N)
+//   'subcapitulo' "N.M {título}" / "N.M.K {título}" (hierarquia sob o capítulo N;
+//                 todos os níveis carregam o número do capítulo raiz em `num`)
 //   'outro'       sem numeração reconhecida ("Referências", títulos livres).
 // Retorna { level, num, subnum }. Puro e testável.
 function classifyTocLevel(label) {
@@ -146,8 +147,10 @@ function classifyTocLevel(label) {
   if (m) return { level: 'unidade', num: parseInt(m[1], 10), subnum: null };
   m = s.match(/^cap[ií]tulo\s+(\d+)\b/i) || s.match(/^cap\.\s*(\d+)\b/i);
   if (m) return { level: 'capitulo', num: parseInt(m[1], 10), subnum: null };
-  m = s.match(/^(\d+)\.(\d+)\b/);
-  if (m) return { level: 'subcapitulo', num: parseInt(m[1], 10), subnum: parseInt(m[2], 10) };
+  // Numeração multinível (§6): "1.2" e "1.2.3" pertencem ao capítulo 1 —
+  // `num` carrega a raiz; `subnum`/`subsubnum` os níveis seguintes.
+  m = s.match(/^(\d+)\.(\d+)(?:\.(\d+))?\b/);
+  if (m) return { level: 'subcapitulo', num: parseInt(m[1], 10), subnum: parseInt(m[2], 10), subsubnum: m[3] ? parseInt(m[3], 10) : null };
   return { level: 'outro', num: null, subnum: null };
 }
 
