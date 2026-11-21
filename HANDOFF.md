@@ -1,7 +1,7 @@
 # HANDOFF — Sessão Pearson/OCR (2026-11-18)
 
 > **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
-> HEAD `c47543b`; `npm test`: **30 suítes / 391 casos / 0 falhas**.
+> HEAD `ca0b9f2`; `npm test`: **30 suítes / 398 casos / 0 falhas**.
 > Validado SINTETICAMENTE: orquestradores Pearson/VitalSource + adaptadores DOM
 > (`poc/test-pearson-adapter-m3.js`, seletores simulados — NÃO é sessão real).
 > PENDENTE: validação autenticada no Electron (Beta/Clássico/fallback/janelas,

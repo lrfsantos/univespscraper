@@ -1,10 +1,10 @@
 # RELATÓRIO DE AUDITORIA — Pearson/OCR (2026-11-18)
 
 > **ESTADO ATUAL (2026-11-21)** — branch `integration/pearson-ocr-master`;
-> HEAD `c47543b`; `npm test`: **30 suítes / 391 casos / 0 falhas**. Correções
+> HEAD `ca0b9f2`; `npm test`: **30 suítes / 398 casos / 0 falhas**. Correções
 > P1/P2 da auditoria anterior em `d2494b9`/`f58c85a`; rodada de fidelidade
 > (TOC N.M.K, fronteira §6-B, pageRange §2 com fim declarado pelo AVA, testes de
-> adaptador DOM) em `c47543b`. Seções abaixo: **HISTÓRICO** (inclui pendências
+> adaptador DOM) em `ca0b9f2`. Seções abaixo: **HISTÓRICO** (inclui pendências
 > já fechadas — ver registros de fechamento no fim); em conflito, prevalece este
 > bloco. Validação real no Electron e OCR Tesseract.js: PENDENTES.
 
@@ -172,4 +172,19 @@ FULL AUDIT da IA auditora (achados P1/P2) endereçados:
 - §7: `readAxText` captura identidade (location.href) e texto no MESMO
   snapshot e revalida contra a URL do driver (corrida eliminada).
 Bateria: 29 suítes, 381 casos, 0 falhas. OCR tesseract.js segue PENDENTE.
+
+## Terceira rodada — adaptadores (2026-11-21, HEAD ca0b9f2)
+
+Achados P1/P2 da auditoria do GPT sobre `25361d5` corrigidos:
+- Baseline de janelas Pearson capturado ANTES da seleção (não no fallback), com
+  popup da tentativa anterior fechado antes do único fallback; operações do
+  leitor passam a usar `activeWin` (janela real do popup). Caso A5.
+- Primeira página Beta exige evidência independente: assinatura de conteúdo
+  capturada ANTES da navegação; conteúdo antigo não vazio → partial. Casos P15/P25/P26.
+- VitalSource: ISBN/frame vinculados à navegação; `gotoPage` exige mudança real
+  de pageRef antes de calibrar o offset; leitura atômica e frame único. Corrigido
+  também o uso de URL obsoleta do frame na revalidação. Casos V14–V17.
+Bateria final: 30 suítes, 398 casos, 0 falhas. **Validação real no Electron
+autenticado: BLOQUEADA** — depende de sessão humana (login manual no AVA); OCR
+Tesseract.js e rotação da credencial histórica seguem PENDENTES.
 
