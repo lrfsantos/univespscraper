@@ -1342,6 +1342,17 @@ async function extractPageidViaSync(driver, expected, opts = {}) {
 
 // Extrai o capítulo esperado no leitor real com sincronização página×frame.
 async function extractPageid(app, win, launchUrl, expected, opts = {}) {
+  // Leitor PDF da Minha Biblioteca (VitalSource): camada textual `#pdf-ax-text`
+  // (descoberta real 2026-11-18). Presente → extração dedicada; ausente →
+  // pipeline pageid HTML existente (preservado).
+  const vsProbe = await createVitalsourceDriver(app).waitContent(
+    opts.vsProbeTimeoutMs != null ? opts.vsProbeTimeoutMs : 10000
+  );
+  if (vsProbe) {
+    const r = await extractVitalsource(app, win, launchUrl, expected, opts);
+    if ((r.text || '').trim()) return r;
+    // sem texto útil → continua no pipeline pageid HTML abaixo
+  }
   // Reutiliza o leitor JÁ ABERTO (sem goto) — o lançamento é de extractBook.
   const loaded = await poll(
     app,
@@ -1360,6 +1371,234 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
   }
   const driver = createPageidDriver(app);
   const r = await extractPageidViaSync(driver, expected, opts);
+  return { ...r, url: launchUrl };
+}
+
+// ---- VitalSource / Minha Biblioteca — camada textual #pdf-ax-text (§7) ----
+//
+// Descobertas REAIS (Edge, 2026-11-18 — DESCOBERTAS §10):
+//   - conteúdo em cadeia de iframes same-origin: topo → mosaic/wrapper.html →
+//     <mosaic-book> (shadowRoot) → iframes `/books/{isbn}/pages/{pageRef}/content`
+//     (CONTEÚDO) e `/books/{isbn}/pageid/{N}` (shell). O Playwright achata os
+//     frames (inclusive os hospedados em shadow DOM) — a busca cobre todos;
+//   - texto completo em `#pdf-ax-text` (div.comment{pageRef} > p.comment{pageRef});
+//   - pageRef incrementa +1 por página impressa (constante por livro);
+//   - TOC: button[aria-label^="Acesse "] com "Acesse {TÍTULO}, página {P}";
+//   - navegação funcional: caixa "Ir para Página" (input.InputControl__input) +
+//     Enter com a PÁGINA IMPRESSA absoluta; o botão "Seguinte" NÃO avançou na
+//     sessão testada — não é usado como mecanismo principal aqui;
+//   - a UA de automação pode ser recusada ("Browser Not Supported") — limitação
+//     registrada, sem contornar SSO/autenticação/UA.
+
+// Driver REAL do leitor VitalSource sobre o app Electron (frames achatados).
+function createVitalsourceDriver(app) {
+  const readAxText = async () => {
+    for (const { frame, url } of await collectFrames(app)) {
+      if (!/\/books\/[^/]+\/pages\/\d+\/content/i.test(url)) continue;
+      const text = await frame.evaluate(() => {
+        const el = document.querySelector('#pdf-ax-text');
+        return el ? (el.innerText || '') : '';
+      }).catch(() => '');
+      const m = url.match(/\/books\/[^/]+\/pages\/(\d+)\/content/i);
+      if (m) return { pageRef: parseInt(m[1], 10), text: text || '' };
+    }
+    return null;
+  };
+  const expandToc = async () => {
+    let expanded = false;
+    for (const { frame } of await collectFrames(app)) {
+      try {
+        const btns = frame.locator('button[aria-label^="Itens em"]');
+        const n = await btns.count().catch(() => 0);
+        for (let i = 0; i < Math.min(n, 30); i++) {
+          await btns.nth(i).click({ timeout: 2000 }).catch(() => {});
+          expanded = true;
+        }
+      } catch { /* frame indisponível */ }
+    }
+    return expanded;
+  };
+  return {
+    waitContent: (timeoutMs) => poll(app, async () => {
+      const st = await readAxText();
+      return st && st.text.trim().length > 80 ? st : null;
+    }, { timeoutMs, interval: 2000 }),
+    expandToc,
+    readToc: async () => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        for (const { frame } of await collectFrames(app)) {
+          const items = await frame.evaluate(() => Array.from(document.querySelectorAll('button[aria-label^="Acesse "]')).map((b) => {
+            const aria = b.getAttribute('aria-label') || '';
+            const m = aria.match(/^Acesse\s+(.+),\s*p[áa]gina\s+(\d+)/i);
+            return m ? { label: m[1].trim(), printedPage: parseInt(m[2], 10) } : null;
+          }).filter(Boolean)).catch(() => null);
+          if (items && items.length) return items;
+        }
+        if (attempt === 0) {
+          // Abre o painel de sumário e expande colapsáveis antes de reler.
+          for (const { frame } of await collectFrames(app)) {
+            await frame.locator('button[aria-label="Sumário" i]').first().click({ timeout: 2000 }).catch(() => {});
+          }
+          await expandToc();
+        }
+      }
+      return null;
+    },
+    gotoPage: async (printed) => {
+      for (const { frame } of await collectFrames(app)) {
+        try {
+          const loc = frame.locator('input.InputControl__input').first();
+          if (!(await loc.count().catch(() => 0))) continue;
+          await loc.fill(String(printed), { timeout: 3000 }).catch(() => {});
+          await loc.press('Enter', { timeout: 3000 }).catch(() => {});
+          // Confirmação verificável: o conteúdo (pageRef) tem que trocar —
+          // preencher o campo não é prova de navegação.
+          const deadline = Date.now() + 10000;
+          while (Date.now() < deadline) {
+            const st = await readAxText();
+            if (st && st.pageRef != null && (st.text || '').trim().length > 0) return { ok: true, pageRef: st.pageRef };
+            await waitTimeout(500);
+          }
+          return { ok: false, reason: 'conteudo-nao-carregou' };
+        } catch { /* próximo frame */ }
+      }
+      return { ok: false, reason: 'input-ir-para-pagina-nao-encontrado' };
+    },
+    readState: readAxText,
+  };
+}
+
+// Orquestrador PURO (testável) da extração VitalSource: TOC → capítulo →
+// fronteira → páginas impressas absolutas via "Ir para Página" → #pdf-ax-text,
+// com pageRef conferindo ordem/unicidade e os MESMOS critérios fail-closed de
+// `integral` do Pearson (evaluatePageSequence, auditoria §2).
+// driver: {
+//   waitContent(timeoutMs) -> { pageRef, text } | null
+//   expandToc()            -> boolean
+//   readToc()              -> [{ label, printedPage }] | null
+//   gotoPage(printed)      -> { ok, pageRef?, reason? }
+//   readState()            -> { pageRef, text } | null
+// }
+async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
+  const maxPages = opts.maxPages || 120;
+  const maxChars = opts.maxChars || 500000;
+  const attempts = [];
+  const steps = [];
+
+  const first = await driver.waitContent(opts.waitTimeoutMs != null ? opts.waitTimeoutMs : 35000);
+  if (!first || !(first.text || '').trim()) {
+    attempts.push('camada-ax-text-indisponivel');
+    return {
+      format: 'pageid', source: 'vitalsource-axtext', status: 'inaccessible', text: '', chars: 0,
+      readerLoaded: false, readerUrl: null, attempts, steps, error: 'camada-ax-text-indisponivel',
+      validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['camada-ax-text-indisponivel'] },
+    };
+  }
+
+  // TOC (+ expansão dos colapsáveis "Itens em" quando necessário).
+  let tocRaw = await driver.readToc();
+  if (!tocRaw || !tocRaw.length) {
+    await driver.expandToc().catch(() => {});
+    tocRaw = await driver.readToc();
+  }
+  if (!tocRaw || !tocRaw.length) {
+    attempts.push('sumario-indisponivel');
+    return { format: 'pageid', source: 'vitalsource-axtext', status: 'inaccessible', text: '', chars: 0, readerLoaded: true, readerUrl: null, attempts, steps, error: 'sumario-indisponivel', validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['sumario-indisponivel'] } };
+  }
+  const toc = pearson.parseToc(tocRaw.map((t) => ({ label: t.label, dataPagina: t.printedPage })));
+  const loc = pearson.locateInToc(toc, expected);
+  attempts.push('localizar=' + loc.reason + (loc.ambiguous ? ' (ambiguo:' + loc.matches + ')' : ''));
+  if (!loc.found || !loc.entry) {
+    // Sem localização segura: NÃO extrai o livro inteiro (conservador).
+    return { format: 'pageid', source: 'vitalsource-axtext', status: 'not_found', text: '', chars: 0, readerLoaded: true, readerUrl: null, attempts, steps, chapterLocated: false, tocEntries: toc.length, error: 'capitulo-nao-localizado', validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['capitulo-nao-localizado'] } };
+  }
+
+  const boundary = pearson.chapterEndBoundary(toc, loc.entry);
+  const startPage = loc.entry.dataPagina;
+  const endPage = boundary.endPage; // página impressa do próximo item (exclusiva)
+  attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida') + ' fronteira=' + (endPage != null ? endPage : (boundary.ambiguous ? 'ambigua' : 'indefinida')));
+  if (startPage == null) {
+    return { format: 'pageid', source: 'vitalsource-axtext', status: 'not_found', text: '', chars: 0, readerLoaded: true, readerUrl: null, attempts, steps, chapterLocated: true, tocEntries: toc.length, error: 'pagina-inicial-indeterminada', validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['pagina-inicial-indeterminada'] } };
+  }
+
+  // Offset: pageRef = página impressa + offset (constante por livro, §10).
+  const goto0 = await driver.gotoPage(startPage);
+  if (!goto0 || !goto0.ok) {
+    attempts.push('navegacao-inicial-falhou motivo=' + ((goto0 && goto0.reason) || 'erro'));
+    return { format: 'pageid', source: 'vitalsource-axtext', status: 'inaccessible', text: '', chars: 0, readerLoaded: true, readerUrl: null, attempts, steps, chapterLocated: true, tocEntries: toc.length, error: 'navegacao-inicial-falhou', validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['navegacao-inicial-falhou'] } };
+  }
+  const offset = goto0.pageRef != null ? goto0.pageRef - startPage : null;
+  attempts.push('offset-pageref=' + (offset != null ? offset : 'indeterminado'));
+
+  const lastPage = endPage != null ? Math.min(endPage - 1, startPage + maxPages - 1) : (startPage + maxPages - 1);
+  const pages = [];
+  let stoppedBy = endPage == null ? 'sem-fronteira' : null;
+  let prevRef = goto0.pageRef;
+  let prevSig = null;
+  for (let p = startPage; p <= lastPage; p++) {
+    if (p > startPage) {
+      const g = await driver.gotoPage(p);
+      if (!g || !g.ok) { attempts.push('navegacao-falhou-pagina=' + p + ' motivo=' + ((g && g.reason) || 'erro')); stoppedBy = stoppedBy || 'falha-de-navegacao'; break; }
+      // pageRef precisa AVANÇAR entre páginas (ordem/unicidade, §7).
+      if (g.pageRef != null && prevRef != null && g.pageRef <= prevRef) {
+        attempts.push('pageref-nao-avancou-pagina=' + p); stoppedBy = stoppedBy || 'pageref-nao-avancou'; break;
+      }
+      prevRef = g.pageRef;
+    }
+    const st = await driver.readState();
+    const t = ((st && st.text) || '').trim();
+    // pageRef confere a identidade da página: esperado p + offset exato.
+    if (st && st.pageRef != null && offset != null && st.pageRef !== p + offset) {
+      attempts.push('pageref-diverge-pagina=' + p + ' esperado=' + (p + offset));
+      stoppedBy = stoppedBy || 'pageref-diverge'; break;
+    }
+    const sig = t || '<vazio>';
+    if (prevSig !== null && sig === prevSig) {
+      attempts.push('conteudo-repetido-pagina=' + p); stoppedBy = stoppedBy || 'conteudo-repetido'; break;
+    }
+    prevSig = sig;
+    pages.push({ page: p, pageRef: st ? st.pageRef : null, text: t });
+    if (!t) { attempts.push('pagina-vazia=' + p); stoppedBy = stoppedBy || 'pagina-vazia'; break; }
+    if (pages.reduce((a, x) => a + (x.text || '').length, 0) > maxChars) { stoppedBy = stoppedBy || 'limite-de-caracteres'; break; }
+  }
+  if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
+  else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
+
+  const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
+  attempts.push('paginas=' + pages.length + ' parada=' + stoppedBy + ' status=' + evalRes.status);
+  const text = pages.map((p) => `\n[PÁGINA impressa ${p.page} | pageRef ${p.pageRef != null ? p.pageRef : '?'}]\n${p.text}`).filter((s) => !/\]\n$/.test(s)).join('\n\n');
+  return {
+    format: 'pageid',
+    source: 'vitalsource-axtext',
+    url: null,
+    status: evalRes.status,
+    text: evalRes.text ? text : '',
+    chars: evalRes.text ? text.trim().length : 0,
+    readerLoaded: true,
+    readerUrl: null,
+    attempts,
+    steps,
+    validation: evalRes.validation,
+    chapterLocated: true,
+    tocEntries: toc.length,
+    pageStart: startPage,
+    pageEnd: endPage,
+    pagesExtracted: pages.length,
+    pagesWithoutText: evalRes.pagesWithoutText,
+    pagesMissing: evalRes.missingPages,
+    duplicatePages: evalRes.duplicatePages,
+    repetitions: evalRes.repetitions,
+    stoppedBy,
+    boundaryKnown: evalRes.boundaryKnown,
+    pageRefOffset: offset,
+    error: null,
+  };
+}
+
+// Extração real no leitor aberto (mesma assinatura das demais).
+async function extractVitalsource(app, win, launchUrl, expected, opts = {}) {
+  const driver = createVitalsourceDriver(app);
+  const r = await extractVitalsourceViaDriver(driver, expected, opts);
   return { ...r, url: launchUrl };
 }
 
@@ -1583,6 +1822,75 @@ async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
     semDadosSensiveis: !SENSITIVE_REPORT_RE.test(JSON.stringify({ origemAva: sanitizeUrlForReport(launchUrl), dominios: hosts })),
   };
   return report;
+}
+
+// Núcleo PURO de avaliação da sequência de páginas capturadas (auditoria §2) —
+// compartilhado entre Pearson (Beta/Clássico) e VitalSource (§7). `integral`
+// SOMENTE com: fronteira do próximo item ALCANÇADA (stoppedBy='fim-do-capitulo',
+// nunca apenas conhecida), sequência completa (sem páginas ausentes/duplicadas),
+// texto plausível, sem página vazia e sem repetições. Limites de páginas/
+// caracteres e falhas de navegação → partial. Texto útil incompleto é preservado.
+function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }) {
+  const pagesWithoutText = pages.filter((p) => !p.text).length;
+  const text = pages.map((p) => p.text).filter(Boolean).join('\n\n');
+  const layer = pearson.detectContentLayer({ mainText: text, framesText: '', hasImages: false });
+  const validated = pearson.validateExtractedText({ text, expected });
+  const dups = detectRepetitions(text);
+  const boundaryKnown = endPage != null;
+  const boundaryReached = stoppedBy === 'fim-do-capitulo';
+  const pageSeq = pages.map((p) => p.page);
+  const duplicatePages = pageSeq.length !== new Set(pageSeq).size;
+  let missingPages = 0;
+  if (startPage != null && endPage != null) {
+    const seen = new Set(pageSeq);
+    for (let p = startPage; p < endPage; p++) if (!seen.has(p)) missingPages++;
+  }
+  const sequenceOk = !duplicatePages && missingPages === 0;
+  const usefulText = validated.ok === true && layer.hasText;
+  // Integral SOMENTE com evidência positiva completa; qualquer reprovado
+  // estrutural → partial (nunca coexistem integral × validação reprovada).
+  const ok = usefulText && pagesWithoutText === 0 && dups.length === 0 && boundaryReached && sequenceOk;
+  const validation = {
+    // Validação efetivamente aplicável ao leitor paginado (não reaproveita
+    // critérios de EPUB/pageid) — o status final é derivado dela.
+    hasText: usefulText,
+    noNonsense: validated.ok === true,
+    startOk: usefulText,
+    midOk: usefulText && (pages.length > 1 || boundaryReached),
+    endOk: boundaryReached,
+    pageRangeOk: null,
+    pageRangeNote: boundaryKnown && startPage != null ? `${startPage}..${Math.max(endPage - 1, startPage)}` : null,
+    sequenceOk,
+    missingPages,
+    duplicatePages,
+    boundaryKnown,
+    boundaryReached,
+    stoppedBy,
+    repetitions: dups,
+    ambiguousPages: 0,
+    warnings: [
+      ...(pagesWithoutText > 0 ? [`paginas-sem-texto (${pagesWithoutText})`] : []),
+      ...(duplicatePages ? ['paginas-duplicadas'] : []),
+      ...(missingPages > 0 ? [`paginas-ausentes (${missingPages})`] : []),
+      ...(validated.ok ? [] : ['validacao-conteudo-reprovada: ' + validated.reason]),
+      ...dups.map((r) => `repeticao-suspeita (${r.count}x, ${r.length} chars)`),
+      ...(boundaryKnown && !boundaryReached ? ['fronteira-conhecida-mas-nao-alcancada'] : []),
+    ],
+  };
+  return {
+    ok,
+    status: ok ? 'integral' : 'partial',
+    validation,
+    text: usefulText ? text : '',
+    chars: usefulText ? text.length : 0,
+    pagesWithoutText,
+    missingPages,
+    duplicatePages,
+    repetitions: dups.length,
+    boundaryKnown,
+    boundaryReached,
+    layer,
+  };
 }
 
 // ---- Pearson (Beta/Clássico) — automação BEST-EFFORT por sumário ----
@@ -1885,71 +2193,27 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     //   - limite de páginas/caracteres, falha de navegação, página não
     //     confirmada ou conteúdo repetido → NUNCA integral (partial);
     //   - texto útil porém incompleto é preservado como `partial`.
-    const layer = pearson.detectContentLayer({ mainText: text, framesText: '', hasImages: false });
-    const validated = pearson.validateExtractedText({ text, expected });
-    const dups = detectRepetitions(text);
-    const boundaryKnown = endPage != null;
-    const boundaryReached = stoppedBy === 'fim-do-capitulo';
-    const pageSeq = pages.map((p) => p.page);
-    const duplicatePages = pageSeq.length !== new Set(pageSeq).size;
-    let missingPages = 0;
-    if (startPage != null && endPage != null) {
-      const seen = new Set(pageSeq);
-      for (let p = startPage; p < endPage; p++) if (!seen.has(p)) missingPages++;
-    }
-    const sequenceOk = !duplicatePages && missingPages === 0;
-    const usefulText = validated.ok === true && layer.hasText;
-    // Integral SOMENTE com evidência positiva completa; qualquer reprovado
-    // estrutural → partial (nunca coexistem integral × validação reprovada).
-    const ok = usefulText && pagesWithoutText === 0 && dups.length === 0 && boundaryReached && sequenceOk;
-    attempts.push('camada=' + layer.layer + ' validacao=' + (validated.ok ? 'ok' : validated.reason) + ' repeticoes=' + dups.length + ' sequencia=' + (sequenceOk ? 'ok' : 'ausentes=' + missingPages + ',duplicadas=' + duplicatePages) + ' fronteira=' + (boundaryReached ? 'alcancada' : 'nao-alcancada'));
-    const validation = {
-      // Validação efetivamente aplicável ao leitor Pearson (não reaproveita
-      // critérios de EPUB/pageid) — o status final é derivado dela.
-      hasText: usefulText,
-      noNonsense: validated.ok === true,
-      startOk: usefulText,
-      midOk: usefulText && (pages.length > 1 || boundaryReached),
-      endOk: boundaryReached,
-      pageRangeOk: null,
-      pageRangeNote: boundaryKnown && startPage != null ? `${startPage}..${Math.max(endPage - 1, startPage)}` : null,
-      sequenceOk,
-      missingPages,
-      duplicatePages,
-      boundaryKnown,
-      boundaryReached,
-      stoppedBy,
-      repetitions: dups,
-      ambiguousPages: 0,
-      warnings: [
-        ...(pagesWithoutText > 0 ? [`paginas-sem-texto (${pagesWithoutText})`] : []),
-        ...(duplicatePages ? ['paginas-duplicadas'] : []),
-        ...(missingPages > 0 ? [`paginas-ausentes (${missingPages})`] : []),
-        ...(validated.ok ? [] : ['validacao-conteudo-reprovada: ' + validated.reason]),
-        ...dups.map((r) => `repeticao-suspeita (${r.count}x, ${r.length} chars)`),
-        ...(boundaryKnown && !boundaryReached ? ['fronteira-conhecida-mas-nao-alcancada'] : []),
-      ],
-    };
-    const status = ok ? 'integral' : 'partial';
+    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
+    attempts.push('camada=' + evalRes.layer.layer + ' status=' + evalRes.status + ' parada=' + stoppedBy + ' sequencia=' + (evalRes.sequenceOk ? 'ok' : 'ausentes=' + evalRes.missingPages + ',duplicadas=' + evalRes.duplicatePages) + ' fronteira=' + (evalRes.boundaryReached ? 'alcancada' : 'nao-alcancada'));
     return {
-      ok,
+      ok: evalRes.ok,
       format: fmt.format,
       reader,
       readerUrl: page.href,
-      text: usefulText ? text : '',
-      chars: usefulText ? text.length : 0,
-      status,
-      validation,
-      layer,
+      text: evalRes.text,
+      chars: evalRes.chars,
+      status: evalRes.status,
+      validation: evalRes.validation,
+      layer: evalRes.layer,
       chapterLocated: true,
       tocEntries: toc.length,
       pageStart: startPage,
       pageEnd: endPage,
       pagesExtracted: pages.length,
-      pagesWithoutText,
-      pagesMissing: missingPages,
-      duplicatePages,
-      repetitions: dups.length,
+      pagesWithoutText: evalRes.pagesWithoutText,
+      pagesMissing: evalRes.missingPages,
+      duplicatePages: evalRes.duplicatePages,
+      repetitions: evalRes.repetitions,
       stoppedBy,
       boundaryKnown,
       attempts,
@@ -2084,5 +2348,9 @@ module.exports = {
   sanitizeUrlForReport,
   diagnoseReader,
   tryPearsonAutomation,
+  evaluatePageSequence,
+  createVitalsourceDriver,
+  extractVitalsourceViaDriver,
+  extractVitalsource,
   pearson,
 };
