@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-21T16:52:37.338Z",
+  "date": "2026-11-21T17:13:50.438Z",
   "summary": {
-    "total": 24,
-    "passed": 24,
+    "total": 26,
+    "passed": 26,
     "failed": 0
   },
   "results": [
@@ -94,7 +94,7 @@
       "id": "P15",
       "title": "Input programatico sozinho nao confirma navegacao",
       "status": "PASS",
-      "detail": "stoppedBy=pagina-nao-confirmada pages=1"
+      "detail": "failure=pearson-falhou-select attempts=pagina-nao-confirmada-solicitada=3 | paginas-extraidas=0 sem-texto=0 parada=pagina-nao-confirmada | camada=unknown status=partial parada=pagina-nao-confirmada sequencia=ausentes=37,duplicadas=false fronteira=nao-alcancada"
     },
     {
       "id": "P16",
@@ -149,6 +149,18 @@
       "title": "Titulos livres no capitulo -> fronteira ambigua (partial)",
       "status": "PASS",
       "detail": "status=partial pages=2"
+    },
+    {
+      "id": "P25",
+      "title": "Primeira pagina: conteudo antigo nao confirmado -> partial",
+      "status": "PASS",
+      "detail": "failure=pearson-falhou-select pages=undefined"
+    },
+    {
+      "id": "P26",
+      "title": "Primeira pagina com conteudo realmente atualizado -> aceita",
+      "status": "PASS",
+      "detail": "status=integral pages=5"
     }
   ]
 }

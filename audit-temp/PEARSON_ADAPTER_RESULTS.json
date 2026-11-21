@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-21T16:52:37.505Z",
+  "date": "2026-11-21T17:13:50.522Z",
   "summary": {
-    "total": 4,
-    "passed": 4,
+    "total": 5,
+    "passed": 5,
     "failed": 0
   },
   "results": [
@@ -29,6 +29,12 @@
       "title": "Adaptador real Clássico: XHR pagination + #divBookMark integral",
       "status": "PASS",
       "detail": "status=integral failure=undefined pages=4 reader=classic"
+    },
+    {
+      "id": "A5",
+      "title": "Baseline real: fecha so o popup do Beta no fallback, preserva preexistentes",
+      "status": "PASS",
+      "detail": "popupClosed=true popupCalls=13 outras=2 failure=pearson-falhou-select"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-21T16:52:37.687Z",
+  "date": "2026-11-21T17:14:04.819Z",
   "summary": {
-    "total": 13,
-    "passed": 13,
+    "total": 17,
+    "passed": 17,
     "failed": 0
   },
   "results": [
@@ -83,6 +83,30 @@
       "title": "Fronteira Referencias (outro) -> partial (§6-B)",
       "status": "PASS",
       "detail": "status=partial ambigua=true pages=15"
+    },
+    {
+      "id": "V14",
+      "title": "Adaptador real: navegacao inicial sem mudanca nao calibrada",
+      "status": "PASS",
+      "detail": "status=inaccessible error=navegacao-inicial-falhou attempts=[\"localizar=unidade-numerica\",\"pagina-inicial=10 fronteira=20\",\"navegacao-inicial-falhou motivo=navegacao-nao-confirmada\"]"
+    },
+    {
+      "id": "V15",
+      "title": "Adaptador real: navegacao confirmada vincula frame e offset",
+      "status": "PASS",
+      "detail": "status=integral error=null offset=1 pages=10 attempts=[\"localizar=unidade-numerica\",\"pagina-inicial=10 fronteira=20\",\"offset-pageref=1\",\"paginas=10 parada=fim-do-capitulo status=integral\"]"
+    },
+    {
+      "id": "V16",
+      "title": "Dois livros abertos -> associacao ambigua (nao integral)",
+      "status": "PASS",
+      "detail": "status=inaccessible error=camada-ax-text-indisponivel"
+    },
+    {
+      "id": "V17",
+      "title": "Frames divergentes do mesmo livro -> ambiguo (nao integral)",
+      "status": "PASS",
+      "detail": "status=inaccessible error=camada-ax-text-indisponivel"
     }
   ]
 }

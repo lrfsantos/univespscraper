@@ -41,6 +41,30 @@ function vsDriver({ toc, pages, offset, defects = {} }) {
   };
 }
 
+// ---- Adaptador REAL VitalSource: frames simulados com URL/ISBN por frame ----
+
+function vsRealFrame({ isbn, startRef, navChanges = true }) {
+  let curRef = startRef;
+  const textOf = (ref) => TXT(ref - 1); // offset 1 ⇒ página impressa = ref - 1
+  const frame = {
+    url: () => `https://jigsaw.minhabiblioteca.com.br/books/${isbn}/pages/${curRef}/content`,
+    evaluate: async (fn) => {
+      global.location = { href: frame.url() };
+      global.document = { querySelector: (s) => (s === '#pdf-ax-text' ? { innerText: textOf(curRef) } : null) };
+      return fn();
+    },
+    locator: () => ({ first: () => ({
+      count: async () => 1,
+      fill: async (v) => { frame._target = parseInt(v, 10); },
+      press: async (k) => { if (k === 'Enter' && navChanges) curRef = frame._target + 1; },
+    }) }),
+  };
+  return frame;
+}
+
+const vsApp = (frames) => ({ windows: () => [{ frames: () => frames }] });
+const vsToc = [['Unidade 1: Fundamentos', 10], ['Unidade 2: Prática', 20]];
+
 (async () => {
   // V1 — integral: fronteira alcançada, pageRef avança e confere página+offset.
   {
@@ -192,6 +216,52 @@ function vsDriver({ toc, pages, offset, defects = {} }) {
       && r.validation.boundaryAmbiguous === true && r.pagesExtracted === 15
       && (r.text || '').includes('impressa 10:');
     record({ id: 'V13', title: 'Fronteira Referencias (outro) -> partial (§6-B)', status: ok(good), detail: `status=${r.status} ambigua=${r.validation.boundaryAmbiguous} pages=${r.pagesExtracted}` });
+  }
+
+  // V14 — adaptador real: primeira navegação SEM mudança de pageRef é recusada
+  // (offset nunca é calibrado com página não confirmada).
+  {
+    const d = books.createVitalsourceDriver(vsApp([vsRealFrame({ isbn: 'book1', startRef: 5, navChanges: false })]));
+    d.readToc = async () => vsToc.map(([label, printedPage]) => ({ label, printedPage }));
+    const r = await books.extractVitalsourceViaDriver(d, { chapter: 1 }, { waitTimeoutMs: 1000, maxPages: 20 });
+    const good = r.status !== 'integral' && r.error === 'navegacao-inicial-falhou'
+      && r.attempts.some((a) => a.includes('navegacao-nao-confirmada'));
+    record({ id: 'V14', title: 'Adaptador real: navegacao inicial sem mudanca nao calibrada', status: ok(good), detail: `status=${r.status} error=${r.error} attempts=${JSON.stringify(r.attempts)}` });
+  }
+
+  // V15 — adaptador real: navegação confirmada (pageRef muda) vincula frame e
+  // calibra offset → integral com páginas sequenciais.
+  {
+    const d = books.createVitalsourceDriver(vsApp([vsRealFrame({ isbn: 'book1', startRef: 5 })]));
+    d.readToc = async () => vsToc.map(([label, printedPage]) => ({ label, printedPage }));
+    const r = await books.extractVitalsourceViaDriver(d, { chapter: 1 }, { waitTimeoutMs: 1000, maxPages: 20 });
+    const good = r.status === 'integral' && r.pageRefOffset === 1 && r.pagesExtracted === 10
+      && r.pageStart === 10 && r.pageEnd === 20;
+    record({ id: 'V15', title: 'Adaptador real: navegacao confirmada vincula frame e offset', status: ok(good), detail: `status=${r.status} error=${r.error} offset=${r.pageRefOffset} pages=${r.pagesExtracted} attempts=${JSON.stringify(r.attempts)}` });
+  }
+
+  // V16 — dois livros abertos → associação ambígua, nunca integral.
+  {
+    const d = books.createVitalsourceDriver(vsApp([
+      vsRealFrame({ isbn: 'book1', startRef: 5 }),
+      vsRealFrame({ isbn: 'book2', startRef: 8 }),
+    ]));
+    d.readToc = async () => vsToc.map(([label, printedPage]) => ({ label, printedPage }));
+    const r = await books.extractVitalsourceViaDriver(d, { chapter: 1 }, { waitTimeoutMs: 1000, maxPages: 20 });
+    const good = r.status !== 'integral' && r.error === 'camada-ax-text-indisponivel';
+    record({ id: 'V16', title: 'Dois livros abertos -> associacao ambigua (nao integral)', status: ok(good), detail: `status=${r.status} error=${r.error}` });
+  }
+
+  // V17 — dois frames do MESMO livro com pageRef divergente → leitura ambígua.
+  {
+    const d = books.createVitalsourceDriver(vsApp([
+      vsRealFrame({ isbn: 'book1', startRef: 5 }),
+      vsRealFrame({ isbn: 'book1', startRef: 7 }),
+    ]));
+    d.readToc = async () => vsToc.map(([label, printedPage]) => ({ label, printedPage }));
+    const r = await books.extractVitalsourceViaDriver(d, { chapter: 1 }, { waitTimeoutMs: 1000, maxPages: 20 });
+    const good = r.status !== 'integral' && r.error === 'camada-ax-text-indisponivel';
+    record({ id: 'V17', title: 'Frames divergentes do mesmo livro -> ambiguo (nao integral)', status: ok(good), detail: `status=${r.status} error=${r.error}` });
   }
 
   const fails = results.filter((r) => r.status !== 'PASS').length;

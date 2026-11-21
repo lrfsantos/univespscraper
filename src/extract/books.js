@@ -1392,23 +1392,54 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
 
 // Driver REAL do leitor VitalSource sobre o app Electron (frames achatados).
 function createVitalsourceDriver(app) {
+  // Rodada final: o LIVRO ativo e o FRAME que recebeu o comando ficam vinculados.
+  // Nunca escolher silenciosamente o primeiro frame entre todas as janelas.
+  let boundBook = null;
+  let boundFrame = null;
+
+  // Frame de conteúdo do livro ativo: exatamente um ISBN, senão ambiguidade.
+  const contentFrames = async () => {
+    const all = (await collectFrames(app)).filter(({ url }) => /\/books\/[^/]+\/pages\/\d+\/content/i.test(url));
+    if (!all.length) return [];
+    const isbns = new Set(all.map(({ url }) => (url.match(/\/books\/([^/]+)\/pages\//i) || [])[1]).filter(Boolean));
+    if (isbns.size !== 1) return null; // dois livros/sem ISBN → falha fechada
+    const isbn = [...isbns][0];
+    if (boundBook && boundBook !== isbn) return null;
+    boundBook = isbn;
+    return all;
+  };
+
+  // Leitura ATÔMICA: URL (com ISBN/pageRef) e #pdf-ax-text no MESMO evaluate,
+  // revalidada contra a URL observada pelo driver e contra o livro vinculado.
+  // Revalidação contra a URL OBSERVADA AGORA (frame.url() pode mudar a cada
+  // navegação — usar a URL da lista inicial gera rejeição falsa).
+  const readFrameAx = async (frame) => {
+    const snap = await frame.evaluate(() => {
+      const el = document.querySelector('#pdf-ax-text');
+      return { url: location.href || '', text: el ? (el.innerText || '') : '' };
+    }).catch(() => null);
+    if (!snap || !snap.url) return null;
+    let observed = '';
+    try { observed = frame.url ? String(frame.url()) : ''; } catch { observed = ''; }
+    if (observed && normFrameUrl(observed) !== normFrameUrl(snap.url)) return null;
+    const m = snap.url.match(/\/books\/([^/]+)\/pages\/(\d+)\/content/i);
+    if (!m || (boundBook && m[1] !== boundBook)) return null;
+    return { pageRef: parseInt(m[2], 10), text: snap.text || '' };
+  };
+
   const readAxText = async () => {
-    for (const { frame, url: frameUrl } of await collectFrames(app)) {
-      if (!/\/books\/[^/]+\/pages\/\d+\/content/i.test(frameUrl)) continue;
-      // §7: identidade (location.href) e texto capturados no MESMO snapshot —
-      // ler a URL fora do evaluate cria corrida (URL de A, texto de B).
-      const snap = await frame.evaluate(() => {
-        const el = document.querySelector('#pdf-ax-text');
-        return { url: location.href || '', text: el ? (el.innerText || '') : '' };
-      }).catch(() => null);
-      if (!snap) continue;
-      // Revalidação: divergência entre URL capturada e URL observada pelo driver
-      // ⇒ o frame navegou durante a leitura ⇒ captura descartada por inteiro.
-      if (frameUrl && snap.url && normFrameUrl(frameUrl) !== normFrameUrl(snap.url)) continue;
-      const m = snap.url.match(/\/books\/[^/]+\/pages\/(\d+)\/content/i);
-      if (m) return { pageRef: parseInt(m[1], 10), text: snap.text || '' };
+    const frames = await contentFrames();
+    if (!frames) return null;
+    const candidates = boundFrame ? frames.filter(({ frame }) => frame === boundFrame) : frames;
+    if (!candidates.length) return null;
+    const states = [];
+    for (const { frame } of candidates) {
+      const st = await readFrameAx(frame);
+      if (st) states.push(st);
     }
-    return null;
+    // Candidatos sem associação inequívoca (pageRefs divergentes) → conservador.
+    if (states.length !== 1) return null;
+    return states[0];
   };
   const expandToc = async () => {
     let expanded = false;
@@ -1451,21 +1482,31 @@ function createVitalsourceDriver(app) {
       return null;
     },
     gotoPage: async (printed) => {
-      for (const { frame } of await collectFrames(app)) {
+      const frames = await contentFrames();
+      if (!frames) return { ok: false, reason: 'identidade-de-livro-ambigua' };
+      // Navegação e leitura ficam no MESMO frame identificado antes do comando.
+      const candidates = boundFrame ? frames.filter(({ frame }) => frame === boundFrame) : frames;
+      if (!candidates.length) return { ok: false, reason: 'frame-de-leitor-perdido' };
+      const before = boundFrame ? await readFrameAx(boundFrame) : await readAxText();
+      for (const { frame } of candidates) {
         try {
           const loc = frame.locator('input.InputControl__input').first();
           if (!(await loc.count().catch(() => 0))) continue;
           await loc.fill(String(printed), { timeout: 3000 }).catch(() => {});
           await loc.press('Enter', { timeout: 3000 }).catch(() => {});
-          // Confirmação verificável: o conteúdo (pageRef) tem que trocar —
-          // preencher o campo não é prova de navegação.
+          // Evidência de navegação REAL: pageRef/conteúdo tem que MUDAR em
+          // relação ao estado capturado ANTES do comando, no MESMO frame.
           const deadline = Date.now() + 10000;
           while (Date.now() < deadline) {
-            const st = await readAxText();
-            if (st && st.pageRef != null && (st.text || '').trim().length > 0) return { ok: true, pageRef: st.pageRef };
+            const st = await readFrameAx(frame);
+            if (st && st.pageRef != null && (st.text || '').trim().length > 0 &&
+                (!before || st.pageRef !== before.pageRef || st.text !== before.text)) {
+              boundFrame = frame;
+              return { ok: true, pageRef: st.pageRef };
+            }
             await waitTimeout(500);
           }
-          return { ok: false, reason: 'conteudo-nao-carregou' };
+          return { ok: false, reason: 'navegacao-nao-confirmada' };
         } catch { /* próximo frame */ }
       }
       return { ok: false, reason: 'input-ir-para-pagina-nao-encontrado' };
@@ -2005,6 +2046,10 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
   const extractPearsonRange = async (reader, toc, entry) => {
     // 8) Navega pelo SUMÁRIO até o capítulo e descobre a fronteira final
     //    (próximo item de MESMO nível estrutural). NUNCA "próxima página".
+    // §5: assinatura do conteúdo ANTES de qualquer navegação (referência para
+    // provar a PRIMEIRA página por mudança real, não por conteúdo antigo).
+    const beforeNavAlts = await driver.readPageAlts();
+    const beforeFirstSig = (beforeNavAlts || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim() || '<vazio>';
     const clickedTarget = await driver.clickTocEntry(reader, reader === 'beta' ? entry.summaryItemIndex : entry.dataPagina);
     attempts.push('navegar-sumario=' + (clickedTarget ? 'ok' : 'nao'));
     await driver.waitFor(2000);
@@ -2075,12 +2120,14 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
             // §5: o input é preenchido por NÓS (programático) — nunca é prova
             // sozinha. Confirmação exige evidência INDEPENDENTE (#ExibicaoAtual
             // mostrando a página) ou mudança REAL de conteúdo (assinatura ≠
-            // página anterior).
+            // assinatura de referência — na 1ª página, capturada ANTES da
+            // navegação; nas seguintes, a da página anterior).
             if (st && st.shown === p) { confirmed = true; break; }
             if (st && st.shown == null && st.input === p) {
               const altsNow = await driver.readPageAlts();
               const sigNow = (altsNow || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim() || '<vazio>';
-              if (prevAltsSig === null ? sigNow !== '<vazio>' : sigNow !== prevAltsSig) { confirmed = true; break; }
+              const refSig = prevAltsSig !== null ? prevAltsSig : beforeFirstSig;
+              if (sigNow !== '<vazio>' && sigNow !== refSig) { confirmed = true; break; }
             }
           }
           if (!confirmed) { attempts.push('pagina-nao-confirmada-solicitada=' + p); stoppedBy = stoppedBy || 'pagina-nao-confirmada'; break; }
@@ -2299,38 +2346,51 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     // Adaptador REAL (win.evaluate) do contrato de driver — a lógica de
     // produção está em extractPearsonViaDriver (pura; testável com drivers
     // falsos, auditoria §9). Seletores reais (DESCOBERTAS 2026-11-18).
-    // Rastreio §3: popups abertos desde o início da automação Pearson podem ser
-    // fechados entre tentativas (fallback) — um leitor por vez.
-    let pearsonWindows = null;
+    // Rastreio §3: o BASELINE é capturado ANTES de qualquer seleção — capturá-lo
+    // só no fallback registraria o popup recém-aberto como "preexistente".
+    const pearsonWindows = new Set(allWindows(app));
+    // Janela que efetivamente contém o leitor (pode ser um popup aberto pela
+    // seleção); a tela de seleção continua sendo lida em `win`.
+    let activeWin = win;
+    let readerWindowAmbiguous = false;
     const driver = {
       closeNewWindows: async () => {
-        if (!pearsonWindows) pearsonWindows = new Set(allWindows(app));
         const n = await closeWindowsOpenedSince(app, pearsonWindows);
-        pearsonWindows = new Set(allWindows(app));
         return n;
       },
-      selectReader: (readerName) => win.evaluate((name) => {
-        const id = name === 'beta' ? 'pdf-novo' : 'pdf';
-        const byId = document.getElementById(id);
-        if (byId) { byId.click(); return 'id:' + id; }
-        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
-          const t = norm(el.textContent);
-          return (name === 'beta' && /beta/.test(t)) || (name === 'classic' && /(cl[aá]ssico|classic)/.test(t));
-        });
-        if (clickable.length) { clickable[0].click(); return 'texto'; }
-        return false;
-      }, readerName).catch(() => false),
+      selectReader: async (readerName) => {
+        activeWin = win; // nunca reutilizar o popup da tentativa anterior
+        readerWindowAmbiguous = false;
+        const before = new Set(allWindows(app));
+        const chosen = await win.evaluate((name) => {
+          const id = name === 'beta' ? 'pdf-novo' : 'pdf';
+          const byId = document.getElementById(id);
+          if (byId) { byId.click(); return 'id:' + id; }
+          const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          const clickable = Array.from(document.querySelectorAll('button, [role="button"], a, label, [class*="reader"]')).filter((el) => {
+            const t = norm(el.textContent);
+            return (name === 'beta' && /beta/.test(t)) || (name === 'classic' && /(cl[aá]ssico|classic)/.test(t));
+          });
+          if (clickable.length) { clickable[0].click(); return 'texto'; }
+          return false;
+        }, readerName).catch(() => false);
+        if (chosen) {
+          const opened = allWindows(app).filter((w) => !before.has(w));
+          if (opened.length === 1) activeWin = opened[0];
+          else if (opened.length > 1) { readerWindowAmbiguous = true; attempts.push('janela-leitor-ambigua=' + opened.length); }
+        }
+        return chosen;
+      },
       waitFor: (ms) => (win.waitForTimeout ? win.waitForTimeout(ms) : Promise.resolve()),
-      handleDialog: () => win.evaluate(() => {
+      handleDialog: () => activeWin.evaluate(() => {
         const btns = Array.from(document.querySelectorAll('button, [role="button"], a'));
         const label = (b) => ((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || ''));
         const current = btns.find((b) => /p[aá]gina\s+atual|current\s+page/i.test(label(b)));
         if (current) { current.click(); return 'pagina-atual'; }
         return btns.some((b) => /[uú]ltima\s+p[aá]gina|last\s+page/i.test(label(b))) ? 'dialogo-sem-botao-seguro' : 'sem-dialogo';
       }).catch(() => 'erro'),
-      readToc: (isBeta) => readPearsonTocFromPage(win, isBeta, attempts),
-      clickTocEntry: (readerName, n) => win.evaluate(({ reader, n }) => {
+      readToc: (isBeta) => (readerWindowAmbiguous ? Promise.resolve(null) : readPearsonTocFromPage(activeWin, isBeta, attempts)),
+      clickTocEntry: (readerName, n) => activeWin.evaluate(({ reader, n }) => {
         const el = reader === 'beta'
           ? document.getElementById('summary-item-' + n)
           : Array.from(document.querySelectorAll('section.sumario ul li.box-capt')).find((li) => li.getAttribute('data-pagina') === String(n));
@@ -2338,14 +2398,14 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
         el.click();
         return true;
       }, { reader: readerName, n }).catch(() => false),
-      readCurrentPage: () => win.evaluate(() => {
+      readCurrentPage: () => activeWin.evaluate(() => {
         const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
         const v = inp ? parseInt(inp.value, 10) : NaN;
         if (Number.isFinite(v)) return { page: v, source: 'input' };
         const m = ((document.body && document.body.innerText) || '').match(/p[aá]gina\s+(\d+)/i);
         return m ? { page: parseInt(m[1], 10), source: 'texto-progresso' } : { page: null, source: 'indefinido' };
       }).catch(() => null),
-      navigateToPage: (p) => win.evaluate((n) => {
+      navigateToPage: (p) => activeWin.evaluate((n) => {
         const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
         if (!inp) return false;
         const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -2354,19 +2414,19 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
         inp.dispatchEvent(new Event('change', { bubbles: true }));
         return true;
       }, p).catch(() => false),
-      readNavState: () => win.evaluate(() => {
+      readNavState: () => activeWin.evaluate(() => {
         const inp = document.querySelector('input#input-navigate-read, input[type="number"]');
         const v = inp ? parseInt(inp.value, 10) : NaN;
         const ex = document.getElementById('ExibicaoAtual');
         const s = ex ? parseInt((ex.textContent || '').replace(/\D+/g, ''), 10) : NaN;
         return { input: Number.isFinite(v) ? v : null, shown: Number.isFinite(s) ? s : null };
       }).catch(() => null),
-      readPageAlts: () => win.evaluate(() => Array.from(document.querySelectorAll('img[class^="PdfImageView_pageImage"]')).map((i) => i.getAttribute('alt') || '')).catch(() => []),
+      readPageAlts: () => activeWin.evaluate(() => Array.from(document.querySelectorAll('img[class^="PdfImageView_pageImage"]')).map((i) => i.getAttribute('alt') || '')).catch(() => []),
       // XHR /Leitor/pagination com proteções (auditoria §4): timeout fixo 15s +
       // fallback 30s (nunca pendente), HTTP != 200, redirecionamento para login,
       // sessão expirada, resposta sem #divBookMark e texto vazio. Razões
       // sanitizadas — code/cookies/URLs assinadas nunca são registradas.
-      fetchPaginationPage: (p) => win.evaluate((n) => new Promise((resolve) => {
+      fetchPaginationPage: (p) => activeWin.evaluate((n) => new Promise((resolve) => {
         const u = new URL(location.href);
         const code = u.searchParams.get('code');
         if (!code) { resolve({ ok: false, reason: 'sem-code' }); return; }

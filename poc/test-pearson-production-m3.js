@@ -232,9 +232,9 @@ function classicDriver({ toc, entryPages, failFrom, failReason }) {
     d.navigateToPage = async (p) => { d._req = p; return origNav(p); };
     d.readPageAlts = async () => [TXT(3)]; // conteúdo TRAVADO: leitor não navegou
     const r = await books.extractPearsonViaDriver(d, { chapter: 1 }, { maxPages: 20, format: 'pdf' });
-    const good = r.status === 'partial' && r.stoppedBy === 'pagina-nao-confirmada'
-      && r.attempts.some((a) => a.startsWith('pagina-nao-confirmada-solicitada=4'));
-    record({ id: 'P15', title: 'Input programatico sozinho nao confirma navegacao', status: ok(good), detail: `stoppedBy=${r.stoppedBy} pages=${r.pagesExtracted}` });
+    const good = r.ok === false
+      && r.attempts.some((a) => a.startsWith('pagina-nao-confirmada-solicitada=3'));
+    record({ id: 'P15', title: 'Input programatico sozinho nao confirma navegacao', status: ok(good), detail: `failure=${r.failureType} attempts=${r.attempts.filter((a) => a.includes('nao-confirmada')).join(' | ')}` });
   }
 
   // P16 — §6-B: fronteira "Referências" (item sem numeração) é AMBÍGUA →
@@ -348,6 +348,39 @@ function classicDriver({ toc, entryPages, failFrom, failReason }) {
     const good = r.status === 'partial' && r.validation.boundaryAmbiguous === true
       && r.pagesExtracted === 2 && (r.text || '').includes('Pagina 3:') && (r.text || '').includes('Pagina 4:');
     record({ id: 'P24', title: 'Titulos livres no capitulo -> fronteira ambigua (partial)', status: ok(good), detail: `status=${r.status} pages=${r.pagesExtracted}` });
+  }
+
+  // P25 — rodada final: PRIMEIRA página, input muda, sem #ExibicaoAtual e
+  // conteúdo antigo (não vazio) permanece → partial (pagina não confirmada).
+  {
+    const toc = ['Unidade 1: Fundamentos', 'Unidade 2: Prática'];
+    const d = betaDriver({ toc, entryPages: { 0: 3, 1: 8 } });
+    d.readNavState = async () => ({ input: 3, shown: null }); // input programático
+    d.readPageAlts = async () => [TXT(2)]; // conteúdo antigo, não vazio, travado
+    const r = await books.extractPearsonViaDriver(d, { chapter: 'Unidade 1: Fundamentos' }, { maxPages: 20, format: 'pdf' });
+    const good = r.ok === false
+      && r.attempts.some((a) => a === 'pagina-nao-confirmada-solicitada=3');
+    record({ id: 'P25', title: 'Primeira pagina: conteudo antigo nao confirmado -> partial', status: ok(good), detail: `failure=${r.failureType} pages=${r.pagesExtracted}` });
+  }
+
+  // P26 — rodada final: PRIMEIRA página com mudança REAL de conteúdo (sem
+  // #ExibicaoAtual) → aceita (prova independente da assinatura anterior).
+  {
+    const toc = ['Unidade 1: Fundamentos', 'Unidade 2: Prática'];
+    const d = betaDriver({ toc, entryPages: { 0: 3, 1: 8 } });
+    let beforeClick = true;
+    let req = 3;
+    const origToc = d.clickTocEntry;
+    d.clickTocEntry = async (reader, n) => { beforeClick = false; return origToc(reader, n); };
+    d.readNavState = async () => ({ input: req, shown: null });
+    // Depois da 1ª página, o conteúdo precisa acompanhar a página solicitada.
+    const origNav = d.navigateToPage;
+    d.navigateToPage = async (p) => { req = p; return origNav(p); };
+    d.readPageAlts = async () => [beforeClick ? TXT(2) : TXT(req)];
+    const r = await books.extractPearsonViaDriver(d, { chapter: 'Unidade 1: Fundamentos' }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'integral' && r.pagesExtracted === 5
+      && (r.text || '').includes('Pagina 3:') && (r.text || '').includes('Pagina 7:');
+    record({ id: 'P26', title: 'Primeira pagina com conteudo realmente atualizado -> aceita', status: ok(good), detail: `status=${r.status} pages=${r.pagesExtracted}` });
   }
 
   const fails = results.filter((r) => r.status !== 'PASS').length;

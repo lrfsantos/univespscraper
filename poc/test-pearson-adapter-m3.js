@@ -276,6 +276,43 @@ function fakeWin({ waitForTimeout }) {
     record({ id: 'A4', title: 'Adaptador real Clássico: XHR pagination + #divBookMark integral', status: ok(good), detail: `status=${r && r.status} failure=${r && r.failureType} pages=${r && r.pagesExtracted} reader=${r && r.reader}` });
   }
 
+  // A5 — rodada final: baseline de janelas capturado ANTES da seleção. Um popup
+  // aberto pelo Beta é fechado no fallback; as duas janelas preexistentes
+  // permanecem; as operações do leitor usam a janela do popup.
+  {
+    const { body } = betaDom({ chapterStart: 3, chapterEnd: 8 });
+    installDom(body);
+    const img = body.querySelector('img');
+    const origGet = img.getAttribute.bind(img);
+    img.getAttribute = (n) => (n === 'alt' ? '' : origGet(n)); // Beta falha: sem conteúdo útil
+    const main = { evaluate: (fn, arg) => Promise.resolve(fn(arg)), waitForTimeout: async () => {} };
+    const other = { id: 'preexistente', close: async () => { other.closed = true; } };
+    let popupCalls = 0;
+    const popup = {
+      evaluate: (fn, arg) => { popupCalls++; return Promise.resolve(fn(arg)); },
+      waitForTimeout: async () => {},
+      close: async () => { popup.closed = true; },
+    };
+    const windows = [main, other];
+    const app = { windows: () => windows.filter((w) => !w.closed) };
+    const evaluateMain = (fn, arg) => {
+      const r = fn(arg);
+      if (String(fn).includes('pdf-novo') && !windows.includes(popup)) windows.push(popup);
+      return Promise.resolve(r);
+    };
+    const r = await books.tryPearsonAutomation({
+      app,
+      win: { evaluate: evaluateMain, waitForTimeout: async () => {} },
+      expected: { chapter: 'Unidade 1: Fundamentos' },
+      opts: {},
+    });
+    const good = popup.closed === true && other.closed !== true && popupCalls > 0
+      && app.windows().includes(other) && !app.windows().includes(popup)
+      && r && String(r.failureType || '').startsWith('pearson-falhou-')
+      && r.attempts.some((a) => a.startsWith('fallback-unico='));
+    record({ id: 'A5', title: 'Baseline real: fecha so o popup do Beta no fallback, preserva preexistentes', status: ok(good), detail: `popupClosed=${popup.closed} popupCalls=${popupCalls} outras=${app.windows().length} failure=${r && r.failureType}` });
+  }
+
   function itemsOf(body) { return matchAll(body, 'button[id^="summary-item-"]'); }
   function itemsClicked(items, i) { return !!(items[i] && items[i].clicked); }
 
