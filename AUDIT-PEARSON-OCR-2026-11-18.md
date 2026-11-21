@@ -140,3 +140,28 @@ RELATORIO-FINAL §8). Itens acima que deixaram de valer como pendência:
   PENDENTE (UA de automação pode ser recusada — sem contornar SSO/UA).
 - Fallback tesseract.js: segue PENDENTE e inequívoco (motor não instalado;
   `ocr.js` continua camada de decisão/qualidade, sem simulação).
+
+## Segunda rodada pós-auditoria (2026-11-21, commit d2494b9)
+
+FULL AUDIT da IA auditora (achados P1/P2) endereçados:
+- §2: `expected.pageRange` do AVA agora DELIMITA a janela de extração (Pearson
+  Beta/Clássico e VitalSource) — nunca o capítulo inteiro; só estreita
+  (endPage exclusivo = reqEnd + 1). Casos P14/V12.
+- §3: janelas/popups abertos por uma tentativa fecham ANTES do relaunch
+  (`closeWindowsOpenedSince`) e antes do fallback (`driver.closeNewWindows`) —
+  nunca dois leitores abertos. Sem caso automatizado (fluxo real Electron);
+  pendência de sessão real mantida.
+- §4: fallback 30s do XHR `/Leitor/pagination` limpa o timer e aborta a
+  requisição no `done` (nunca pendente).
+- §5: confirmação de página (Beta) exige evidência INDEPENDENTE
+  (`#ExibicaoAtual`) ou mudança real de conteúdo — o input programático
+  (preenchido por nós) nunca é prova. Caso P15.
+- §6-A: `parseExpectedFromResource` preserva `chapterKind` ('capitulo' vs
+  'unidade') e `locateInToc` respeita o tipo declarado — Capítulo 2 ≠
+  Unidade 2. Casos P17/P18.
+- §6-B: fronteira com item SEM numeração ("Referências") é AMBÍGUA —
+  integral bloqueado (fail-closed), texto preservado. Casos P16/V13.
+- §7: `readAxText` captura identidade (location.href) e texto no MESMO
+  snapshot e revalida contra a URL do driver (corrida eliminada).
+Bateria: 29 suítes, 381 casos, 0 falhas. OCR tesseract.js segue PENDENTE.
+
