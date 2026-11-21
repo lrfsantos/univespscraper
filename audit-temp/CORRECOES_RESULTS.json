@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T06:28:47.723Z",
+  "generatedAt": "2026-11-21T11:26:09.466Z",
   "total": 49,
   "failed": 0,
   "results": [
@@ -31,7 +31,7 @@
       "id": "A-5",
       "title": "Livro LTI carrega expected com capítulo declarado pelo AVA (correção E na descoberta)",
       "status": "PASS",
-      "detail": "expected={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"author\":\"Autor\"}"
+      "detail": "expected={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"chapterKind\":\"capitulo\",\"author\":\"Autor\"}"
     },
     {
       "id": "A-6",
@@ -169,7 +169,7 @@
       "id": "E-2",
       "title": "Capítulo e intervalo de páginas declarados pelo AVA são extraídos (sem inventar)",
       "status": "PASS",
-      "detail": "cap={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"author\":\"Autor\"} pag={\"book\":\"Livro XYZ - páginas 10 a 25\",\"chapter\":null,\"hasChapter\":false,\"pageRange\":{\"start\":10,\"end\":25},\"hasPageRange\":true,\"source\":\"ancora-do-ava\"}"
+      "detail": "cap={\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"chapterKind\":\"capitulo\",\"author\":\"Autor\"} pag={\"book\":\"Livro XYZ - páginas 10 a 25\",\"chapter\":null,\"hasChapter\":false,\"pageRange\":{\"start\":10,\"end\":25},\"hasPageRange\":true,\"source\":\"ancora-do-ava\"}"
     },
     {
       "id": "E-3",

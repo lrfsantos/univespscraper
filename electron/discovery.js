@@ -443,6 +443,9 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
   if (capM) {
     expected.chapter = parseInt(capM[1], 10);
     expected.hasChapter = true;
+    // Preserva a DISTINÇÃO semântica do AVA (auditoria §6-A): "Capítulo 2" e
+    // "Unidade 2" podem coexistir no sumário do mesmo livro — não reduzir a número.
+    expected.chapterKind = 'capitulo';
   }
   // Livros UNIVESP reais usam "Unidade N" (ex.: "Leia a Unidade 1 'Empreendedorismo'").
   // Capturado com a MESMA honestidade do capítulo: só quando o AVA declara.
@@ -451,6 +454,7 @@ function parseExpectedFromResource({ text = '', url = '' } = {}) {
     if (uniM) {
       expected.chapter = parseInt(uniM[1], 10);
       expected.hasChapter = true;
+      expected.chapterKind = 'unidade';
     }
   }
   const pagM = t.match(/(?:p[aá]ginas?|p\.)\s*(\d+)\s*(?:[-–—aà]\s*(\d+))?/i);

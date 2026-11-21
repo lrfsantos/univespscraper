@@ -1393,14 +1393,20 @@ async function extractPageid(app, win, launchUrl, expected, opts = {}) {
 // Driver REAL do leitor VitalSource sobre o app Electron (frames achatados).
 function createVitalsourceDriver(app) {
   const readAxText = async () => {
-    for (const { frame, url } of await collectFrames(app)) {
-      if (!/\/books\/[^/]+\/pages\/\d+\/content/i.test(url)) continue;
-      const text = await frame.evaluate(() => {
+    for (const { frame, url: frameUrl } of await collectFrames(app)) {
+      if (!/\/books\/[^/]+\/pages\/\d+\/content/i.test(frameUrl)) continue;
+      // §7: identidade (location.href) e texto capturados no MESMO snapshot —
+      // ler a URL fora do evaluate cria corrida (URL de A, texto de B).
+      const snap = await frame.evaluate(() => {
         const el = document.querySelector('#pdf-ax-text');
-        return el ? (el.innerText || '') : '';
-      }).catch(() => '');
-      const m = url.match(/\/books\/[^/]+\/pages\/(\d+)\/content/i);
-      if (m) return { pageRef: parseInt(m[1], 10), text: text || '' };
+        return { url: location.href || '', text: el ? (el.innerText || '') : '' };
+      }).catch(() => null);
+      if (!snap) continue;
+      // Revalidação: divergência entre URL capturada e URL observada pelo driver
+      // ⇒ o frame navegou durante a leitura ⇒ captura descartada por inteiro.
+      if (frameUrl && snap.url && normFrameUrl(frameUrl) !== normFrameUrl(snap.url)) continue;
+      const m = snap.url.match(/\/books\/[^/]+\/pages\/(\d+)\/content/i);
+      if (m) return { pageRef: parseInt(m[1], 10), text: snap.text || '' };
     }
     return null;
   };
@@ -1514,8 +1520,17 @@ async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
   }
 
   const boundary = pearson.chapterEndBoundary(toc, loc.entry);
-  const startPage = loc.entry.dataPagina;
-  const endPage = boundary.endPage; // página impressa do próximo item (exclusiva)
+  let startPage = loc.entry.dataPagina;
+  let endPage = boundary.endPage; // página impressa do próximo item (exclusiva)
+  // §2: intervalo declarado pelo AVA delimita a janela (só estreita; inclusivo
+  // → reqEnd + 1 exclusivo).
+  const reqStart = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)) ? Number(expected.pageRange.start) : null;
+  const reqEnd = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.end)) ? Number(expected.pageRange.end) : null;
+  if (reqStart != null || reqEnd != null) {
+    if (startPage != null && reqStart != null && reqStart > startPage) startPage = reqStart;
+    if (reqEnd != null) endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+    attempts.push('janela-intervalo-ava=' + (startPage != null ? startPage : '?') + '..' + (endPage != null ? endPage - 1 : '?'));
+  }
   attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida') + ' fronteira=' + (endPage != null ? endPage : (boundary.ambiguous ? 'ambigua' : 'indefinida')));
   if (startPage == null) {
     return { format: 'pageid', source: 'vitalsource-axtext', status: 'not_found', text: '', chars: 0, readerLoaded: true, readerUrl: null, attempts, steps, chapterLocated: true, tocEntries: toc.length, error: 'pagina-inicial-indeterminada', validation: { hasText: false, noNonsense: true, startOk: false, midOk: false, endOk: false, pageRangeOk: null, pageRangeNote: null, warnings: ['pagina-inicial-indeterminada'] } };
@@ -1564,7 +1579,7 @@ async function extractVitalsourceViaDriver(driver, expected, opts = {}) {
   if (endPage != null && pages.length && pages[pages.length - 1].page >= endPage - 1) stoppedBy = stoppedBy || 'fim-do-capitulo';
   else if (!stoppedBy) stoppedBy = 'limite-de-paginas';
 
-  const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
+  const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !!(boundary && boundary.ambiguous) });
   attempts.push('paginas=' + pages.length + ' parada=' + stoppedBy + ' status=' + evalRes.status);
   const text = pages.map((p) => `\n[PÁGINA impressa ${p.page} | pageRef ${p.pageRef != null ? p.pageRef : '?'}]\n${p.text}`).filter((s) => !/\]\n$/.test(s)).join('\n\n');
   return {
@@ -1674,6 +1689,12 @@ async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts 
   // 4) Desconhecido (unknown/no-frames/bv*): um relaunch + uma reavaliação.
   if (det.format === 'unknown') {
     attempts.push('desconhecido-sem-relaunch');
+    // §3: popups/janelas abertas pela 1ª tentativa fecham ANTES do relaunch —
+    // os dois leitores nunca ficam abertos simultaneamente.
+    let openedAtStart;
+    try { openedAtStart = new Set(allWindows(app)); } catch { openedAtStart = new Set(); }
+    const closed = await closeWindowsOpenedSince(app, openedAtStart);
+    if (closed) attempts.push('janelas-fechadas-antes-relaunch=' + closed);
     const ok1 = await goto(true);
     if (!ok1) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
     await waitTimeout(1500);
@@ -1828,10 +1849,11 @@ async function diagnoseReader(app, win, launchUrl, expected = {}, opts = {}) {
 // Núcleo PURO de avaliação da sequência de páginas capturadas (auditoria §2) —
 // compartilhado entre Pearson (Beta/Clássico) e VitalSource (§7). `integral`
 // SOMENTE com: fronteira do próximo item ALCANÇADA (stoppedBy='fim-do-capitulo',
-// nunca apenas conhecida), sequência completa (sem páginas ausentes/duplicadas),
+// nunca apenas conhecida) e NÃO AMBÍGUA (§6-B: fronteira "outro" sem numeração
+// nunca aprova integral), sequência completa (sem páginas ausentes/duplicadas),
 // texto plausível, sem página vazia e sem repetições. Limites de páginas/
 // caracteres e falhas de navegação → partial. Texto útil incompleto é preservado.
-function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }) {
+function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous }) {
   const pagesWithoutText = pages.filter((p) => !p.text).length;
   const text = pages.map((p) => p.text).filter(Boolean).join('\n\n');
   const layer = pearson.detectContentLayer({ mainText: text, framesText: '', hasImages: false });
@@ -1850,7 +1872,7 @@ function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }
   const usefulText = validated.ok === true && layer.hasText;
   // Integral SOMENTE com evidência positiva completa; qualquer reprovado
   // estrutural → partial (nunca coexistem integral × validação reprovada).
-  const ok = usefulText && pagesWithoutText === 0 && dups.length === 0 && boundaryReached && sequenceOk;
+  const ok = usefulText && pagesWithoutText === 0 && dups.length === 0 && boundaryReached && sequenceOk && !boundaryAmbiguous;
   const validation = {
     // Validação efetivamente aplicável ao leitor paginado (não reaproveita
     // critérios de EPUB/pageid) — o status final é derivado dela.
@@ -1866,6 +1888,7 @@ function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }
     duplicatePages,
     boundaryKnown,
     boundaryReached,
+    boundaryAmbiguous: !!boundaryAmbiguous,
     stoppedBy,
     repetitions: dups,
     ambiguousPages: 0,
@@ -1875,6 +1898,7 @@ function evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected }
       ...(missingPages > 0 ? [`paginas-ausentes (${missingPages})`] : []),
       ...(validated.ok ? [] : ['validacao-conteudo-reprovada: ' + validated.reason]),
       ...dups.map((r) => `repeticao-suspeita (${r.count}x, ${r.length} chars)`),
+      ...(boundaryAmbiguous ? ['fronteira-ambigua-item-sem-numeracao'] : []),
       ...(boundaryKnown && !boundaryReached ? ['fronteira-conhecida-mas-nao-alcancada'] : []),
     ],
   };
@@ -1981,6 +2005,7 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     const boundary = pearson.chapterEndBoundary(toc, entry);
     let startPage = null;
     let endPage = null;
+
     if (reader === 'beta') {
       const cur = await driver.readCurrentPage();
       startPage = cur && cur.page != null ? cur.page : null;
@@ -1997,6 +2022,17 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
       endPage = boundary.endPage;
       attempts.push('pagina-inicial=' + (startPage != null ? startPage : 'indefinida'));
       attempts.push('fronteira=' + (endPage != null ? endPage : 'indefinida'));
+    }
+
+    // §2: quando o AVA declara um intervalo de páginas (hasPageRange), a janela
+    // de extração é o INTERVALO pedido — nunca o capítulo inteiro. Só estreita
+    // (endPage é EXCLUSIVO; o intervalo do AVA é inclusivo → reqEnd + 1).
+    const reqStart = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.start)) ? Number(expected.pageRange.start) : null;
+    const reqEnd = expected && expected.hasPageRange && expected.pageRange && Number.isFinite(Number(expected.pageRange.end)) ? Number(expected.pageRange.end) : null;
+    if (reqStart != null || reqEnd != null) {
+      if (startPage != null && reqStart != null && reqStart > startPage) startPage = reqStart;
+      if (reqEnd != null) endPage = endPage != null ? Math.min(endPage, reqEnd + 1) : reqEnd + 1;
+      attempts.push('janela-intervalo-ava=' + (startPage != null ? startPage : '?') + '..' + (endPage != null ? endPage - 1 : '?'));
     }
 
     // 9) Extração do intervalo [startPage, endPage) com limites estruturais duros.
@@ -2021,7 +2057,16 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
           for (let k = 0; k < navAttempts; k++) {
             await driver.waitFor(300);
             const st = await driver.readNavState();
-            if (st && (st.input === p || st.shown === p)) { confirmed = true; break; }
+            // §5: o input é preenchido por NÓS (programático) — nunca é prova
+            // sozinha. Confirmação exige evidência INDEPENDENTE (#ExibicaoAtual
+            // mostrando a página) ou mudança REAL de conteúdo (assinatura ≠
+            // página anterior).
+            if (st && st.shown === p) { confirmed = true; break; }
+            if (st && st.shown == null && st.input === p) {
+              const altsNow = await driver.readPageAlts();
+              const sigNow = (altsNow || []).map((s) => String(s || '').trim()).filter(Boolean).join('\n').trim() || '<vazio>';
+              if (prevAltsSig === null ? sigNow !== '<vazio>' : sigNow !== prevAltsSig) { confirmed = true; break; }
+            }
           }
           if (!confirmed) { attempts.push('pagina-nao-confirmada-solicitada=' + p); stoppedBy = stoppedBy || 'pagina-nao-confirmada'; break; }
           const alts = await driver.readPageAlts();
@@ -2057,7 +2102,7 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     attempts.push('paginas-extraidas=' + pages.length + ' sem-texto=' + pages.filter((p) => !p.text).length + ' parada=' + stoppedBy);
 
     // 10) Validação honesta fail-closed (núcleo compartilhado, auditoria §2).
-    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected });
+    const evalRes = evaluatePageSequence({ pages, startPage, endPage, stoppedBy, expected, boundaryAmbiguous: !!(boundary && boundary.ambiguous) });
     attempts.push('camada=' + evalRes.layer.layer + ' status=' + evalRes.status + ' parada=' + stoppedBy + ' sequencia=' + (evalRes.sequenceOk ? 'ok' : 'ausentes=' + evalRes.missingPages + ',duplicadas=' + evalRes.duplicatePages) + ' fronteira=' + (evalRes.boundaryReached ? 'alcancada' : 'nao-alcancada'));
     return {
       ok: evalRes.ok,
@@ -2133,6 +2178,14 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     // abertos simultaneamente (um por vez; janelas fechadas pelo chamador).
     const nxt = pearson.nextReaderAfterFailure(preferred, reader);
     if (nxt) {
+      // §3: janelas/popup abertos pelo leitor que falhou fecham ANTES do
+      // fallback — nunca dois leitores abertos ao mesmo tempo.
+      if (typeof (driver && driver.closeNewWindows) === 'function') {
+        try {
+          const closed = await driver.closeNewWindows();
+          if (closed) attempts.push('janelas-fechadas-antes-fallback=' + closed);
+        } catch { /* melhor esforço */ }
+      }
       attempts.push('fallback-unico=' + nxt + ' motivo=' + out.stage + '-falhou-no-' + reader);
       reader = nxt;
       out = await runReader(reader);
@@ -2231,7 +2284,16 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     // Adaptador REAL (win.evaluate) do contrato de driver — a lógica de
     // produção está em extractPearsonViaDriver (pura; testável com drivers
     // falsos, auditoria §9). Seletores reais (DESCOBERTAS 2026-11-18).
+    // Rastreio §3: popups abertos desde o início da automação Pearson podem ser
+    // fechados entre tentativas (fallback) — um leitor por vez.
+    let pearsonWindows = null;
     const driver = {
+      closeNewWindows: async () => {
+        if (!pearsonWindows) pearsonWindows = new Set(allWindows(app));
+        const n = await closeWindowsOpenedSince(app, pearsonWindows);
+        pearsonWindows = new Set(allWindows(app));
+        return n;
+      },
       selectReader: (readerName) => win.evaluate((name) => {
         const id = name === 'beta' ? 'pdf-novo' : 'pdf';
         const byId = document.getElementById(id);
@@ -2295,7 +2357,16 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
         if (!code) { resolve({ ok: false, reason: 'sem-code' }); return; }
         const xh = new XMLHttpRequest();
         let settled = false;
-        const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+        let fallbackTimer = null;
+        const done = (v) => {
+          if (settled) return;
+          settled = true;
+          // §4: o fallback de 30s nunca deixa a requisição pendente — limpa o
+          // timer e aborta o XHR quando a resposta definitiva já chegou.
+          if (fallbackTimer) clearTimeout(fallbackTimer);
+          try { if (xh.readyState !== 4) xh.abort(); } catch (e) {}
+          resolve(v);
+        };
         xh.open('GET', '/Leitor/pagination?code=' + encodeURIComponent(code) + '&page=' + n + '&paginaAnteriorId=0', true);
         xh.withCredentials = true;
         xh.timeout = 15000;
@@ -2318,7 +2389,7 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
         xh.ontimeout = () => done({ ok: false, reason: 'timeout' });
         xh.onerror = () => done({ ok: false, reason: 'rede' });
         xh.onabort = () => done({ ok: false, reason: 'abortado' });
-        setTimeout(() => done({ ok: false, reason: 'timeout' }), 30000);
+        fallbackTimer = setTimeout(() => done({ ok: false, reason: 'timeout' }), 30000);
         xh.send();
       }), p).catch(() => ({ ok: false, reason: 'erro-evaluate' })),
     };
@@ -2327,7 +2398,6 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
       attempts, maxPages, maxChars, pageWaitMs, preferred,
       format: fmt.format, readerUrl: page.href,
     });
-    return out.result;
   } catch (e) {
     attempts.push('erro=' + String((e && e.message) || 'desconhecido').slice(0, 120));
     return { ok: false, failureType: 'pearson-erro', attempts };

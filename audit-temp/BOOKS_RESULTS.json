@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-21T06:28:50.204Z",
+  "ts": "2026-11-21T11:26:11.978Z",
   "results": [
     {
       "id": "B-1",
@@ -11,7 +11,7 @@
       "id": "B-2",
       "title": "5: OPF sem metadados -> null; âncora AVA com \"| Autor\" expõe autor real",
       "status": "PASS",
-      "detail": "{\"empty\":{\"title\":null,\"author\":null,\"publisher\":null,\"year\":null,\"language\":null},\"expected\":{\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"author\":\"Dornelas\"}}"
+      "detail": "{\"empty\":{\"title\":null,\"author\":null,\"publisher\":null,\"year\":null,\"language\":null},\"expected\":{\"book\":\"Empreendedorismo\",\"chapter\":1,\"hasChapter\":true,\"pageRange\":null,\"hasPageRange\":false,\"source\":\"ancora-do-ava\",\"chapterKind\":\"capitulo\",\"author\":\"Dornelas\"}}"
     },
     {
       "id": "B-3",

@@ -170,6 +170,30 @@ function vsDriver({ toc, pages, offset, defects = {} }) {
     record({ id: 'V11', title: 'Falha de navegacao -> partial com motivo', status: ok(good), detail: `stoppedBy=${r.stoppedBy}` });
   }
 
+  // V12 — §2: intervalo do AVA delimita a janela (nunca o capítulo inteiro).
+  {
+    const r = await books.extractVitalsourceViaDriver(
+      vsDriver({ toc: [['Unidade 1: Fundamentos', 10], ['Unidade 2: Prática', 40]], pages: {}, offset: 1 }),
+      { chapter: 1, hasPageRange: true, pageRange: { start: 12, end: 15 } }, { maxPages: 20 }
+    );
+    const good = r.status === 'integral' && r.pageStart === 12 && r.pageEnd === 16 && r.pagesExtracted === 4
+      && (r.text || '').includes('impressa 12') && (r.text || '').includes('impressa 15') && !(r.text || '').includes('impressa 11')
+      && r.attempts.some((a) => a === 'janela-intervalo-ava=12..15');
+    record({ id: 'V12', title: 'pageRange do AVA delimita a janela (VitalSource)', status: ok(good), detail: `status=${r.status} janela=${r.pageStart}..${r.pageEnd - 1} pages=${r.pagesExtracted}` });
+  }
+
+  // V13 — §6-B: fronteira "Referências" (sem numeração) → partial fail-closed.
+  {
+    const r = await books.extractVitalsourceViaDriver(
+      vsDriver({ toc: [['Unidade 1: Fundamentos', 10], ['Referências', 25]], pages: {}, offset: 1 }),
+      { chapter: 'Unidade 1: Fundamentos' }, { maxPages: 40 }
+    );
+    const good = r.status === 'partial' && r.stoppedBy === 'fim-do-capitulo'
+      && r.validation.boundaryAmbiguous === true && r.pagesExtracted === 15
+      && (r.text || '').includes('impressa 10:');
+    record({ id: 'V13', title: 'Fronteira Referencias (outro) -> partial (§6-B)', status: ok(good), detail: `status=${r.status} ambigua=${r.validation.boundaryAmbiguous} pages=${r.pagesExtracted}` });
+  }
+
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
   console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);

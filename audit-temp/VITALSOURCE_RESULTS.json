@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-21T06:29:34.711Z",
+  "date": "2026-11-21T11:26:56.478Z",
   "summary": {
-    "total": 11,
-    "passed": 11,
+    "total": 13,
+    "passed": 13,
     "failed": 0
   },
   "results": [
@@ -71,6 +71,18 @@
       "title": "Falha de navegacao -> partial com motivo",
       "status": "PASS",
       "detail": "stoppedBy=falha-de-navegacao"
+    },
+    {
+      "id": "V12",
+      "title": "pageRange do AVA delimita a janela (VitalSource)",
+      "status": "PASS",
+      "detail": "status=integral janela=12..15 pages=4"
+    },
+    {
+      "id": "V13",
+      "title": "Fronteira Referencias (outro) -> partial (§6-B)",
+      "status": "PASS",
+      "detail": "status=partial ambigua=true pages=15"
     }
   ]
 }

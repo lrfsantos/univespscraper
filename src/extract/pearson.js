@@ -177,6 +177,12 @@ function chapterEndBoundary(toc, entry) {
     if (self.level === 'capitulo' && lv.level === 'subcapitulo' && lv.num === self.num) continue;
     // Capítulo/subcapítulo pertence à unidade atual: não é fronteira dela.
     if (self.level === 'unidade' && (lv.level === 'capitulo' || lv.level === 'subcapitulo')) continue;
+    // §6-B: item SEM numeração ("Referências", "Glossário") pode ser seção do
+    // livro OU do capítulo — usá-lo como fronteira é AMBÍGUO (fail-closed): o
+    // limite é mantido, mas o chamador nunca declara integral por ele.
+    if (lv.level === 'outro' || self.level === 'outro') {
+      return { index: i, endPage: t.dataPagina != null ? t.dataPagina : null, ambiguous: true, reason: 'fronteira-item-sem-numeracao' };
+    }
     return { index: i, endPage: t.dataPagina != null ? t.dataPagina : null, ambiguous: false };
   }
   // Sem item de fronteira: pode ser fim do livro OU hierarquia indeterminada.
@@ -219,16 +225,25 @@ function locateInToc(toc, expected = {}) {
   // Busca por capítulo (numérico primeiro, depois por rótulo normalizado).
   if (chapterNum != null) {
     const num = String(chapterNum);
-    const exact = toc.filter((t) => t.label === 'Capítulo ' + num || t.label === 'Cap. ' + num || new RegExp('^cap[ií]tulo\\s+' + num + '\\b', 'i').test(t.label));
-    if (exact.length === 1) return { found: true, entry: exact[0], reason: 'capitulo-numerico' };
-    if (exact.length > 1) return ambiguous('capitulo-duplicado-no-sumario', exact.length);
-    const byNum = toc.filter((t) => /(?:cap[ií]tulo|cap\.)\s*\d+|\b\d+\s*[-–—]\s*\d+\b/i.test(t.label) && t.normalized.includes(' ' + num + ' ') && /cap[ií]tulo/.test(t.normalized));
-    if (byNum.length === 1) return { found: true, entry: byNum[0], reason: 'capitulo-rotulo-com-numero', approximate: true };
-    if (byNum.length > 1) return ambiguous('capitulo-ambiguo-no-sumario', byNum.length);
+    // §6-A: quando o AVA declarou o TIPO ("Capítulo" vs "Unidade" — chapterKind),
+    // SÓ o tipo declarado é aceitável: Capítulo 2 ≠ Unidade 2. Sem declaração
+    // (kind ausente), os dois formatos são candidatos (compatibilidade).
+    const wantCap = expected.chapterKind !== 'unidade';
+    const wantUni = expected.chapterKind !== 'capitulo';
+    if (wantCap) {
+      const exact = toc.filter((t) => t.label === 'Capítulo ' + num || t.label === 'Cap. ' + num || new RegExp('^cap[ií]tulo\\s+' + num + '\\b', 'i').test(t.label));
+      if (exact.length === 1) return { found: true, entry: exact[0], reason: 'capitulo-numerico' };
+      if (exact.length > 1) return ambiguous('capitulo-duplicado-no-sumario', exact.length);
+      const byNum = toc.filter((t) => /(?:cap[ií]tulo|cap\.)\s*\d+|\b\d+\s*[-–—]\s*\d+\b/i.test(t.label) && t.normalized.includes(' ' + num + ' ') && /cap[ií]tulo/.test(t.normalized));
+      if (byNum.length === 1) return { found: true, entry: byNum[0], reason: 'capitulo-rotulo-com-numero', approximate: true };
+      if (byNum.length > 1) return ambiguous('capitulo-ambiguo-no-sumario', byNum.length);
+    }
     // Livros reais UNIVESP/Pearson: "Unidade N: {título}".
-    const byUnidade = toc.filter((t) => new RegExp('^unidade\\s+' + num + '\\b', 'i').test(t.label));
-    if (byUnidade.length === 1) return { found: true, entry: byUnidade[0], reason: 'unidade-numerica' };
-    if (byUnidade.length > 1) return ambiguous('unidade-duplicada-no-sumario', byUnidade.length);
+    if (wantUni) {
+      const byUnidade = toc.filter((t) => new RegExp('^unidade\\s+' + num + '\\b', 'i').test(t.label));
+      if (byUnidade.length === 1) return { found: true, entry: byUnidade[0], reason: 'unidade-numerica' };
+      if (byUnidade.length > 1) return ambiguous('unidade-duplicada-no-sumario', byUnidade.length);
+    }
   }
   if (chapterLabel) {
     const byLabel = toc.filter((t) => t.normalized.includes(chapterLabel));

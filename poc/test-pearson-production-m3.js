@@ -212,6 +212,62 @@ function classicDriver({ toc, entryPages, failFrom, failReason }) {
     record({ id: 'P13', title: 'Beta navegacao falhou -> stoppedBy correto', status: ok(good), detail: `stoppedBy=${r.stoppedBy}` });
   }
 
+  // P14 — §2: intervalo do AVA delimita a janela (nunca o capítulo inteiro).
+  {
+    const toc = ['Unidade 1: Fundamentos', 'Unidade 2: Prática'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 0: 3, 1: 40 } }), { chapter: 1, hasPageRange: true, pageRange: { start: 5, end: 8 } }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'integral' && r.pageStart === 5 && r.pageEnd === 9 && r.pagesExtracted === 4
+      && (r.text || '').includes('Pagina 5:') && (r.text || '').includes('Pagina 8:') && !(r.text || '').includes('Pagina 4:')
+      && r.attempts.some((a) => a === 'janela-intervalo-ava=5..8');
+    record({ id: 'P14', title: 'pageRange do AVA delimita a janela de extracao', status: ok(good), detail: `status=${r.status} janela=${r.pageStart}..${r.pageEnd - 1} pages=${r.pagesExtracted}` });
+  }
+
+  // P15 — §5: input programático SOZINHO não confirma (sem #ExibicaoAtual e
+  // sem mudança de conteúdo → página não confirmada).
+  {
+    const toc = ['Unidade 1: Fundamentos', 'Unidade 2: Prática'];
+    const d = betaDriver({ toc, entryPages: { 0: 3, 1: 40 } });
+    d.readNavState = async () => ({ input: d._req != null ? d._req : null, shown: null });
+    const origNav = d.navigateToPage;
+    d.navigateToPage = async (p) => { d._req = p; return origNav(p); };
+    d.readPageAlts = async () => [TXT(3)]; // conteúdo TRAVADO: leitor não navegou
+    const r = await books.extractPearsonViaDriver(d, { chapter: 1 }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'partial' && r.stoppedBy === 'pagina-nao-confirmada'
+      && r.attempts.some((a) => a.startsWith('pagina-nao-confirmada-solicitada=4'));
+    record({ id: 'P15', title: 'Input programatico sozinho nao confirma navegacao', status: ok(good), detail: `stoppedBy=${r.stoppedBy} pages=${r.pagesExtracted}` });
+  }
+
+  // P16 — §6-B: fronteira "Referências" (item sem numeração) é AMBÍGUA →
+  // texto preservado, mas nunca integral.
+  {
+    const toc = ['Capítulo 1: X', 'Referências'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 0: 3, 1: 10 } }), { chapter: 1 }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'partial' && r.stoppedBy === 'fim-do-capitulo'
+      && r.validation.boundaryAmbiguous === true
+      && r.validation.warnings.some((w) => w === 'fronteira-ambigua-item-sem-numeracao')
+      && (r.text || '').includes('Pagina 3:');
+    record({ id: 'P16', title: 'Fronteira sem numeracao (Referencias) -> partial fail-closed', status: ok(good), detail: `status=${r.status} stoppedBy=${r.stoppedBy} ambigua=${r.validation.boundaryAmbiguous}` });
+  }
+
+  // P17 — §6-A: chapterKind 'unidade' do AVA NÃO casa "Capítulo N".
+  {
+    const toc = ['Capítulo 2: Errado', 'Unidade 2: Correto', 'Unidade 3: Z'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 1: 5, 2: 9 } }), { chapter: 2, chapterKind: 'unidade' }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'integral' && r.attempts.some((a) => a === 'localizar=unidade-numerica')
+      && (r.text || '').includes('Pagina 5:') && (r.text || '').includes('Pagina 8:');
+    record({ id: 'P17', title: 'chapterKind unidade nao casa Capitulo N (§6-A)', status: ok(good), detail: `status=${r.status} loc=${(r.attempts.find((a) => a.startsWith('localizar=')) || '')}` });
+  }
+
+  // P18 — §6-A: sem chapterKind declarado, comportamento anterior preservado
+  // (Capítulo N tem prioridade sobre Unidade N).
+  {
+    const toc = ['Capítulo 2: Errado', 'Unidade 2: Correto', 'Unidade 3: Z'];
+    const r = await books.extractPearsonViaDriver(betaDriver({ toc, entryPages: { 0: 3, 1: 7 } }), { chapter: 2 }, { maxPages: 20, format: 'pdf' });
+    const good = r.status === 'integral' && r.attempts.some((a) => a === 'localizar=capitulo-numerico')
+      && (r.text || '').includes('Pagina 3:') && (r.text || '').includes('Pagina 6:');
+    record({ id: 'P18', title: 'Sem chapterKind, Capitulo N tem prioridade (compat.)', status: ok(good), detail: `status=${r.status}` });
+  }
+
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
   console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
