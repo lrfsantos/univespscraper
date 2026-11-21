@@ -2240,6 +2240,14 @@ async function extractPearsonViaDriver(driver, expected, opts = {}) {
     // abertos simultaneamente (um por vez; janelas fechadas pelo chamador).
     const nxt = pearson.nextReaderAfterFailure(preferred, reader);
     if (nxt) {
+      // §3: o Beta pode ter NAVEGADO a janela para dentro do leitor — voltar
+      // à tela de seleção é pré-requisito para selecionar o outro leitor.
+      if (typeof (driver && driver.resetToSelection) === 'function') {
+        try {
+          const back = await driver.resetToSelection();
+          attempts.push('retorno-tela-selecao=' + (back ? 'ok' : 'nao'));
+        } catch { attempts.push('retorno-tela-selecao=erro'); }
+      }
       // §3: janelas/popup abertos pelo leitor que falhou fecham ANTES do
       // fallback — nunca dois leitores abertos ao mesmo tempo.
       if (typeof (driver && driver.closeNewWindows) === 'function') {
@@ -2357,6 +2365,16 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
       closeNewWindows: async () => {
         const n = await closeWindowsOpenedSince(app, pearsonWindows);
         return n;
+      },
+      // Volta à tela de seleção original (a URL é usada apenas em memória;
+      // nunca é registrada em log/relatório — contém parâmetros temporários).
+      resetToSelection: async () => {
+        try {
+          await win.goto(page.href, { waitUntil: 'domcontentloaded', timeout: 60000 });
+          activeWin = win;
+          if (win.waitForTimeout) await win.waitForTimeout(2000);
+          return true;
+        } catch { return false; }
       },
       selectReader: async (readerName) => {
         activeWin = win; // nunca reutilizar o popup da tentativa anterior
