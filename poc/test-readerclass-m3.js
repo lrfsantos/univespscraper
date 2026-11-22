@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { classificarLeitor, leitorDeHost, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook } = require('./lib/reader-classifier');
+const { classificarLeitor, leitorDeHost, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, executarFluxoBook } = require('./lib/reader-classifier');
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'READERCLASS_RESULTS.json');
 const results = [];
@@ -75,7 +75,24 @@ record({ id: 'RC17', title: 'integracao: leitor com motivo nao persiste mesmo co
   return p.gravado === false && !fs.existsSync(base + '.md');
 })()) });
 
-const fails = results.filter((r) => r.status !== 'PASS').length;
-fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
-console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
-process.exit(fails ? 1 : 0);
+(async () => {
+  const casos = [
+    ['RC18', 'DOM inacessivel: nao chama extractBook', { leituraOk: false }, 'evidencias-inconclusivas'],
+    ['RC19', 'frames inacessiveis: nao chama extractBook', { classificacao: { motivo: 'iframe-inacessivel', leitor: 'vitalsource' } }, 'iframe-inacessivel'],
+    ['RC20', 'reader-selection-required: nao chama extractBook', { classificacao: { motivo: 'reader-selection-required', leitor: 'bvirtual' } }, 'reader-selection-required'],
+    ['RC21', 'sem-autorizacao: nao chama extractBook', { classificacao: { motivo: 'sem-autorizacao', leitor: 'minhabiblioteca' } }, 'sem-autorizacao'],
+  ];
+  for (const [id, titulo, args, esperado] of casos) {
+    let chamou = false;
+    const r = await executarFluxoBook(Object.assign({ extrair: async () => { chamou = true; } }, args));
+    record({ id, title: titulo, status: ok(r.extraiu === false && chamou === false && r.bloqueio === esperado) });
+  }
+  let chamouOk = false;
+  const okFluxo = await executarFluxoBook({ classificacao: { motivo: null, leitor: 'bvirtual', formato: 'bvpdf' }, extrair: async () => { chamouOk = true; } });
+  record({ id: 'RC22', title: 'leitor classificado sem motivo: extrai normalmente', status: ok(okFluxo.extraiu === true && chamouOk === true) });
+
+  const fails = results.filter((r) => r.status !== 'PASS').length;
+  fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
+  console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
+  process.exit(fails ? 1 : 0);
+})();

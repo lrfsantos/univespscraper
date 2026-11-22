@@ -70,4 +70,20 @@ function persistirMarkdownBook({ resultado, classificacao, caminhoBase, titulo, 
   return { arquivo, gravado: true };
 }
 
-module.exports = { classificarLeitor, leitorDeHost, hostnameDe, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, LEITORES };
+// Decisão de fluxo: com evidência inconclusiva ou seleção pendente, NÃO extrair.
+function decidirExtracaoLeitor({ classificacao, leituraOk = true } = {}) {
+  if (!leituraOk || !classificacao || classificacao.motivo === 'inconclusivo') {
+    return { extrair: false, bloqueio: 'evidencias-inconclusivas' };
+  }
+  const bloqueantes = ['sem-autorizacao', 'dominio-desconhecido', 'reader-selection-required', 'iframe-inacessivel', 'iframe-sem-conteudo-consultavel'];
+  if (bloqueantes.includes(classificacao.motivo)) return { extrair: false, bloqueio: classificacao.motivo };
+  return { extrair: true, bloqueio: null };
+}
+async function executarFluxoBook({ classificacao, leituraOk = true, extrair }) {
+  const decisao = decidirExtracaoLeitor({ classificacao, leituraOk });
+  if (!decisao.extrair) return { extraiu: false, bloqueio: decisao.bloqueio };
+  if (typeof extrair === 'function') await extrair();
+  return { extraiu: true, bloqueio: null };
+}
+
+module.exports = { classificarLeitor, leitorDeHost, hostnameDe, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, decidirExtracaoLeitor, executarFluxoBook, LEITORES };
