@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-22T06:05:13.208Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "I1",
+      "title": "integral com arquivo valido = OK",
+      "status": "PASS"
+    },
+    {
+      "id": "I2",
+      "title": "integral sem arquivo = MISCLASSIFIED",
+      "status": "PASS"
+    },
+    {
+      "id": "I3",
+      "title": "failed sem arquivo NÃO vira no_text/misclassified",
+      "status": "PASS"
+    },
+    {
+      "id": "I4",
+      "title": "partial com conteudo exige arquivo",
+      "status": "PASS"
+    },
+    {
+      "id": "I5",
+      "title": "amostra estratificada: 30/7/12/11 = 60",
+      "status": "PASS",
+      "detail": "{\"integral\":30,\"partial\":7,\"failed\":12,\"unclassified\":11}"
+    },
+    {
+      "id": "I6",
+      "title": "integrais da amostra: >=3 por disciplina",
+      "status": "PASS",
+      "detail": "{\"D0\":3,\"D1\":3,\"D2\":3,\"D3\":3,\"D4\":3,\"D5\":3,\"D6\":3,\"D7\":3,\"D8\":3,\"D9\":3}"
+    },
+    {
+      "id": "I7",
+      "title": "seleção determinística (mesma entrada -> mesma amostra)",
+      "status": "PASS"
+    },
+    {
+      "id": "I8",
+      "title": "auditoria: arquivo valido PASS, falha OK, inexistente MISCLASSIFIED",
+      "status": "PASS",
+      "detail": "{\"total\":3,\"PASS\":2,\"MISCLASSIFIED\":1,\"INCONCLUSIVE\":0}"
+    }
+  ]
+}

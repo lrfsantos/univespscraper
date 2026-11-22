@@ -95,7 +95,9 @@ function reconcileRoot(root) {
       vistos.set(chaveDedup, true);
       const ocorrencia = (ocorrencias.get(chaveDedup) || 0) + 1;
       ocorrencias.set(chaveDedup, ocorrencia);
-      const arquivo = localizarArquivo(dir, r.week, r.title, r.file);
+      // Só quem produziu arquivo (declarado ou com conteúdo) recebe output_file:
+      // fuzzy-match para registro sem conteúdo atribuía arquivo alheio.
+      const arquivo = (r.file || r.chars > 0) ? localizarArquivo(dir, r.week, r.title, r.file) : null;
       if ((r.file || (r.chars > 0)) && !arquivo) problemas.arquivosAusentes.push({ disciplina: code, semana: r.week, titulo: r.title, declarado: r.file || null });
       const recursoId = r.id ? String(r.id) : idHistorico(code, r.week, r.title, ocorrencia);
       const linha = r.__line ? `#L${r.__line}` : '';

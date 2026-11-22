@@ -211,7 +211,7 @@ async function extractCourse({ app, win, course, rootDir, state }) {
         // usa a URL do link da própria UI, na janela autenticada.
         if (await gotoSafe(win, link.url)) target = win;
       }
-      if (!target) { results.push({ id, title: link.text, week: sec.id, status: 'inaccessible', detail: 'clique-nao-abriu-recurso', chars: 0 }); continue; }
+      if (!target) { results.push({ id, title: cleanTitle(link.text, id), week: sec.id, status: 'inaccessible', detail: 'clique-nao-abriu-recurso', chars: 0 }); continue; }
       const r = await extractResource({ app, win: target, r: link, dir: weekDir, seq, state, course, week: sec.id });
       r.week = sec.id;
       results.push(r);

@@ -1,0 +1,629 @@
+{
+  "gerado_em": "2026-11-22T05:57:30.084Z",
+  "criterio": "estratificada determinística (ordenação por resource_id)",
+  "total": 60,
+  "justificativa": {
+    "integral": {
+      "criterio": ">=3 por disciplina, distribuição round-robin por resource_id",
+      "alvo": 30,
+      "selecionados": 30
+    },
+    "partial": {
+      "criterio": "todos os casos",
+      "alvo": 7,
+      "selecionados": 7
+    },
+    "failed": {
+      "criterio": "cobrir causas/leitores distintos, round-robin",
+      "alvo": 12,
+      "selecionados": 12
+    },
+    "unclassified": {
+      "criterio": "distribuídos entre disciplinas/semanas, round-robin",
+      "alvo": 11,
+      "selecionados": 11
+    }
+  },
+  "selecionados": [
+    {
+      "estrato": "integral",
+      "resource_id": "ADM210-S1-s1---aprofundando-o-tema-página-230b5e94",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 950,
+      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM220-S1-s1---aprofundando-o-tema-página-839a5525",
+      "course_id": "ADM220",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 427,
+      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM230-S1-s1---aprofundando-o-tema-página-5a06a2da",
+      "course_id": "ADM230",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 539,
+      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM270-S1-s1---aprofundando-o-tema-página-82af0da2",
+      "course_id": "ADM270",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 508,
+      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM290-S1-s1---aprofundando-o-tema-página-4a0a8e01",
+      "course_id": "ADM290",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1063,
+      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "CIN200-S1-s1---aprofundando-o-tema-página-c9349428",
+      "course_id": "CIN200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 492,
+      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18491-S1-s1---aprofundando-o-tema-página-c81416e1",
+      "course_id": "D18491",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 513,
+      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18539-S1-s1---aprofundando-o-tema-página-70a3d229",
+      "course_id": "D18539",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 396,
+      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18554-S1-s1---aprofundando-o-tema-página-19627bfe",
+      "course_id": "D18554",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 606,
+      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "SOC200-S1-s1---aprofundando-o-tema-página-50f38581",
+      "course_id": "SOC200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 705,
+      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM210-S1-s1---em-síntese-página-c4876ab5",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1266,
+      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM220-S1-s1---em-síntese-página-d6f2c0aa",
+      "course_id": "ADM220",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1812,
+      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM230-S1-s1---em-síntese-página-be88abd7",
+      "course_id": "ADM230",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1854,
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM270-S1-s1---em-síntese-página-1c968436",
+      "course_id": "ADM270",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1152,
+      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM290-S1-s1---em-síntese-página-a00145a7",
+      "course_id": "ADM290",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1355,
+      "output_file": "SEMANA_1\\05_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "CIN200-S1-s1---em-síntese-página-24435220",
+      "course_id": "CIN200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1224,
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18491-S1-s1---em-síntese-página-60c75211",
+      "course_id": "D18491",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1794,
+      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18539-S1-s1---em-síntese-página-6158820e",
+      "course_id": "D18539",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1113,
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18554-S1-s1---em-síntese-página-9994b707",
+      "course_id": "D18554",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1649,
+      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "SOC200-S1-s1---em-síntese-página-296faf50",
+      "course_id": "SOC200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 1516,
+      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM210-S1-s1---videoaula-1---revolução-industrial-e-o-surgimento-do-administrador-página-06e16ebd",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 255,
+      "output_file": "SEMANA_1\\02_S1 - Videoaula 1 - Revolução Industrial e o surgimento do administrador Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM220-S1-s1---início-página-3d1756d9",
+      "course_id": "ADM220",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 6081,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM230-S1-s1---início-página-f601d4b9",
+      "course_id": "ADM230",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 2205,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM270-S1-s1---início-página-231d2203",
+      "course_id": "ADM270",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 4219,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "ADM290-S1-s1---início-página-fc0b881d",
+      "course_id": "ADM290",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 5041,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "CIN200-S1-s1---início-página-a43fe540",
+      "course_id": "CIN200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 4645,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18491-S1-s1---introdução-à-ética_-conceitos-fundamentais-página-c74c6060",
+      "course_id": "D18491",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 4936,
+      "output_file": "SEMANA_1\\01_S1 - Introdução à Ética_ conceitos fundamentais Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18539-S1-s1---exercício-de-apoio-página-eeafda3b",
+      "course_id": "D18539",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 682,
+      "output_file": "SEMANA_1\\05_S1 - Exercício de apoio Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "D18554-S1-s1---início-página-26bf251e",
+      "course_id": "D18554",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 3848,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "integral",
+      "resource_id": "SOC200-S1-s1---início-página-e116c610",
+      "course_id": "SOC200",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "integral",
+      "chars": 5479,
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "ADM210-S1-s1---texto-base-1---teorias-da-administração-(p.-4-18-e-42-46-)-12bd976b",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "pdf",
+      "reconciled_status": "partial",
+      "chars": 121,
+      "output_file": "SEMANA_1\\05_S1 - Texto-base 1 - Teorias da administração (p. 4-18 e 42-46 ).md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "ADM270-S2-s2---texto-base---manual-de-oslo_-diretrizes-para-coleta-e-interpretação-de-dados-sobre-in-231281ef",
+      "course_id": "ADM270",
+      "week": 2,
+      "detected_type": "unknown",
+      "reconciled_status": "partial",
+      "chars": 38,
+      "output_file": "SEMANA_2\\14_S2 - Texto-base - Manual de Oslo_ diretrizes para coleta e interpretação de dados sobre in.md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "CIN200-S4-s4---texto-base_-fundamentos-de-gestão-de-projetos-(leia-o-capítulo-6,-p.-217-250)-257f9217",
+      "course_id": "CIN200",
+      "week": 4,
+      "detected_type": "pdf",
+      "reconciled_status": "partial",
+      "chars": 39527,
+      "output_file": "SEMANA_4\\20_S4 - Texto-base_ Fundamentos de Gestão de Projetos (Leia o capítulo 6, p. 217-250).md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "D18491-S1-s1---vídeo-base---qual-o-significado-de-ética_-url-90aac5de",
+      "course_id": "D18491",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "partial",
+      "chars": 78,
+      "output_file": "SEMANA_1\\04_S1 - Vídeo-base - Qual o significado de ética_ URL.md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "D18491-S5-s5---texto-base---ética-profissional-url-be901345",
+      "course_id": "D18491",
+      "week": 5,
+      "detected_type": "unknown",
+      "reconciled_status": "partial",
+      "chars": 68,
+      "output_file": "SEMANA_5\\32_S5 - Texto-base - Ética profissional URL.md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "D18491-S6-s6---texto-base---dignidade-da-pessoa-humana-url-1c093940",
+      "course_id": "D18491",
+      "week": 6,
+      "detected_type": "unknown",
+      "reconciled_status": "partial",
+      "chars": 76,
+      "output_file": "SEMANA_6\\39_S6 - Texto-base - Dignidade da pessoa humana URL.md"
+    },
+    {
+      "estrato": "partial",
+      "resource_id": "D18491-S7-s7---texto-base---ética-na-pesquisa-url-d7ba5b28",
+      "course_id": "D18491",
+      "week": 7,
+      "detected_type": "unknown",
+      "reconciled_status": "partial",
+      "chars": 67,
+      "output_file": "SEMANA_7\\46_S7 - Texto-base - Ética na pesquisa URL.md"
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S1-s1---texto-base-2---teoria-geral-da-administração-(p.-23-35)-_-fernando-c.-prestes-motta,--2bbb50d0",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM290-S6-s6---texto-base---comunicação-organizacional,-transformações-e-mudanças,-comunicação-digit-e88045df",
+      "course_id": "ADM290",
+      "week": 6,
+      "detected_type": "bvleitor",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S2-s2---texto-base-1---teorias-da-administração-(p.-9-25)-af2aac07",
+      "course_id": "ADM210",
+      "week": 2,
+      "detected_type": "bvpdf",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM270-S1-s1---texto-base---empreendedorismo-(leia-o-capítulo-1-_o-empreendedorismo-e-a-mentalidade--862b643c",
+      "course_id": "ADM270",
+      "week": 1,
+      "detected_type": "reader",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S3-s3---texto-base-3---teorias-da-administração-(p.-186-203)-2ed5760f",
+      "course_id": "ADM210",
+      "week": 3,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM270-S2-s2--texto-base---manual-de-oslo_-diretrizes-para-coleta-e-interpretação-de-dados-sobre-ino-7c7ee091",
+      "course_id": "ADM270",
+      "week": 2,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S1-s1---texto-base-3---teoria-geral-da-administração_-da-revolução-urbana-à-era-da-agilidade--11ada4e8",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM290-S7-s7---texto-base---métricas-e-avaliação-em-comunicação-organizacional-(leia-o-capítulo-16)-8d9de090",
+      "course_id": "ADM290",
+      "week": 7,
+      "detected_type": "bvleitor",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S2-s2---texto-base-2---teorias-da-administração-(p.-121-124)-da442dd6",
+      "course_id": "ADM210",
+      "week": 2,
+      "detected_type": "bvpdf",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "CIN200-S1-s1---texto-base-1_-gestão-eficaz-de-projetos_-como-gerenciar-com-excelência-projetos-tradi-1ec1acc3",
+      "course_id": "CIN200",
+      "week": 1,
+      "detected_type": "reader",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S4-s4---texto-base-1---teorias-da-administração-(p.-204-226-e-229-239)-e7fd7383",
+      "course_id": "ADM210",
+      "week": 4,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "failed",
+      "resource_id": "ADM210-S1-s1---texto-base-4---teorias-da-administração-(leia-a-partir-da-seção-_o-sistema-da-indústr-9647219e",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "failed",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM210-S1-s1---introdução-a-abordagem-científica-e-a-teoria-clássica-da-administração-página-f3dd9550",
+      "course_id": "ADM210",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM220-S1-s1---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-4---atitudes-e-co-a13f63ed",
+      "course_id": "ADM220",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM230-S2-s2---exercício-de-apoio-página-035e99ad",
+      "course_id": "ADM230",
+      "week": 2,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM270-S1-s1---vídeo-base---palestra-empreendedorismo-e-seus-reflexos-para-o-brasil-(veja-até-25min)-50a116b7",
+      "course_id": "ADM270",
+      "week": 1,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "CIN200-S3-s3---videoaula-página-4a8e654a",
+      "course_id": "CIN200",
+      "week": 3,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "D18539-S3-s3---texto-base---introdução-à-metodologia-da-pesquisa_-um-guia-para-iniciantes-(leia-o-ca-9e36d04a",
+      "course_id": "D18539",
+      "week": 3,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM210-S2-s2---aprofundando-o-tema-página-48d07d60",
+      "course_id": "ADM210",
+      "week": 2,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM220-S2-s2---texto-base---comportamento-organizacional-(leia-o-capítulo-5---motivação-e-desempenho-ae262b08",
+      "course_id": "ADM220",
+      "week": 2,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM230-S3-s3---exercício-de-apoio-página-08724e74",
+      "course_id": "ADM230",
+      "week": 3,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "ADM270-S4-s4---vídeo-base---como-fazer-um-plano-de-negócios-2d85c57e",
+      "course_id": "ADM270",
+      "week": 4,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    },
+    {
+      "estrato": "unclassified",
+      "resource_id": "CIN200-S6-s6---texto-base_-cases-de-scrum-6ec09c54",
+      "course_id": "CIN200",
+      "week": 6,
+      "detected_type": "unknown",
+      "reconciled_status": "unclassified",
+      "chars": 0,
+      "output_file": null
+    }
+  ]
+}
