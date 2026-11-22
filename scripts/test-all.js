@@ -35,6 +35,7 @@ const suites = [
   { name: 'poc/test-pdf-m3.js', out: 'PDF_RESULTS.json' },
   { name: 'poc/test-books-m3.js', out: 'BOOKS_RESULTS.json' },
   { name: 'poc/test-bvirtual-m3.js', out: 'BVNAV_RESULTS.json' },
+  { name: 'poc/test-readerclass-m3.js', out: 'READERCLASS_RESULTS.json' },
   { name: 'poc/test-my-courses-m3.js', out: 'MYCOURSES_RESULTS.json' },
   { name: 'poc/test-embedded-m3.js', out: 'EMBEDDED_RESULTS.json' },
   { name: 'poc/test-pearson-m3.js', out: 'PEARSON_RESULTS.json' },

@@ -18,6 +18,7 @@ const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
 const { seguirBvirtual } = require('./lib/bvirtual-nav');
+const { classificarLeitor, hostnameDe, deveGravarConteudo } = require('./lib/reader-classifier');
 const pdfFlow = require('./lib/pdf-flow');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
@@ -195,6 +196,21 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
           out.detail = `formato=bv falha=${nav.motivo}${navInfo}`;
           out.chars = 0; out.file = null;
           bloqueado = true;
+        }
+      }
+      // Frente 5: domínio externo desconhecido ou acesso negado confirmado
+      // impedem qualquer extração/arquivo — com motivo honesto e distinto.
+      if (!bloqueado) {
+        const urlAtual = typeof win.url === 'function' ? win.url() : '';
+        const host = hostnameDe(urlAtual);
+        if (host && !host.endsWith('univesp.br')) {
+          const cls = classificarLeitor({ url: urlAtual, hostname: host });
+          if (!deveGravarConteudo(cls) && ['sem-autorizacao', 'dominio-desconhecido'].includes(cls.motivo)) {
+            out.status = 'inaccessible';
+            out.detail = `formato=${cls.leitor || 'unknown'} falha=${cls.motivo}`;
+            out.chars = 0; out.file = null;
+            bloqueado = true;
+          }
         }
       }
       if (!bloqueado) {
