@@ -108,19 +108,23 @@ function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois 
 
   let gotos = 0;
   const winReal = {
-    url: () => 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22',
-    title: async () => 'Reader - leitor',
+    url: () => 'https://example.org/generic/123',
+    title: async () => 'Generic page',
     frames: () => [],
     goto: async () => { gotos++; return null; },
     evaluate: async () => '',
     waitForTimeout: async () => {},
   };
   const appFake = { windows: () => [winReal] };
-  await books.extractBookWithReader({
+  const classificacao = books.classifyReader({ frames: [], windows: [winReal.url(), 'Generic page'] });
+  const result = await books.extractBookWithReader({
     app: appFake, win: winReal, launchUrl: winReal.url(), expected: {},
     opts: { jaAberto: true, observeTimeoutMs: 100, observeInterval: 50 },
   });
-  record({ id: 'B19', title: 'integracao real: extractBookWithReader com jaAberto nao executa goto', status: ok(gotos === 0) });
+  record({ id: 'B19', title: 'integracao real: formato unknown com jaAberto nao executa goto nem relaunch', status: ok(
+    classificacao.format === 'unknown' && gotos === 0 &&
+    (result.attempts || []).some((a) => a.includes('desconhecido-leitor-ja-aberto')) &&
+    !result.attempts.some((a) => /^relaunch-/.test(a))) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
