@@ -35,10 +35,27 @@ record({ id: 'C11', title: 'ultima pagina desconhecida = inconclusivo, nunca int
   return r.acao === 'inconclusivo' && r.status === 'partial';
 })()) });
 record({ id: 'C12', title: 'calibracao local CIN200 = 248 (nao exigir 249-250)', status: ok((function () {
-  const fim = require('./lib/coverage-check').fimCalibradoParaTitulo('CIN200 - Fundamentos de Gestão de Projetos p. 217-250');
+  const fim = require('./lib/coverage-check').fimCalibradoParaTitulo('CIN200 - Fundamentos de Gestão de Projetos p. 217-250', { courseId: 'CIN200' });
+  const outro = require('./lib/coverage-check').fimCalibradoParaTitulo('Fundamentos de Gestão de Projetos p. 217-250', { courseId: 'ADM210' });
   const r = avaliarCobertura({ texto: CORPO, titulo: 'CIN200 Fundamentos de Gestão de Projetos p. 217-250', ultimaPaginaImpressa: 248, fimCalibrado: fim });
-  return fim === 248 && r.acao === 'coberto';
+  return fim === 248 && outro === undefined && r.acao === 'coberto';
 })()) });
+
+record({ id: 'C13', title: 'avanco real: capa -> capitulo com conteudo', status: ok((function () {
+  const r = require('./lib/coverage-check').avancarAteConteudo([CAPA, CORPO]);
+  return r.indice === 1 && r.texto === CORPO && r.paginasAvancadas === 2;
+})()) });
+record({ id: 'C14', title: 'avanco sem conteudo ate o limite: falha honesta', status: ok((function () {
+  const r = require('./lib/coverage-check').avancarAteConteudo([CAPA, CAPA], 2);
+  return r.indice === -1 && r.limiteAtingido === true && r.paginasAvancadas === 2;
+})()) });
+record({ id: 'C15', title: 'ultima pagina fisica sem numero = inconclusivo, nao coberto', status: ok((function () {
+  const detectadas = [217, 248, null]; // ultima posicao (fisica) sem numero
+  const ultima = detectadas[detectadas.length - 1];
+  const r = avaliarCobertura({ texto: CORPO, titulo: 'p. 217-250', ultimaPaginaImpressa: Number.isInteger(ultima) ? ultima : null });
+  return r.acao === 'inconclusivo' && r.status === 'partial';
+})()) });
+record({ id: 'C16', title: 'heuristica de capa nao dispara com termo editorial dentro do corpo', status: ok(ehSomenteCapa('A universidade publicou este capitulo sobre metodos de pesquisa e suas aplicacoes praticas em diferentes contextos de ensino superior no pais inteiro.') === false) });
 
 const fails = results.filter((r) => r.status !== 'PASS').length;
 fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
