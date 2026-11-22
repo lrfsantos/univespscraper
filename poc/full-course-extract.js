@@ -18,7 +18,7 @@ const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
 const { seguirBvirtual } = require('./lib/bvirtual-nav');
-const { classificarLeitor, hostnameDe, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, decidirExtracaoLeitor } = require('./lib/reader-classifier');
+const { classificarLeitor, avaliarEvidenciasLeitor, hostnameDe, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, decidirExtracaoLeitor } = require('./lib/reader-classifier');
 const pdfFlow = require('./lib/pdf-flow');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
@@ -201,31 +201,31 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       // Frente 5: reunir evidências reais (DOM + frames) antes de classificar.
       // Falha ao ler qualquer evidência => inconclusivo, nunca "sem autorização".
       let clsLeitor = null;
-      let leituraEvidentiasOk = true;
       if (!bloqueado) {
-        const urlAtual = typeof win.url === 'function' ? win.url() : '';
-        const host = hostnameDe(urlAtual);
-        if (host && !ehDominioInstitucional(host)) {
-          let textoJanela = '';
-          let frames = [];
-          try { textoJanela = String(await win.evaluate(() => document.body.innerText)); }
-          catch { leituraEvidentiasOk = false; }
-          try {
-            const lista = typeof win.frames === 'function' ? await win.frames() : [];
-            for (const f of lista) {
-              let u = '';
-              try { u = typeof f.url === 'function' ? f.url() : ''; } catch { leituraEvidentiasOk = false; }
-              frames.push({ url: String(u || '') });
-            }
-          } catch { leituraEvidentiasOk = false; }
-          clsLeitor = classificarLeitor({ url: urlAtual, hostname: host, texto: textoJanela, frames, leituraOk: leituraEvidentiasOk });
-          const decisaoLeitor = decidirExtracaoLeitor({ classificacao: clsLeitor, leituraOk: leituraEvidentiasOk });
-          if (!decisaoLeitor.extrair) {
-            out.status = 'inaccessible';
-            out.detail = `formato=${(clsLeitor && clsLeitor.leitor) || 'unknown'} falha=${decisaoLeitor.bloqueio}`;
-            out.chars = 0; out.file = null;
-            bloqueado = true;
+        let textoJanela = '';
+        let frames = [];
+        let leituraEvidentiasOk = true;
+        try { textoJanela = String(await win.evaluate(() => document.body.innerText)); }
+        catch { leituraEvidentiasOk = false; }
+        try {
+          const lista = typeof win.frames === 'function' ? await win.frames() : [];
+          for (const f of lista) {
+            let u = '';
+            try { u = typeof f.url === 'function' ? f.url() : ''; } catch { leituraEvidentiasOk = false; }
+            frames.push({ url: String(u || '') });
           }
+        } catch { leituraEvidentiasOk = false; }
+        const avaliacao = avaliarEvidenciasLeitor({
+          urlPrincipal: typeof win.url === 'function' ? win.url() : '',
+          texto: textoJanela, frames, leituraOk: leituraEvidentiasOk,
+        });
+        clsLeitor = avaliacao.classificacao;
+        const decisaoLeitor = decidirExtracaoLeitor({ classificacao: clsLeitor, leituraOk: leituraEvidentiasOk });
+        if (!decisaoLeitor.extrair) {
+          out.status = 'inaccessible';
+          out.detail = `formato=${(clsLeitor && clsLeitor.leitor) || 'unknown'} falha=${decisaoLeitor.bloqueio}`;
+          out.chars = 0; out.file = null;
+          bloqueado = true;
         }
       }
       if (!bloqueado) {

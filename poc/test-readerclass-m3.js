@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { classificarLeitor, leitorDeHost, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, executarFluxoBook } = require('./lib/reader-classifier');
+const { classificarLeitor, avaliarEvidenciasLeitor, leitorDeHost, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, executarFluxoBook, decidirExtracaoLeitor } = require('./lib/reader-classifier');
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'READERCLASS_RESULTS.json');
 const results = [];
@@ -90,6 +90,28 @@ record({ id: 'RC17', title: 'integracao: leitor com motivo nao persiste mesmo co
   let chamouOk = false;
   const okFluxo = await executarFluxoBook({ classificacao: { motivo: null, leitor: 'bvirtual', formato: 'bvpdf' }, extrair: async () => { chamouOk = true; } });
   record({ id: 'RC22', title: 'leitor classificado sem motivo: extrai normalmente', status: ok(okFluxo.extraiu === true && chamouOk === true) });
+
+  const AVA = 'https://ava.univesp.br/mod/lti/view.php?id=263859';
+  const casosFrame = [
+    ['RC23', 'pagina institucional + iframe VitalSource com not-authorized bloqueia',
+      { urlPrincipal: AVA, texto: 'not authorized', frames: [{ url: 'https://bookshelf.vitalsource.com/books/x/pages/12/content' }] }, 'sem-autorizacao'],
+    ['RC24', 'pagina institucional + selecao pendente no leitor bloqueia',
+      { urlPrincipal: AVA, texto: 'Escolha o formato desejado', frames: [{ url: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789' }] }, 'reader-selection-required'],
+    ['RC25', 'host vazio/ilegivel gera inconclusivo e bloqueia',
+      { urlPrincipal: '', texto: '', frames: [] }, 'evidencias-inconclusivas'],
+  ];
+  for (const [id, titulo, evid, esperado] of casosFrame) {
+    const aval = avaliarEvidenciasLeitor(evid);
+    let chamou = false;
+    const r = await executarFluxoBook({ classificacao: aval.classificacao, leituraOk: true, extrair: async () => { chamou = true; } });
+    record({ id, title: titulo, status: ok(r.extraiu === false && chamou === false && r.bloqueio === esperado) });
+  }
+  const avalOk = avaliarEvidenciasLeitor({ urlPrincipal: AVA, texto: '', frames: [{ url: 'https://bookshelf.vitalsource.com/books/x/pages/12/content' }] });
+  let chamouValido = false;
+  const fluxoOk = await executarFluxoBook({ classificacao: avalOk.classificacao, extrair: async () => { chamouValido = true; } });
+  record({ id: 'RC26', title: 'iframe VitalSource valido em pagina institucional continua extraindo', status: ok(
+    avalOk.classificacao.leitor === 'vitalsource' && decidirExtracaoLeitor({ classificacao: avalOk.classificacao }).extrair === true &&
+    fluxoOk.extraiu === true && chamouValido === true) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
