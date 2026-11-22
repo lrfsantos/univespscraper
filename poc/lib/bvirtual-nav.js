@@ -1,6 +1,8 @@
 // Frente 4 — navegação bvirtual: detectar tela de escolha de formato e prompt
 // do leitor Beta pelo CONTEÚDO, clicar condicionalmente e confirmar navegação.
 // Nunca executa sequência fixa nem transforma tela/prompt em conteúdo.
+const { classificarPagina } = require('./url-capture');
+const ERRO_RE = /404\b|página não encontrada|page not found|acesso negado|forbidden|unauthorized|not authorized|login|erro ao carregar/i;
 const TELA_ESCOLHA_RE = /escolha (o )?formato desejado|choose your desired format|ler em epub|read in epub/i;
 const PROMPT_BETA_RE = /novo leitor pdf\s*beta|reader.*beta|try now.*beta|continue in current reader|continue no leitor atual/i;
 const PAGEID_RE = /(?:[?&](?:PaginaPdf|Pageid)=|\/pageid\/|\/pdf\/)(\d+)/i;
@@ -21,8 +23,16 @@ function decidirAcao({ texto, urlAntes, urlDepois } = {}) {
 
 // Confirmação: a URL deve mudar ou o texto do leitor deve deixar de conter
 // a tela/prompt. Sem confirmação, falha honesta — nunca conteúdo extraído.
-function avaliarNavegacao({ acao, urlAntes, urlDepois, textoDepois } = {}) {
+function avaliarNavegacao({ acao, urlAntes, urlDepois, textoDepois, leituraOk = true } = {}) {
   if (!acao || acao === 'nenhuma') return { confirmado: false, status: null, motivo: 'nenhuma-acao' };
+  if (!leituraOk) return { confirmado: false, status: 'inaccessible', motivo: 'leitura-dom-falhou' };
+  const classe = classificarPagina(urlDepois);
+  if (classe === 'invalida' || ERRO_RE.test(String(textoDepois || ''))) {
+    return { confirmado: false, status: 'inaccessible', motivo: 'pagina-de-erro-ou-autenticacao' };
+  }
+  if (classe === 'intermediaria' || classe === 'origem') {
+    return { confirmado: false, status: 'inaccessible', motivo: 'destino-intermediario' };
+  }
   const mudouUrl = !!urlDepois && urlDepois !== urlAntes;
   const saiuDaTela = !detectarTelaEscolhaFormato(textoDepois) && !detectarPromptBeta(textoDepois);
   if (!mudouUrl && !saiuDaTela) return { confirmado: false, status: 'inaccessible', motivo: 'navegacao-nao-confirmada' };
@@ -32,8 +42,12 @@ function avaliarNavegacao({ acao, urlAntes, urlDepois, textoDepois } = {}) {
 // Executa no win do Playwright: lê o texto, decide e clica APENAS se a tela
 // correspondente estiver presente. Retorna decisão + estado para o runner.
 async function seguirBvirtual(win) {
-  const texto = String(await win.evaluate(() => document.body.innerText).catch(() => ''));
   const urlAntes = typeof win.url === 'function' ? win.url() : '';
+  let texto;
+  try { texto = String(await win.evaluate(() => document.body.innerText)); }
+  catch {
+    return { acao: 'leitura-estado', clicar: null, urlAntes, urlDepois: urlAntes, confirmado: false, status: 'inaccessible', motivo: 'leitura-dom-falhou' };
+  }
   const decisao = decidirAcao({ texto, urlAntes });
   if (decisao.acao === 'nenhuma') return Object.assign({ urlAntes, urlDepois: urlAntes, textoDepois: texto }, decisao, { confirmado: false, motivo: 'nenhuma-tela-condicional' });
   const clicou = await win.evaluate((alvo) => {
@@ -48,9 +62,12 @@ async function seguirBvirtual(win) {
   if (!clicou) return Object.assign({ urlAntes, urlDepois: urlAntes, textoDepois: texto }, decisao, { confirmado: false, status: 'inaccessible', motivo: 'alvo-de-clique-ausente' });
   await win.waitForTimeout(700).catch(() => {});
   const urlDepois = typeof win.url === 'function' ? win.url() : '';
-  const textoDepois = String(await win.evaluate(() => document.body.innerText).catch(() => ''));
+  let textoDepois = '';
+  let leituraOk = true;
+  try { textoDepois = String(await win.evaluate(() => document.body.innerText)); }
+  catch { leituraOk = false; }
   return Object.assign({ urlAntes, urlDepois, textoDepois, pageid: extrairPageid(urlDepois) },
-    decisao, avaliarNavegacao({ acao: decisao.acao, urlAntes, urlDepois, textoDepois }));
+    decisao, avaliarNavegacao({ acao: decisao.acao, urlAntes, urlDepois, textoDepois, leituraOk }));
 }
 
 module.exports = {

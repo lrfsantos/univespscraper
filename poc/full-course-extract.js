@@ -185,7 +185,10 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       let navInfo = '';
       if (/bvirtual|bibliotecavirtual/i.test(String(r.url || ''))) {
         const nav = await seguirBvirtual(win);
-        if (nav.acao !== 'nenhuma') navInfo = ` navegacao=${nav.acao}:${nav.motivo || 'ok'}`;
+        if (nav.acao !== 'nenhuma') {
+          navInfo = ` navegacao=${nav.acao}:${nav.motivo || 'ok'}`;
+          if (nav.confirmado) opts.jaAberto = true; // extrair no leitor já selecionado
+        }
         if (nav.pageid != null) navInfo += ` pageid=${nav.pageid}`;
         if (nav.status === 'inaccessible') {
           out.status = 'inaccessible';

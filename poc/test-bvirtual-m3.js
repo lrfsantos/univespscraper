@@ -30,7 +30,7 @@ record({ id: 'B7', title: 'sem mudanca e sem saida da tela = navegacao-nao-confi
   return r.confirmado === false && r.status === 'inaccessible' && r.motivo === 'navegacao-nao-confirmada';
 })()) });
 
-function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22?code=x' }) {
+function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22?code=x', falharLeitura = false }) {
   let url = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=22';
   let texto = textoInicial;
   let mudou = false;
@@ -38,7 +38,7 @@ function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois 
     url: () => url,
     evaluate: async (fn, arg) => {
       const s = String(fn);
-      if (s.includes('document.body.innerText')) return texto;
+      if (s.includes('document.body.innerText')) { if (falharLeitura) throw new Error('dom-indisponivel'); return texto; }
       if (s.includes('querySelectorAll')) {
         if (!clicou) return false;
         texto = textoDepois;
@@ -78,6 +78,27 @@ function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois 
   const r5 = await bv.seguirBvirtual(w5);
   record({ id: 'B12', title: 'integracao: clique sem navegacao confirmada = inaccessible', status: ok(
     r5.status === 'inaccessible' && r5.motivo === 'navegacao-nao-confirmada') });
+
+  record({ id: 'B13', title: 'cinco pageids preservados nos tres formatos de URL', status: ok(
+    [22, 134, 199, 217, 107].every((n) =>
+      bv.extrairPageid('https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=' + n) === n &&
+      bv.extrairPageid('https://app.minhabiblioteca.com.br/reader/books/x/pageid/' + n) === n &&
+      bv.extrairPageid('https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/' + n) === n)) });
+
+  const w6 = fakeWin({ textoInicial: TELA_PT, falharLeitura: true });
+  const r6 = await bv.seguirBvirtual(w6);
+  record({ id: 'B14', title: 'leitura do DOM falha = inconclusiva, nunca confirmacao', status: ok(
+    r6.status === 'inaccessible' && r6.motivo === 'leitura-dom-falhou' && !w6.mudou) });
+
+  const r7 = bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'about:blank', textoDepois: '404 Página não encontrada' });
+  record({ id: 'B15', title: 'URL de erro/autenticacao nao confirma navegacao', status: ok(
+    r7.confirmado === false && r7.motivo === 'pagina-de-erro-ou-autenticacao') });
+
+  const books = require('../src/extract/books');
+  record({ id: 'B16', title: 'leitor ja aberto: extractBook nao faz goto inicial nem relaunch', status: ok(
+    books.deveFazerGotoInicial({ jaAberto: true }) === false &&
+    books.deveFazerRelaunch({ jaAberto: true }) === false &&
+    books.deveFazerGotoInicial({}) === true && books.deveFazerRelaunch({}) === true) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));

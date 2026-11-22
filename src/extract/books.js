@@ -1691,6 +1691,10 @@ function failureResult({ url, format, failureType, readerLoaded = false, error, 
 //   - unknown → espera (observeTimeoutMs) e reavalia SEM navegar; se persistir,
 //     permite NO MÁXIMO UM relaunch e uma única reavaliação após ele;
 //   - relaunch que resultar em reader-auth → interrompe.
+// Frente 4 — com leitor já selecionado, NÃO relançar a URL original.
+function deveFazerGotoInicial(opts) { return opts && opts.jaAberto === true ? false : true; }
+function deveFazerRelaunch(opts) { return opts && opts.jaAberto === true ? false : true; }
+
 async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts = {} }) {
   const observeTimeoutMs = opts.observeTimeoutMs != null ? opts.observeTimeoutMs : 30000;
   const observeInterval = opts.observeInterval != null ? opts.observeInterval : 1500;
@@ -1717,10 +1721,14 @@ async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts 
     return r;
   };
 
-  // 1) Lançamento inicial.
-  const ok0 = await goto(false);
-  if (!ok0) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
-  await waitTimeout(1500);
+  // 1) Lançamento inicial (ignorado quando a Frente 4 já selecionou o leitor).
+  if (deveFazerGotoInicial(opts)) {
+    const ok0 = await goto(false);
+    if (!ok0) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
+    await waitTimeout(1500);
+  } else {
+    attempts.push('leitor-ja-aberto-sem-goto');
+  }
 
   // 2) Observa o leitor já aberto (sem navegar).
   let det = await observeReader(app, observeTimeoutMs, observeInterval);
@@ -1736,16 +1744,16 @@ async function extractBookWithReader({ app, win, launchUrl, expected = {}, opts 
 
   // 4) Desconhecido (unknown/no-frames/bv*): um relaunch + uma reavaliação.
   if (det.format === 'unknown') {
-    attempts.push('desconhecido-sem-relaunch');
-    // §3: popups/janelas abertas pela 1ª tentativa fecham ANTES do relaunch —
-    // os dois leitores nunca ficam abertos simultaneamente.
-    let openedAtStart;
-    try { openedAtStart = new Set(allWindows(app)); } catch { openedAtStart = new Set(); }
-    const closed = await closeWindowsOpenedSince(app, openedAtStart);
-    if (closed) attempts.push('janelas-fechadas-antes-relaunch=' + closed);
-    const ok1 = await goto(true);
-    if (!ok1) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
-    await waitTimeout(1500);
+    attempts.push(opts && opts.jaAberto ? 'desconhecido-leitor-ja-aberto' : 'desconhecido-sem-relaunch');
+    if (deveFazerRelaunch(opts)) {
+      let openedAtStart;
+      try { openedAtStart = new Set(allWindows(app)); } catch { openedAtStart = new Set(); }
+      const closed = await closeWindowsOpenedSince(app, openedAtStart);
+      if (closed) attempts.push('janelas-fechadas-antes-relaunch=' + closed);
+      const ok1 = await goto(true);
+      if (!ok1) return failureResult({ url: launchUrl, format: 'unknown', failureType: 'network', readerLoaded: false, error: 'goto-falhou', expected, attempts });
+      await waitTimeout(1500);
+    }
     det = await observeReader(app, observeTimeoutMs, observeInterval);
     attempts.push(`reclassificacao=${det.format}`);
     if (det.format === 'reader-auth') {
@@ -2502,6 +2510,8 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
 
 module.exports = {
   extractBook,
+  deveFazerGotoInicial,
+  deveFazerRelaunch,
   closeWindowsOpenedSince,
   detectFormat,
   classifyReader,
