@@ -25,10 +25,14 @@ const DEFAULT_TIMEOUT_MS = 120000;           // 120 s
 // Validação UNIFICADA da resposta antes de tratar bytes como PDF.
 // Nunca grava arquivo nem texto quando status, Content-Type ou assinatura
 // indicam que a resposta não é um PDF (ex.: página HTML 404).
+// MIME types aceitos como PDF. Comparação pelo tipo MIME puro (antes do ';').
+// Content-Type AUSENTE é aceito como fallback explícito: nesse caso a decisão
+// fica apenas com a assinatura %PDF (comportamento documentado e testado).
+const MIME_PDF_PERMITIDOS = new Set(['application/pdf', 'application/octet-stream', 'application/x-pdf', 'application/binary']);
 function validarRespostaPdf({ status, contentType, buffer } = {}) {
   if (status != null && (status < 200 || status >= 300)) return { ok: false, motivo: 'HTTP ' + status };
-  const ct = String(contentType || '').toLowerCase();
-  if (ct && !/pdf|octet-stream|binary/.test(ct)) return { ok: false, motivo: 'content-type-nao-pdf' };
+  const mime = String(contentType || '').split(';', 1)[0].trim().toLowerCase();
+  if (mime && !MIME_PDF_PERMITIDOS.has(mime)) return { ok: false, motivo: 'content-type-nao-pdf' };
   if (!buffer || buffer.length < 4 || buffer.slice(0, 4).toString('ascii') !== '%PDF') return { ok: false, motivo: 'nao-e-pdf' };
   return { ok: true, motivo: null };
 }
@@ -259,6 +263,8 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
     result.status = statusFor({ ok: true, bytes: result.bytes, analyze, pages: analyze.pages });
   } catch (e) {
     result.error = e.message;
+    const m = String(e.message || '').match(/\bHTTP\s+(\d{3})\b/);
+    if (m) result.httpStatus = Number(m[1]);
     result.status = 'inaccessible';
   }
   return result;

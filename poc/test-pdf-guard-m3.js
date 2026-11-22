@@ -19,7 +19,10 @@ record({ id: 'G4', title: 'assinatura invalida bloqueia', status: ok(validarResp
 record({ id: 'G5', title: 'buffer vazio bloqueia', status: ok(validarRespostaPdf({ status: 200, buffer: Buffer.alloc(0) }).ok === false) });
 record({ id: 'G6', title: 'PDF valido com application/pdf aceito', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/pdf', buffer: PDF }).ok === true) });
 record({ id: 'G7', title: 'PDF valido com octet-stream aceito', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/octet-stream', buffer: PDF }).ok === true) });
-record({ id: 'G8', title: 'PDF valido sem content-type aceito (assinatura decide)', status: ok(validarRespostaPdf({ status: 200, contentType: '', buffer: PDF }).ok === true) });
+record({ id: 'G8', title: 'PDF valido SEM content-type aceito como fallback documentado', status: ok(validarRespostaPdf({ status: 200, contentType: '', buffer: PDF }).ok === true) });
+record({ id: 'G12', title: 'text/plain com nome .pdf rejeitado (MIME puro)', status: ok(validarRespostaPdf({ status: 200, contentType: 'text/plain; name=arquivo.pdf', buffer: PDF }).ok === false) });
+record({ id: 'G13', title: 'application/notpdf rejeitado', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/notpdf', buffer: PDF }).ok === false) });
+record({ id: 'G14', title: 'application/pdfx rejeitado', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/pdfx', buffer: PDF }).ok === false) });
 
 (async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pdfguard-'));
@@ -27,7 +30,7 @@ record({ id: 'G8', title: 'PDF valido sem content-type aceito (assinatura decide
 
   const cliente404 = { fetch: async () => ({ status: 404, body: HTML, headers: { 'content-type': 'text/html' } }) };
   const r404 = await extractPdf({ url: 'https://example.invalid/manual.pdf', filePath: arquivo, client: cliente404, useElectronNet: false });
-  record({ id: 'G9', title: 'extrator: HTTP 404 nao grava arquivo e marca inaccessible', status: ok(r404.status === 'inaccessible' && /404/.test(r404.error || '') && !fs.existsSync(arquivo)) });
+  record({ id: 'G9', title: 'extrator: HTTP 404 nao grava arquivo e registra status/motivo', status: ok(r404.status === 'inaccessible' && /404/.test(r404.error || '') && r404.httpStatus === 404 && !fs.existsSync(arquivo)) });
 
   const clienteHtml = { fetch: async () => ({ status: 200, body: HTML, headers: { 'content-type': 'text/html' } }) };
   const rHtml = await extractPdf({ url: 'https://example.invalid/manual.pdf', filePath: arquivo, client: clienteHtml, useElectronNet: false });
