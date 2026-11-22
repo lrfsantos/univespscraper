@@ -72,13 +72,16 @@ function selecionarAmostra(registros) {
 
 // Corpo extraído = Markdown sem a linha de cabeçalho "# titulo" e sem o
 // bloco "Status: ..." — mesmo critério de origem do `chars` do inventário.
+// O gravador escreve `# titulo\n\n${text}\n`: o último \n é sintético e não
+// faz parte do texto extraído, então é removido exatamente uma vez.
 function corpoExtraido(texto) {
   const lines = String(texto).split('\n');
   let i = 0;
   if (lines[i] && lines[i].startsWith('# ')) i++;
   while (i < lines.length && lines[i].trim() === '') i++;
   if (lines[i] && /^Status: /.test(lines[i])) { i++; while (i < lines.length && lines[i].trim() === '') i++; }
-  return lines.slice(i).join('\n');
+  const corpo = lines.slice(i).join('\n');
+  return corpo.endsWith('\n') ? corpo.slice(0, -1) : corpo;
 }
 
 function auditRoot(root) {

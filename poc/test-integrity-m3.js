@@ -48,7 +48,17 @@ record({ id: 'I6b', title: 'UTF-8 inválido (1 byte só) = FAIL utf8-invalido', 
 
 // Tamanho: corpo (sem cabeçalho) menor que chars declarado = FAIL;
 // cabeçalho longo NÃO compensa corpo curto.
-record({ id: 'I6c', title: 'corpoExtraido remove cabeçalho e bloco Status', status: ok(corpoExtraido('# Titulo\n\ntexto aqui\n') === 'texto aqui\n' && corpoExtraido('# Titulo\n\nStatus: integral (250 chars)\n\ntexto aqui\n') === 'texto aqui\n') });
+record({ id: 'I6c', title: 'corpoExtraido remove cabecalho, Status e quebra sintetica final', status: ok(corpoExtraido('# Titulo\n\ntexto aqui\n') === 'texto aqui' && corpoExtraido('# Titulo\n\nStatus: integral (250 chars)\n\ntexto aqui\n') === 'texto aqui' && corpoExtraido('# T\n\nabc\n\n') === 'abc\n') });
+// Adversarial: conteúdo 'abc' (3) com chars=4 e \n sintético -> FAIL.
+const tmpA = fs.mkdtempSync(path.join(os.tmpdir(), 'integrity-fixture5-'));
+fs.writeFileSync(path.join(tmpA, 'INVENTARIO.json'), JSON.stringify({ registros: [
+  { resource_id: 'adv-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 4, output_file: 'SEMANA_1/01_abc.md' },
+] }));
+fs.mkdirSync(path.join(tmpA, 'C1', 'SEMANA_1'), { recursive: true });
+fs.writeFileSync(path.join(tmpA, 'C1', 'SEMANA_1', '01_abc.md'), '# T\n\nabc\n');
+const auditA = auditRoot(tmpA);
+record({ id: 'I6e', title: 'quebra sintetica no compensa conteudo ausente (abc, chars=4) = FAIL', status: ok(auditA.resultados[0].resultado === 'FAIL' && auditA.resultados[0].motivo === 'tamanho-menor-que-declarado'), detail: JSON.stringify(auditA.resultados[0]) });
+
 const tmpT = fs.mkdtempSync(path.join(os.tmpdir(), 'integrity-fixture4-'));
 fs.writeFileSync(path.join(tmpT, 'INVENTARIO.json'), JSON.stringify({ registros: [
   { resource_id: 't-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 500, output_file: 'SEMANA_1/01_curto.md' },

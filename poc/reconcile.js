@@ -151,7 +151,7 @@ function gerarRelatorios(root, resultado) {
   const inventario = { gerado_em: new Date().toISOString(), fonte: 'execuções existentes — sem acesso ao AVA', total: registros.length, grupos: gruposFinais, semUrl, problemas, registros };
   fs.writeFileSync(path.join(root, 'INVENTARIO.json'), JSON.stringify(inventario, null, 2));
 
-  const csvHeader = ['resource_id', 'course_id', 'week', 'detected_type', 'original_status', 'reconciled_status', 'reason', 'chars', 'output_file', 'sanitized_url', 'source_execution', 'source_kind', 'evidence_reference'];
+  const csvHeader = ['resource_id', 'course_id', 'course_title', 'title', 'week', 'detected_type', 'original_status', 'reconciled_status', 'reason', 'chars', 'output_file', 'sanitized_url', 'source_execution', 'source_kind', 'evidence_reference'];
   fs.writeFileSync(path.join(root, 'INVENTARIO.csv'), reconcile.toCsv(registros, csvHeader));
 
   const porDisciplina = {};

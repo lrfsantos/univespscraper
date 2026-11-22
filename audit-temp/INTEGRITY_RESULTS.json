@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-22T06:49:28.984Z",
+  "date": "2026-11-22T13:46:02.170Z",
   "summary": {
-    "total": 13,
-    "passed": 13,
+    "total": 14,
+    "passed": 14,
     "failed": 0
   },
   "results": [
@@ -50,8 +50,14 @@
     },
     {
       "id": "I6c",
-      "title": "corpoExtraido remove cabeçalho e bloco Status",
+      "title": "corpoExtraido remove cabecalho, Status e quebra sintetica final",
       "status": "PASS"
+    },
+    {
+      "id": "I6e",
+      "title": "quebra sintetica no compensa conteudo ausente (abc, chars=4) = FAIL",
+      "status": "PASS",
+      "detail": "{\"resource_id\":\"adv-1\",\"existe\":true,\"vazio\":false,\"ilegivel\":false,\"estruturaOk\":true,\"sha256\":\"53a0ea59397738191765b69967b04590b19e096571b17b6263671c6f8c9901bb\",\"bytes\":9,\"tamanhoOk\":\"MENOR-QUE-DECLARADO\",\"resultado\":\"FAIL\",\"motivo\":\"tamanho-menor-que-declarado\"}"
     },
     {
       "id": "I6d",
