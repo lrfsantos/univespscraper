@@ -30,7 +30,9 @@ const DEFAULT_TIMEOUT_MS = 120000;           // 120 s
 // fica apenas com a assinatura %PDF (comportamento documentado e testado).
 const MIME_PDF_PERMITIDOS = new Set(['application/pdf', 'application/octet-stream', 'application/x-pdf', 'application/binary']);
 function validarRespostaPdf({ status, contentType, buffer } = {}) {
-  if (status != null && (status < 200 || status >= 300)) return { ok: false, motivo: 'HTTP ' + status };
+  if (!Number.isInteger(status) || status < 200 || status > 299) {
+    return { ok: false, motivo: status == null ? 'status-ausente' : 'status-invalido' };
+  }
   const mime = String(contentType || '').split(';', 1)[0].trim().toLowerCase();
   if (mime && !MIME_PDF_PERMITIDOS.has(mime)) return { ok: false, motivo: 'content-type-nao-pdf' };
   if (!buffer || buffer.length < 4 || buffer.slice(0, 4).toString('ascii') !== '%PDF') return { ok: false, motivo: 'nao-e-pdf' };

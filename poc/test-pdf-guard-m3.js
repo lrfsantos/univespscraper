@@ -23,6 +23,9 @@ record({ id: 'G8', title: 'PDF valido SEM content-type aceito como fallback docu
 record({ id: 'G12', title: 'text/plain com nome .pdf rejeitado (MIME puro)', status: ok(validarRespostaPdf({ status: 200, contentType: 'text/plain; name=arquivo.pdf', buffer: PDF }).ok === false) });
 record({ id: 'G13', title: 'application/notpdf rejeitado', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/notpdf', buffer: PDF }).ok === false) });
 record({ id: 'G14', title: 'application/pdfx rejeitado', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/pdfx', buffer: PDF }).ok === false) });
+record({ id: 'G15', title: 'status ausente e explicito: status-ausente', status: ok(validarRespostaPdf({ contentType: 'application/pdf', buffer: PDF }).motivo === 'status-ausente' && validarRespostaPdf({ status: null, buffer: PDF }).motivo === 'status-ausente') });
+record({ id: 'G16', title: 'status invalido (199, 300, NaN, string) rejeitado', status: ok(
+  [199, 300, NaN, '200'].every((s) => validarRespostaPdf({ status: s, buffer: PDF }).motivo === 'status-invalido')) });
 
 (async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pdfguard-'));
