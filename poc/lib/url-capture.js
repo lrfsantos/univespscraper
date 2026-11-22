@@ -14,11 +14,15 @@ function classificarPagina(url) {
   if (!u) return 'sem-url';
   if (/^(about:|chrome-error:|chrome:\/\/|data:)/i.test(u)) return 'invalida';
   if (AVA_URL_VIEW_RE.test(u)) return 'intermediaria';
-  if (/\/course\/view\.php/i.test(u)) return 'origem';
-  try {
-    const x = new URL(u);
-    if (x.hostname.endsWith('univesp.br') && /\/mod\//i.test(x.pathname)) return 'intermediaria';
-  } catch {}
+  let x;
+  try { x = new URL(u); } catch { return 'invalida'; }
+  const proto = String(x.protocol || '').toLowerCase();
+  const host = String(x.hostname || '').toLowerCase();
+  if ((proto !== 'http:' && proto !== 'https:') || !host) return 'invalida';
+  if (host === 'univesp.br' || host.endsWith('.univesp.br')) {
+    if (/\/course\/view\.php/i.test(x.pathname)) return 'origem';
+    return 'intermediaria';
+  }
   return 'externa';
 }
 

@@ -16,7 +16,7 @@ const markdown = require('../src/extract/markdown');
 const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
-const { seguirDestinoUrl } = require('./lib/url-navigation');
+const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -102,8 +102,7 @@ async function clickResource(app, win, courseUrl, id, resourceUrl) {
   if (!clicked) return null;
   const popup = await popupPromise;
   if (popup) {
-    const pu = typeof popup.url === 'function' ? popup.url() : '';
-    return urlCapture.AVA_URL_VIEW_RE.test(String(pu)) ? (await seguirDestinoUrl(app, popup, courseUrl) || null) : popup;
+    return await aguardarPopupFinal(app, popup, courseUrl, (m) => log(`    popup-sem-destino id=${id} motivo=${m}`));
   }
   await win.waitForTimeout(700);
   // Moodle abre materiais em nova aba; seguir a janela criada pelo clique.

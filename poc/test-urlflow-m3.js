@@ -2,7 +2,7 @@
 // Sem AVA, sem login, sem credenciais: usa objetos win/app falsos.
 const fs = require('fs');
 const path = require('path');
-const { seguirDestinoUrl } = require('./lib/url-navigation');
+const { seguirDestinoUrl, aguardarPopupFinal, urlDe } = require('./lib/url-navigation');
 const { avaliarCapturaUrl, classificarPagina, avaliarDestinoNavegacao } = require('./lib/url-capture');
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'URLFLOW_RESULTS.json');
@@ -84,6 +84,42 @@ function fakeWin(urlAtual, { popup = null, clicou = true } = {}) {
     const assinada = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?dummy=placeholder';
     const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: assinada, texto: 'texto' });
     return r.status === 'ok' && !/dummy=|code=|ABCDEF/.test(r.detail) && r.detail.includes('/Leitor/Publicacao/3789');
+  })()) });
+
+  function popupSequencial(urls) {
+    let i = 0;
+    return {
+      url: () => urls[Math.min(i++, urls.length - 1)],
+      avancar: () => { i++; },
+      evaluate: async () => true,
+      waitForEvent: async () => Promise.resolve(null),
+      waitForTimeout: async () => { i++; },
+      waitForLoadState: async () => {},
+    };
+  }
+  const appPop = (w) => ({ windows: () => [w] });
+
+  const p1 = popupSequencial(['about:blank', 'about:blank', EXTERNO]);
+  record({ id: 'UF14', title: 'popup about:blank que navega depois e capturado no destino final', status: ok((await aguardarPopupFinal(appPop(p1), p1, CURSO, () => {}, 2000)) === p1) });
+
+  const p2 = popupSequencial(['about:blank']);
+  const motivos = [];
+  record({ id: 'UF15', title: 'popup que nunca navega falha com motivo identificavel', status: ok((await aguardarPopupFinal(appPop(p2), p2, CURSO, (m) => motivos.push(m), 500)) === null && motivos.some((m) => m.includes('popup-sem-navegacao'))) });
+
+  const p3 = popupSequencial(['about:blank', INTER, EXTERNO]);
+  record({ id: 'UF16', title: 'popup que termina na intermediaria segue o link ate o destino', status: ok((await aguardarPopupFinal(appPop(p3), p3, CURSO, () => {}, 2000)) === p3) });
+
+  const p4 = popupSequencial(['about:blank', 'chrome-error://chromewebdata/']);
+  const motivos4 = [];
+  record({ id: 'UF17', title: 'popup em pagina de erro rejeitado com motivo', status: ok((await aguardarPopupFinal(appPop(p4), p4, CURSO, (m) => motivos4.push(m), 1500)) === null && motivos4.length > 0) });
+
+  record({ id: 'UF18', title: 'URLs malformadas/sem protocolo sao invalidas', status: ok(
+    classificarPagina('ftp://x.br/a') === 'invalida' && classificarPagina('www.youtube.com/watch?v=1') === 'invalida' && classificarPagina('/mod/page/view.php?id=1') === 'invalida') });
+  record({ id: 'UF19', title: 'dominio parecido (fakeunivesp.br) nao e institucional', status: ok(
+    classificarPagina('https://fakeunivesp.br/mod/page/view.php?id=1') === 'externa' && classificarPagina('https://aluno.univesp.br/x') === 'intermediaria') });
+  record({ id: 'UF20', title: 'URL externa http valida continua capturando', status: ok((function () {
+    const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: 'http://example.org/material', texto: 'conteudo' });
+    return r.status === 'ok' && r.acao === 'destino';
   })()) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
