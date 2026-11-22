@@ -1,7 +1,8 @@
 // Frente 3 — teste de integração do fluxo PDF do runner (sem AVA).
 const fs = require('fs');
 const path = require('path');
-const { processarResultadoPdf } = require('./lib/pdf-flow');
+const { processarResultadoPdf, persistirMarkdownPdf } = require('./lib/pdf-flow');
+const os = require('os');
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'PDFFLOW_RESULTS.json');
 const results = [];
@@ -56,6 +57,29 @@ const r6 = processarResultadoPdf({
 record({ id: 'PF6', title: 'capa + intervalo declarado + ultima fisica 248: capa descartada e intervalo avaliado como coberto', status: ok(
   r6.texto.indexOf(CAPA) < 0 && r6.texto.indexOf(CAPITULO) >= 0 &&
   /avanco-pagina-2/.test(r6.detail) && !/so-capa/.test(r6.detail) && !/intervalo-incompleto/.test(r6.detail)) });
+
+const r7 = processarResultadoPdf({
+  status: 'integral', totalPagesArquivo: 1, pages: [pag(CAPA)],
+  printedPagination: { detected: [], reliable: 'none' },
+}, { title: 'Texto-base 1', courseId: 'ADM210' });
+record({ id: 'PF7', title: 'PDF de uma pagina so-capa sem intervalo: partial, nunca integral', status: ok(
+  r7.status === 'partial' && /somente-folha-de-titulo/.test(r7.detail)) });
+
+const r8 = processarResultadoPdf({
+  status: 'integral', totalPagesArquivo: 2, pages: [pag(CAPA), pag(CAPA)],
+  printedPagination: { detected: [], reliable: 'none' },
+}, { title: 'Texto-base 1', courseId: 'ADM210' });
+record({ id: 'PF8', title: 'PDF multiplas capas sem intervalo: partial com avanco-sem-conteudo', status: ok(
+  r8.status === 'partial' && /avanco-sem-conteudo/.test(r8.detail)) });
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pdfflow-'));
+const base = path.join(tmp, '01_material');
+const naoGravou = persistirMarkdownPdf({ resultado: r5, caminhoBase: base, titulo: 'Manual de Oslo' });
+record({ id: 'PF9', title: 'persistencia: inacessivel nao cria Markdown e devolve file=null', status: ok(
+  naoGravou.gravado === false && naoGravou.arquivo === null && !fs.existsSync(base + '.md')) });
+const gravou = persistirMarkdownPdf({ resultado: r1, caminhoBase: base, titulo: 'Texto-base 1' });
+record({ id: 'PF10', title: 'persistencia: conteudo valido gera Markdown', status: ok(
+  gravou.gravado === true && fs.existsSync(base + '.md') && fs.readFileSync(base + '.md', 'utf8').includes('Status:')) });
 
 const fails = results.filter((r) => r.status !== 'PASS').length;
 fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));

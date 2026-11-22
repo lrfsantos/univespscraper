@@ -17,6 +17,7 @@ const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
+const pdfFlow = require('./lib/pdf-flow');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -155,13 +156,13 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       // NÃO existem res.text nem res.ok — status vem pronto do módulo (statusFor).
       const tmp = path.join(os.tmpdir(), `univesp-pdf-${r.id}-${Date.now()}.pdf`);
       const res = await withTimeout(pdfs.extractPdf({ url: r.url, filePath: tmp, request: win.request || (win.context && win.context().request), useElectronNet: false, timeoutMs: 20000 }), 25000, 'pdf');
-      const resultadoPdf = require('./lib/pdf-flow').processarResultadoPdf(res, { title, courseId: course && course.code });
+      const resultadoPdf = pdfFlow.processarResultadoPdf(res, { title, courseId: course && course.code });
       let text = resultadoPdf.texto;
       out.chars = resultadoPdf.chars;
       out.status = resultadoPdf.status;
       out.detail = resultadoPdf.detail;
-      out.file = resultadoPdf.gravarArquivo ? path.basename(base) + '.md' : null;
-      if (resultadoPdf.gravarArquivo) fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
+      const persistencia = pdfFlow.persistirMarkdownPdf({ resultado: resultadoPdf, caminhoBase: base, titulo: title });
+      out.file = persistencia.arquivo;
       try { fs.rmSync(tmp, { force: true }); } catch {}
     } else if (cls.kind === 'video') {
       const res = await withTimeout(videos.extractVideo({ url: r.url, title, fetchFn: globalThis.fetch, timeoutMs: 10000 }), 15000, 'video');
