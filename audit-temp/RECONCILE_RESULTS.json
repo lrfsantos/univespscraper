@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-22T05:09:24.070Z",
+  "summary": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "R1",
+      "title": "integral mapeado",
+      "status": "PASS"
+    },
+    {
+      "id": "R2",
+      "title": "partial com chars>0 (ADM210 real: 121 chars pdf)",
+      "status": "PASS"
+    },
+    {
+      "id": "R3",
+      "title": "partial grande com conteúdo (CIN200 real: 39527 chars)",
+      "status": "PASS"
+    },
+    {
+      "id": "R4",
+      "title": "partial NÃO vira failed só por ter falha registrada",
+      "status": "PASS"
+    },
+    {
+      "id": "R5",
+      "title": "chars=0 com falha explícita = failed",
+      "status": "PASS"
+    },
+    {
+      "id": "R6",
+      "title": "chars=0 sem motivo = unclassified",
+      "status": "PASS"
+    },
+    {
+      "id": "R7",
+      "title": "no_text só com confirmação explícita",
+      "status": "PASS"
+    },
+    {
+      "id": "R8",
+      "title": "contadores exclusivos somam o total",
+      "status": "PASS",
+      "detail": "{\"total\":6,\"integral\":2,\"partial\":1,\"no_text\":0,\"failed\":1,\"unclassified\":2}"
+    },
+    {
+      "id": "R9",
+      "title": "classificação esperada dos 6 casos",
+      "status": "PASS",
+      "detail": "{\"total\":6,\"integral\":2,\"partial\":1,\"no_text\":0,\"failed\":1,\"unclassified\":2}"
+    },
+    {
+      "id": "R10",
+      "title": "sem duplicação: cada registro em 1 grupo",
+      "status": "PASS"
+    },
+    {
+      "id": "R11",
+      "title": "parser do QUALITY.md extrai 3 registros",
+      "status": "PASS"
+    },
+    {
+      "id": "R12",
+      "title": "grupos do histórico: 1 integral, 1 partial, 1 failed",
+      "status": "PASS"
+    },
+    {
+      "id": "R13",
+      "title": "csv escapa separador e aspas",
+      "status": "PASS"
+    }
+  ]
+}

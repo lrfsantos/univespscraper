@@ -14,6 +14,7 @@ const videos = require('../src/extract/videos');
 const books = require('../src/extract/books');
 const markdown = require('../src/extract/markdown');
 const learning = require('./lib/reader-learning');
+const reconcile = require('./lib/reconcile');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -125,15 +126,16 @@ async function extractResource({ app, win, r, dir, seq, state, course, week }) {
       out.file = path.basename(base) + '.md';
       fs.writeFileSync(base + '.md', `# ${title}\n\n${text}\n`);
     } else if (cls.kind === 'pdf') {
+      // Contrato de pdfs.extractPdf(): { status, pages: [{text}], totalPagesArquivo }.
+      // NÃO existem res.text nem res.ok — status vem pronto do módulo (statusFor).
       const tmp = path.join(os.tmpdir(), `univesp-pdf-${r.id}-${Date.now()}.pdf`);
       const res = await withTimeout(pdfs.extractPdf({ url: r.url, filePath: tmp, request: win.request || (win.context && win.context().request), useElectronNet: false, timeoutMs: 20000 }), 25000, 'pdf');
-      const text = String(res && (res.text || '') || '');
-      const npages = res && res.pages ? res.pages.length : 0;
+      const text = ((res && res.pages) || []).map((p) => p.text).filter(Boolean).join('\n\n');
       out.chars = text.length;
-      out.status = res && res.ok !== false && text.length >= 100 ? 'integral' : 'partial';
-      out.detail = `paginas=${npages}`;
+      out.status = (res && res.status) || 'partial';
+      out.detail = `paginas=${(res && res.pages ? res.pages.length : 0)}/${(res && res.totalPagesArquivo) || '?'}`;
       out.file = path.basename(base) + '.md';
-      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status}\n\n${text}\n`);
+      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
       try { fs.rmSync(tmp, { force: true }); } catch {}
     } else if (cls.kind === 'video') {
       const res = await withTimeout(videos.extractVideo({ url: r.url, title, fetchFn: globalThis.fetch, timeoutMs: 10000 }), 15000, 'video');
@@ -218,11 +220,11 @@ async function extractCourse({ app, win, course, rootDir, state }) {
     }
   }
   const total = results.length;
-  const integral = results.filter((r) => r.status === 'integral').length;
-  const empty = results.filter((r) => r.chars === 0).length;
-  const quality = { disciplina: code, total, integrais: integral, semTexto: empty, status: integral === total ? 'PASS' : 'REVIEW' };
-  fs.writeFileSync(path.join(dir, 'QUALITY.md'), ['# Qualidade da extração', '', `- Disciplina: ${course.title} (${code})`, `- Recursos: ${total}`, `- Integrais: ${integral}`, `- Sem texto: ${empty}`, `- Resultado: ${quality.status}`, '', '## Detalhes', ...results.map((r) => `- S${r.week} ${r.title}: ${r.status} (${r.chars} chars)${r.detail ? ' — ' + r.detail : ''}`)].join('\n'));
-  log(`FIM disciplina=${code} total=${total} integrais=${integral} semTexto=${empty}`);
+  const groups = reconcile.countGroups(results);
+  const quality = { disciplina: code, total, groups, status: groups.integral === total ? 'PASS' : 'REVIEW' };
+  fs.writeFileSync(path.join(dir, 'RECORDS.json'), JSON.stringify({ disciplina: code, titulo: course.title, cursoId: course.id, registros: results }, null, 2));
+  fs.writeFileSync(path.join(dir, 'QUALITY.md'), ['# Qualidade da extração', '', `- Disciplina: ${course.title} (${code})`, `- Recursos: ${total}`, `- Integral: ${groups.integral}`, `- Partial: ${groups.partial}`, `- Sem texto: ${groups.no_text}`, `- Falhas: ${groups.failed}`, `- Sem classificação: ${groups.unclassified}`, `- Resultado: ${quality.status}`, '', '## Detalhes', ...results.map((r) => `- S${r.week} ${r.title}: ${r.status} (${r.chars} chars)${r.detail ? ' — ' + r.detail : ''}`)].join('\n'));
+  log(`FIM disciplina=${code} total=${total} ${JSON.stringify(groups)}`);
   return quality;
 }
 
