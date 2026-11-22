@@ -1,19 +1,22 @@
 {
-  "gerado_em": "2026-11-22T05:57:30.081Z",
+  "gerado_em": "2026-11-22T06:17:05.310Z",
   "fase": "2.1 — verificação automatizada, sem acesso ao AVA",
+  "estados": "PASS/FAIL/NOT_APPLICABLE/INCONCLUSIVE",
   "contagem": {
     "total": 468,
-    "PASS": 468,
-    "MISCLASSIFIED": 0,
-    "INCONCLUSIVE": 0
+    "PASS": 336,
+    "FAIL": 0,
+    "NOT_APPLICABLE": 98,
+    "INCONCLUSIVE": 34
   },
   "problemas": {
     "arquivoAusente": 0,
     "vazio": 0,
     "ilegivel": 0,
     "estruturaErrada": 0,
+    "arquivoCompartilhado": 0,
     "conteudoDuplicado": 0,
-    "misclassified": 0
+    "tamanhoMenorQueDeclarado": 0
   },
   "resultados": [
     {
@@ -21,11 +24,12 @@
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S1-s1---videoaula-1---revolução-industrial-e-o-surgimento-do-administrador-página-06e16ebd",
@@ -35,9 +39,9 @@
       "estruturaOk": true,
       "sha256": "633eb05e5d5a474167976d90a0d1a1c6abc9fd11e8dffb87f5d38f88ed8b7bb8",
       "bytes": 351,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S1-s1---videoaula-2---abordagem-científica-da-administração_-introdução-as-teorias-administra-bc450aed",
@@ -47,9 +51,9 @@
       "estruturaOk": true,
       "sha256": "b4b77526c2474606b95f70914611361fce59a87cf4e25bdc9231f59a0edd9d84",
       "bytes": 368,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S1-s1---videoaula-3---introdução-à-teoria-clássica---funções-do-administrador-página-ea98bc3c",
@@ -59,9 +63,9 @@
       "estruturaOk": true,
       "sha256": "d451624f3a86dc54e32bad9c29bdd2e03df545bf6f0c8e2591592c3ddc3b039d",
       "bytes": 345,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S1-s1---texto-base-1---teorias-da-administração-(p.-4-18-e-42-46-)-12bd976b",
@@ -71,42 +75,45 @@
       "estruturaOk": true,
       "sha256": "cf501ab54941ee6301d5f5daf40f7aba1d81a6fbe8b76646c377b920f82194b8",
       "bytes": 253,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S1-s1---texto-base-2---teoria-geral-da-administração-(p.-23-35)-_-fernando-c.-prestes-motta,--2bbb50d0",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S1-s1---texto-base-3---teoria-geral-da-administração_-da-revolução-urbana-à-era-da-agilidade--11ada4e8",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S1-s1---texto-base-4---teorias-da-administração-(leia-a-partir-da-seção-_o-sistema-da-indústr-9647219e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S1-s1---aprofundando-o-tema-página-230b5e94",
@@ -116,9 +123,9 @@
       "estruturaOk": true,
       "sha256": "e6e5f84644c647bfddbb5c7424a0954e9707502e5c0d8401ad33aa582e7ba972",
       "bytes": 1021,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S1-s1---em-síntese-página-c4876ab5",
@@ -128,9 +135,9 @@
       "estruturaOk": true,
       "sha256": "28fc7fe3c138a8d4cd551d69cd998de8a46da09b64885016850d4dd4e29b07b2",
       "bytes": 1346,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S2-s2---abordagem-clássica-da-administração-página-d6ca5f49",
@@ -140,9 +147,9 @@
       "estruturaOk": true,
       "sha256": "8893bd20a95914deb8fcf8931116bca5bb0a94ae275282cb1f6545ac020c9552",
       "bytes": 4707,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S2-s2---videoaula-4---abordagem-clássica_-as-habilidades-e-as-funções-administrativas-página-fd7e2475",
@@ -152,9 +159,9 @@
       "estruturaOk": true,
       "sha256": "4de7b7cc0fe9898346494f626f02cb7e474a042a3acc2d18c757855e9bf7ab2b",
       "bytes": 355,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S2-s2---videoaula-5---principais-diferenças-entre-a-administração-científica-e-a-teoria-cláss-027e0c1a",
@@ -164,9 +171,9 @@
       "estruturaOk": true,
       "sha256": "68df5d38a968936467cb32e09a1d2c5188c466f7382e92d56031530e82727b4e",
       "bytes": 337,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S2-s2---videoaula-6---henry-ford-e-a-linha-de-montagem---fordismo-página-067e4fe3",
@@ -176,64 +183,69 @@
       "estruturaOk": true,
       "sha256": "52862320d42cd23983256ab3d4fd64aa1e36dfe6ecbcccbc8955d82ce6741165",
       "bytes": 271,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S2-s2---texto-base-1---teorias-da-administração-(p.-9-25)-af2aac07",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S2-s2---texto-base-2---teorias-da-administração-(p.-121-124)-da442dd6",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S2-s2---texto-base-3---teorias-da-administração-(p.-131-143)-a5cfe9cc",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S2-s2---texto-base-4---teoria-geral-da-administração-(p.-31-33)-_-fernando-c.-prestes-motta,--4b2ca95e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S2-s2---aprofundando-o-tema-página-48d07d60",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S2-s2---em-síntese-página-246078f6",
@@ -243,9 +255,9 @@
       "estruturaOk": true,
       "sha256": "357ddf39c3ae51bda034a89880b0b65d8106165282efa60cfc8502a00ed0992e",
       "bytes": 1612,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S3-s3---abordagem-humanística-da-administração-e-o-modelo-burocrático-página-fbd8b7b0",
@@ -255,9 +267,9 @@
       "estruturaOk": true,
       "sha256": "e3b9137006152b44accdafaceb03e9d4193d51523c90fdee80c70f7163adfe68",
       "bytes": 7253,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S3-s3---videoaula-7---george-elton-mayo-e-a-experiência-de-hawthorne-página-45e488b5",
@@ -267,9 +279,9 @@
       "estruturaOk": true,
       "sha256": "7570c49f693d19285894061646e621fca2c5fce085974b8458bf3878934fd7cf",
       "bytes": 475,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S3-s3---videoaula-8---abordagem-humanística-da-administração_-teoria-das-relações-humanas-pág-3c728405",
@@ -279,9 +291,9 @@
       "estruturaOk": true,
       "sha256": "d8c8645fb41010a371cabec5a23fcf0872eb966dfa30649dec008b67dfd36ec5",
       "bytes": 403,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S3-s3---videoaula-9---teoria-da-burocracia-e-as-características-da-organização-burocrática-pá-ef481fe7",
@@ -291,64 +303,69 @@
       "estruturaOk": true,
       "sha256": "8b9d11531dc01493517095fa076ac47ab629d0222cc85a84102a995d2a523df9",
       "bytes": 363,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S3-s3---texto-base-1---teorias-da-administração-(p.-146-151)-303fccc0",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S3-s3---texto-base-2---teorias-da-administração-(p.-157-168)-4d388511",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S3-s3---texto-base-3---teorias-da-administração-(p.-186-203)-2ed5760f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S3-s3---texto-base-4---teoria-geral-da-administração-(p.-44-55)-_-fernando-c.-prestes-motta,--a05379fd",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S3-s3---aprofundando-o-tema-página-1aec4672",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S3-s3---em-síntese-página-c08d2ed3",
@@ -358,9 +375,9 @@
       "estruturaOk": true,
       "sha256": "6a6369180b136adefbbdd0371ab1c73c891b722e28e615fd79e99a3333e8c171",
       "bytes": 2327,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S4-s4---abordagem-comportamental-da-administração---contextualização-página-a1f41410",
@@ -370,9 +387,9 @@
       "estruturaOk": true,
       "sha256": "077d64321bd78d7f8f664464e1802c970ae621d124183693be7ed43a3e7a5408",
       "bytes": 6055,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S4-s4---videoaula-10---abordagem-comportamental-da-administração---contextualização-página-578df6da",
@@ -382,9 +399,9 @@
       "estruturaOk": true,
       "sha256": "8f85c5b4edbb5482ee875371c25d3f72ce96fd34404020e20f555e0051651e6f",
       "bytes": 513,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S4-s4---videoaula-11---teoria-do-reforço-de-b.-f.-skinner-e-teoria-da-equidade-de-s.-adams-pá-25310e72",
@@ -394,9 +411,9 @@
       "estruturaOk": true,
       "sha256": "a0088a8a41dbfa227c502313d90f73babde925b593e23dd195439815281684a0",
       "bytes": 540,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S4-s4---videoaula-12---teoria-das-necessidades-humanas---maslow-e-herzberg---teoria-x-e-y-de--780ddfb2",
@@ -406,42 +423,45 @@
       "estruturaOk": true,
       "sha256": "4556a4e0680b885c6bfea3154ad4426a9ff20b042a7dae9a86182e856fe53321",
       "bytes": 504,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S4-s4---texto-base-1---teorias-da-administração-(p.-204-226-e-229-239)-e7fd7383",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S4-s4---texto-base-2---teoria-geral-da-administração-(p.-61-74)-_-fernando-c.-prestes-motta,--6865607c",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S4-s4---aprofundando-o-tema-página-e6570959",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S4-s4---em-síntese-página-7fc3e8dc",
@@ -451,9 +471,9 @@
       "estruturaOk": true,
       "sha256": "494140df7c2d153f601a0ec46a5d83bcd657b1da9d089227aaf94269057c0a15",
       "bytes": 1861,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S5-s5---abordagem-sistêmica-da-administração---contextualização-página-62935bce",
@@ -463,9 +483,9 @@
       "estruturaOk": true,
       "sha256": "1bc5fba4920c0c5ac43e32e34c9cea6dfcb49c4569eb021d05dddcb7bb2c48d8",
       "bytes": 7540,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S5-s5---videoaula-13---abordagem-sistêmica-da-administração_-contextualização-página-251dbcaa",
@@ -475,9 +495,9 @@
       "estruturaOk": true,
       "sha256": "a3e51112f5a418d322c978ea51b1fdd0efd012993a6120afd9869e9741bbe888",
       "bytes": 298,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S5-s5---videoaula-14---conceito-de-sistemas-e-subsistemas-página-dc5163ee",
@@ -487,9 +507,9 @@
       "estruturaOk": true,
       "sha256": "dedbef56357afe4f3795529a5aa4444ee1e6285bf93173450667ee003ddbe1db",
       "bytes": 245,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S5-s5---videoaula-15---teoria-estruturalista---o-ambiente-externo-em-análise-página-cbb8db05",
@@ -499,42 +519,45 @@
       "estruturaOk": true,
       "sha256": "891c29c871f02da4471c76d5f66aa8f3c33f7362c7bb5ce03fe1e1a1e7d65a72",
       "bytes": 293,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S5-s5---texto-base-1---teorias-da-administração-(p.-260-270-e-327-337)-2e3342a9",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S5-s5---texto-base-2---teoria-geral-da-administração-(p.-149-151-e-181-185)-_-fernando-c.-pre-640b3ee5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S5-s5---aprofundando-o-tema-página-c082371a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S5-s5---em-síntese-página-bc6f0679",
@@ -544,9 +567,9 @@
       "estruturaOk": true,
       "sha256": "bfe3a8300b201f1f3344d5a1a60425fbc41c92cfab09730694aecf1e05c8f4ba",
       "bytes": 1898,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S6-s6---abordagem-contingencial-da-administração---contextualização-página-496fc5b8",
@@ -556,9 +579,9 @@
       "estruturaOk": true,
       "sha256": "8d1b97f5c1e55ac18cdf00fb41a2b350deca925a41b6c007f07642cae27f12fe",
       "bytes": 7384,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S6-s6---videoaula-16---abordagem-contingencial-da-administração---contextualização-página-08c15321",
@@ -568,9 +591,9 @@
       "estruturaOk": true,
       "sha256": "12060d92f79150c0067ece9e28f4dc760e22280ceed56209d6e634914e6e5874",
       "bytes": 441,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S6-s6---videoaula-17---análise-ambiental_-os-ambientes-em-que-uma-empresa-se-insere-página-a30b2fd5",
@@ -580,9 +603,9 @@
       "estruturaOk": true,
       "sha256": "4065d7ca3c9ad4bf7d46261e3c8fa166ba5da22ce7a39af79abcac7ba401c5ae",
       "bytes": 543,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S6-s6---videoaula-18---globalização-de-mercados-e-suas-influências-nas-empresas-página-8a6c3160",
@@ -592,31 +615,33 @@
       "estruturaOk": true,
       "sha256": "8c9bcf863af03d7230e8daa8a14d8bc74c4280f7da4aebed20738580d84481cc",
       "bytes": 460,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S6-s6---texto-base-1---teoria-geral-da-administração-(p.-209-221)-_-fernando-c.-prestes-motta-876948d2",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S6-s6---aprofundando-o-tema-página-128b6b25",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S6-s6---em-síntese-página-28ee2e16",
@@ -626,9 +651,9 @@
       "estruturaOk": true,
       "sha256": "6728c75eb9361e6da4d94de6ec9463a4faf52ee8c0cc07c961b066dfa6ddb822",
       "bytes": 1615,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S7-s7---novas-abordagens-da-administração---adm.-por-objetivos-e-adm.-participativa-página-49076b10",
@@ -638,9 +663,9 @@
       "estruturaOk": true,
       "sha256": "7a0fa054365093610b0f0e79b45b93ecca4f5658ee0831cd2ae6819cc9094574",
       "bytes": 5770,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S7-s7---videoaula-19---novas-abordagens-da-administração---adm.-por-objetivos---contextualiza-9f5722d7",
@@ -650,9 +675,9 @@
       "estruturaOk": true,
       "sha256": "32d2c9bcafe4eb52de94b75f3a96221f8b557dd66f55cb82c5c9affa34e9636e",
       "bytes": 392,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S7-s7---videoaula-20---principais-características-da-adm.-por-objetivos-e-a-hierarquia-dos-ob-27b97a5c",
@@ -662,9 +687,9 @@
       "estruturaOk": true,
       "sha256": "a4936fafdfb61acde5f0bcb05cff4cad1ff6b290605e3dce80c0dcf3deb89ca2",
       "bytes": 371,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S7-s7---videoaula-21---novas-abordagens-da-administração---administração-participativa-página-3b7f2973",
@@ -674,42 +699,45 @@
       "estruturaOk": true,
       "sha256": "609a6292b8fd660961089f80018225239e9a4708f68061a2ee69e875277ed42b",
       "bytes": 333,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM210-S7-s7---texto-base-1---teoria-geral-da-administração-(p.-77-88)-_-fernando-c.-prestes-motta,--a177ec4a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S7-s7---aprofundando-o-tema-página-1844dd98",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM210-S7-s7---em-síntese-página-eb741fc5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S1-s1---início-página-3d1756d9",
@@ -719,9 +747,9 @@
       "estruturaOk": true,
       "sha256": "fc9de971b3a50578909cd8a2a423db1a0c1543172b4fe8063e8d44b3aee70a41",
       "bytes": 6292,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S1-s1---videoaulas-página-2e06548f",
@@ -731,42 +759,45 @@
       "estruturaOk": true,
       "sha256": "aaeb3503a79baf06d74ffabc45fc5fdd73e620b452aa26ddffeb7e0cc021cc2a",
       "bytes": 471,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S1-s1---texto-base---comportamento-organizacional-(leia-o-capítulo-1---comportamento-organiza-185fa585",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S1-s1---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-4---atitudes-e-co-a13f63ed",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S1-s1---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-2---comportamento-260ba8f7",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S1-s1---aprofundando-o-tema-página-839a5525",
@@ -776,9 +807,9 @@
       "estruturaOk": true,
       "sha256": "b397be662ebd856123797106953409041c0c025221ca16c8461bc1e84c6ad72f",
       "bytes": 476,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S1-s1---em-síntese-página-d6f2c0aa",
@@ -788,9 +819,9 @@
       "estruturaOk": true,
       "sha256": "72ee9fcdfa0bc26ee24d65fea29823e517c64aa755ed0c0854f86afaa3c05940",
       "bytes": 1899,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S2-s2---início-página-59df49c8",
@@ -800,9 +831,9 @@
       "estruturaOk": true,
       "sha256": "b538f6ab61f4875b115b953564f8217af1f11fe21ae390922f898edbebf4e83f",
       "bytes": 7450,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S2-s2---videoaulas-página-f9db867e",
@@ -812,31 +843,33 @@
       "estruturaOk": true,
       "sha256": "1d35456112488b0aef26d1f4ff31db6415a810bcf53fca05fef626b065c37ea6",
       "bytes": 544,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S2-s2---texto-base---comportamento-organizacional-(leia-o-capítulo-4---percepção,-tomada-de-d-47d793ec",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S2-s2---texto-base---comportamento-organizacional-(leia-o-capítulo-5---motivação-e-desempenho-ae262b08",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S2-s2---aprofundando-o-tema-página-90eed81b",
@@ -846,9 +879,9 @@
       "estruturaOk": true,
       "sha256": "65f82d370927d6d4e6de849ffc0b2484c1ef4d44515e4f80f4850554699a5f7d",
       "bytes": 702,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S2-s2---em-síntese-página-c4d71ea2",
@@ -858,9 +891,9 @@
       "estruturaOk": true,
       "sha256": "fc88477ba24f012cd6189d96e43a04a7ad406685ce265982b76b39d6602d3f83",
       "bytes": 2232,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S3-s3---início-página-2af8f588",
@@ -870,9 +903,9 @@
       "estruturaOk": true,
       "sha256": "75288cb89aec327a2b4c98e29cb95fe41df895066eec3d7bba2181cea67ea6a4",
       "bytes": 6965,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S3-s3---videoaulas-página-9cbc1ca0",
@@ -882,42 +915,45 @@
       "estruturaOk": true,
       "sha256": "c6f6be52ecfc99e886c7de0f893a019213a0ddae90cb2ebc64e520e8177c6a22",
       "bytes": 528,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S3-s3---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-1-–-as-organizaçõ-47941fb1",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S3-s3---texto-base---comportamento-organizacional-(leia-o-capítulo-2---gestão-e-gestores,-p.--c713e9e4",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S3-s3---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-2---organização_--ea45618f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S3-s3---aprofundando-o-tema-página-201b2e70",
@@ -927,9 +963,9 @@
       "estruturaOk": true,
       "sha256": "c927ea4be80e67835dea4fd2939d4c03c25227f51c746b4f60aed203733fb2cf",
       "bytes": 608,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S3-s3---em-síntese-página-001eaa6e",
@@ -939,9 +975,9 @@
       "estruturaOk": true,
       "sha256": "4768440da8bf5ce75258799e16d91137795f6f5c315979c7443450d055c52a8e",
       "bytes": 2242,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S4-s4---início-página-acdb4559",
@@ -951,9 +987,9 @@
       "estruturaOk": true,
       "sha256": "1633f580fc06b2a36d87088205524f5f05134bb24cadd5ddc2644c5118328865",
       "bytes": 6474,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S4-s4---videoaulas-página-805393b4",
@@ -963,42 +999,45 @@
       "estruturaOk": true,
       "sha256": "774e5889886a546e60f5f53b26377964379bf7fd12200c360113965c09f022db",
       "bytes": 477,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S4-s4---texto-base---comportamento-organizacional-(leia-o-capítulo-8---interdependência-e-rel-cdc343a4",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S4-s4---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-6-–-relacionament-d06a5007",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S4-s4---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-3---o-homem_-trab-e8e8be08",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S4-s4---aprofundando-o-tema-página-71904156",
@@ -1008,9 +1047,9 @@
       "estruturaOk": true,
       "sha256": "f6862568ac937275cd77cfa8b8e1273ed04d9de158cf3fcf0d8403584feb1e5f",
       "bytes": 368,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S4-s4---em-síntese-página-9c730071",
@@ -1020,9 +1059,9 @@
       "estruturaOk": true,
       "sha256": "0bb28c0b87bd9d1eea97f0084a96141b9a635b8d265106f04e45d9a6d18e4993",
       "bytes": 2055,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S5-s5---início-página-12b1e06b",
@@ -1032,9 +1071,9 @@
       "estruturaOk": true,
       "sha256": "75211fbefe95470cad9c1cec96cb067709f87a4fac9e93dc0578f517c86a68e3",
       "bytes": 6887,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S5-s5---videoaulas-página-35ac2935",
@@ -1044,9 +1083,9 @@
       "estruturaOk": true,
       "sha256": "3f00f35d1c776b5f05d644cc099a8b9c35f79973ced241b01d915756b1446a30",
       "bytes": 411,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S5-s5---texto-base---comportamento-organizacional_-integrando-conceitos-da-administração-e-da-5a90040c",
@@ -1056,31 +1095,33 @@
       "estruturaOk": true,
       "sha256": "ac92b46c61919bccded7d04ce0afc4fa77b55aad600c94206d92367d7cad31c9",
       "bytes": 23016,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S5-s5---texto-base---comportamento-organizacional-(leia-o-capítulo-14---cultura,-mudança-e-de-48273fcb",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S5-s5---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-3-–-cultura-organ-e450ca2d",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S5-s5---aprofundando-o-tema-página-7e254475",
@@ -1090,9 +1131,9 @@
       "estruturaOk": true,
       "sha256": "00d232e500ab00a22ac3a93f3d04b1d18aba4aca5c85f33d0672f6aba7f538af",
       "bytes": 354,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S5-s5---em-síntese-página-6f4ee808",
@@ -1102,9 +1143,9 @@
       "estruturaOk": true,
       "sha256": "21a99541be814c98ff8cf3e42ac1b6961b16ab842825595a76aefff28768ab1f",
       "bytes": 2110,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---início-página-8969e3d4",
@@ -1114,9 +1155,9 @@
       "estruturaOk": true,
       "sha256": "2bb849cc50f2e895a040d20ef8b42aefab61327cef606a0a947d1a59748aabd9",
       "bytes": 4922,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---videoaulas-página-a0700e38",
@@ -1126,20 +1167,21 @@
       "estruturaOk": true,
       "sha256": "a9ea4029a250c8352cd1fe7a1d667a59faffb3d7606f33c07026dd7b8be62ddd",
       "bytes": 403,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---texto-base---medida-do-comportamento-organizacional-(leia-o-capítulo-2---clima-organi-1c8ba193",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S6-s6---texto-base---comportamento-organizacional_-integrando-conceitos-da-administração-e-da-a0549520",
@@ -1149,9 +1191,9 @@
       "estruturaOk": true,
       "sha256": "1b01aadad090953d2dd9d6e410a67a2dfe45791138b08c264cd2e7b39c3062a5",
       "bytes": 32854,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---texto-base---cultura-e-clima-organizacional_-compreendendo-a-essência-das-organizaçõe-34c9e3e0",
@@ -1161,9 +1203,9 @@
       "estruturaOk": true,
       "sha256": "fd7851912ee050263a0c19227fed01ba2e1823405b3d06b5b5d01607b5f89ca4",
       "bytes": 33154,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---aprofundando-o-tema-página-03b56d63",
@@ -1173,9 +1215,9 @@
       "estruturaOk": true,
       "sha256": "c3820a695a9e53608a7f08c99a756e14c40283d6fb8896efe548958b88ec3f7b",
       "bytes": 429,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S6-s6---em-síntese-página-e15edc1f",
@@ -1185,9 +1227,9 @@
       "estruturaOk": true,
       "sha256": "2efd2aacae0042aecf9b63c62b0f64cb3d460a48171a948da46af5a6d3b5eaa3",
       "bytes": 1865,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S7-s7---início-página-fad8d970",
@@ -1197,9 +1239,9 @@
       "estruturaOk": true,
       "sha256": "c52c528c6bfb384d0857593a5cc34bd82f8a8b971a3bd5bcf1e98c11e0665a5e",
       "bytes": 7130,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S7-s7---videoaulas-página-b16b1f37",
@@ -1209,31 +1251,33 @@
       "estruturaOk": true,
       "sha256": "abbd52f94e8fc61db954f3aca95b2170bd81f9af67e5d47a9e7d31bc56ef5094",
       "bytes": 514,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S7-s7---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-6---liderança-atr-a67473ee",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S7-s7---texto-base---comportamento-humano-nas-organizações-(leia-o-capítulo-7---as-relações-i-f94b16e3",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM220-S7-s7---aprofundando-o-tema-página-f08c44fe",
@@ -1243,9 +1287,9 @@
       "estruturaOk": true,
       "sha256": "02e551ba5b60804859d56919b91052fb1bba6975c71bf97249d0c8d82dfb4f29",
       "bytes": 630,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM220-S7-s7---em-síntese-página-60790166",
@@ -1255,9 +1299,9 @@
       "estruturaOk": true,
       "sha256": "7056f4a57255ad1016e2e4411ebbade8a372ca110588562b9141a55da0c07e05",
       "bytes": 2030,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S1-s1---início-página-f601d4b9",
@@ -1267,9 +1311,9 @@
       "estruturaOk": true,
       "sha256": "557b7f0ebc603d8561d413f303f55da227404a5597740a55f15941f060cda4e1",
       "bytes": 2297,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S1-s1---videoaulas-página-293eddea",
@@ -1279,31 +1323,33 @@
       "estruturaOk": true,
       "sha256": "249a52ae55831a0a9c9c022301e660ea23268e8759794e017cbc3c1022f3ed31",
       "bytes": 413,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S1-s1---texto-base-1_-contabilidade-básica-(leia-o-capítulo-1---introdução,-pp.-1-a-27)-_-pau-d9fb5245",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S1-s1---texto-base-2_-contabilidade-(leia-a-unidade-3---fatos-contábeis,-até-o-item-“retifica-4ccedc7d",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S1-s1---aprofundando-o-tema-página-5a06a2da",
@@ -1313,9 +1359,9 @@
       "estruturaOk": true,
       "sha256": "72a020df6c15cd5c7d723ea333d64f125f15c1238deb2a93e855189d096f08b1",
       "bytes": 588,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S1-s1---em-síntese-página-be88abd7",
@@ -1325,9 +1371,9 @@
       "estruturaOk": true,
       "sha256": "958a4517a3af44844ab6552cc07b389aecfce2639a7ab476911e2f972e26829d",
       "bytes": 1949,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S2-s2---início-página-e56a994f",
@@ -1337,9 +1383,9 @@
       "estruturaOk": true,
       "sha256": "412093ed8f4a819ce715c04f495a05cda0fa61411595ec39d020529d562e8c20",
       "bytes": 3650,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S2-s2---videoaulas-página-44e12837",
@@ -1349,31 +1395,33 @@
       "estruturaOk": true,
       "sha256": "5ab33a92683a4005104545fb4264c004070a34ef42756d49432ebddeedb5c2c4",
       "bytes": 374,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S2-s2---texto-base-1_-contabilidade-básica-(leia-o-capítulo-12---demonstrações-contábeis-e-fi-ed4b6416",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S2-s2---exercício-de-apoio-página-035e99ad",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S2-s2---aprofundando-o-tema-página-16ec082b",
@@ -1383,9 +1431,9 @@
       "estruturaOk": true,
       "sha256": "a498666d01271c9249195978649545acc966aafdf4778830fa717ebb18ca69ff",
       "bytes": 486,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S2-s2---em-síntese-página-953a173d",
@@ -1395,9 +1443,9 @@
       "estruturaOk": true,
       "sha256": "adaf49ecfc501dab9eda0ce30bf49295cff02d4b775746d74f6b261cb6494a54",
       "bytes": 2501,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S3-s3---início-página-b4d4867e",
@@ -1407,9 +1455,9 @@
       "estruturaOk": true,
       "sha256": "0ad11708ba537afa81e1135fb14cde83690165ba7e2a0b4747cb48fad3b86bbd",
       "bytes": 3625,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S3-s3---videoaulas-página-e7cf89bf",
@@ -1419,31 +1467,33 @@
       "estruturaOk": true,
       "sha256": "159f4a61168c639f7d7b453ef680b84fae41956008c885f07ca16c76bfcf44d1",
       "bytes": 333,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S3-s3---texto-base-1_-texto-base---contabilidade-ambiental---relato-integrado-e-sustentabilid-a24ae8a0",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S3-s3---exercício-de-apoio-página-08724e74",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S3-s3---aprofundando-o-tema-página-a1279d85",
@@ -1453,9 +1503,9 @@
       "estruturaOk": true,
       "sha256": "4fbfc786e07585064c4785235602c3307f9bd96c0547629c8fad0ccd20366036",
       "bytes": 146,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S3-s3---em-síntese-página-fcc70f1b",
@@ -1465,9 +1515,9 @@
       "estruturaOk": true,
       "sha256": "70b4e27d899f5cafd5be15207af33c3b171f4a98c72fbff916ec50c113e0f50c",
       "bytes": 2027,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S4-s4---início-página-4d35d453",
@@ -1477,9 +1527,9 @@
       "estruturaOk": true,
       "sha256": "579a6c94a4ada4a605e8328aafd8f55688917566bc68df539ddaada3af7cf664",
       "bytes": 2447,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S4-s4---videoaulas-página-68c9e61e",
@@ -1489,42 +1539,45 @@
       "estruturaOk": true,
       "sha256": "0ee482f40ce28655567b072bb68c55657539cbc47c66edbcd5aa227da9e62fe7",
       "bytes": 390,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S4-s4---texto-base-1_-contabilidade-ambiental_-relato-integrado-e-sustentabilidade-(leia-o-ca-ba56ef0b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S4-s4---texto-base-2_-contabilidade-ambiental_-relato-integrado-e-sustentabilidade-(leia-o-ca-cd12a4ef",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S4-s4---exercício-de-apoio-página-9ef521c7",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S4-s4---aprofundando-o-tema-página-b9ec1433",
@@ -1534,9 +1587,9 @@
       "estruturaOk": true,
       "sha256": "c8213c14a010ce6819a97eb28d1a80b97ece66060eba59857c436f33ad61e1c8",
       "bytes": 286,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S4-s4---em-síntese-página-6567e642",
@@ -1546,9 +1599,9 @@
       "estruturaOk": true,
       "sha256": "8b16a6a792f26f9c7a27655681d8a25adbc87b433a831f80b3239621d5a3143f",
       "bytes": 2252,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S5-s5---início-página-374b72a6",
@@ -1558,9 +1611,9 @@
       "estruturaOk": true,
       "sha256": "9807200baf17bf1dcea7ee9466d76facd40b51f6a84d767184bcc04b4a117c3a",
       "bytes": 2777,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S5-s5---videoaulas-página-dc6b3c00",
@@ -1570,31 +1623,33 @@
       "estruturaOk": true,
       "sha256": "7d9e3cec1369a5d01d739ede5411b933c8bb640f20437d0084e7e9837408c421",
       "bytes": 305,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S5-s5---texto-base-1_-fundamentos-de-administração-financeira-(leia-o-capítulo-9---alavancage-8d4b10c3",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S5-s5---texto-base-2_-contabilidade-ambiental_-relato-integrado-e-sustentabilidade-(leia-o-it-49980161",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S5-s5---exercício-de-apoio-página-e62f85eb",
@@ -1604,9 +1659,9 @@
       "estruturaOk": true,
       "sha256": "d28bf6d3076c0fa92dcdfa2586751a6998c27662730d554d91e446e29d635238",
       "bytes": 324,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S5-s5---aprofundando-o-tema-página-d246c17a",
@@ -1616,9 +1671,9 @@
       "estruturaOk": true,
       "sha256": "588eff1de8b4d26e506b2557936d95e80b31beeb829d768d080f82b69cf14207",
       "bytes": 256,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S5-s5---em-síntese-página-7a8c14fd",
@@ -1628,9 +1683,9 @@
       "estruturaOk": true,
       "sha256": "0c319aa5983eb5fccd585a5c1dd541c426d6e7f86af2bdc26fbaa06c45b59682",
       "bytes": 1617,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S6-s6---início-página-ba68626f",
@@ -1640,9 +1695,9 @@
       "estruturaOk": true,
       "sha256": "610ed0982049bc1013739e5c81371e7659f34debe9ad0822b4b7895260d7bb2f",
       "bytes": 2493,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S6-s6---videoaulas-página-8cf8f5f5",
@@ -1652,31 +1707,33 @@
       "estruturaOk": true,
       "sha256": "b604e61fcbb841d975a45c17b2fa10f156be47c92efc6086d601775e64066f7b",
       "bytes": 425,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S6-s6---texto-base-1_-contabilidade-básica-(leia-o-capítulo-4---operações-com-mercadorias,-p.-0b61ecdd",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S6-s6---exercício-de-apoio-página-49a5b0fb",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S6-s6---aprofundando-o-tema-página-1550fb6a",
@@ -1686,20 +1743,21 @@
       "estruturaOk": true,
       "sha256": "c746250386e347807aab1cc2f7c5c188ef5bc6ed3bb9a8b95fc6062e51addd33",
       "bytes": 253,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S6-s6---em-síntese-página-9de03db5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S7-s7---início-página-640c8eeb",
@@ -1709,9 +1767,9 @@
       "estruturaOk": true,
       "sha256": "6962d0db6c522df3d77ea6d2c8282b999cac601d88e86f45322cf58292f0d4ce",
       "bytes": 2628,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S7-s7---videoaulas-página-85e0645b",
@@ -1721,31 +1779,33 @@
       "estruturaOk": true,
       "sha256": "9806a8361c4d83f00c8785b3642ea718ff5187ef560751827a61e46c7e10cb80",
       "bytes": 448,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S7-s7---texto-base-1_-contabilidade-ambiental-relato-integrado-e-sustentabilidade-(leia-o-cap-feb1978f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S7-s7---texto-base-2_-a-estrutura-internacional-para-o-relato-integrado-(leia-a-parte-i---int-23c52345",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM230-S7-s7---exercício-de-apoio-página-34630f31",
@@ -1755,9 +1815,9 @@
       "estruturaOk": true,
       "sha256": "3c830a0fdb5d796f840ef3aae5d79910f3448432bff94251f705f12f27074575",
       "bytes": 1318,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S7-s7---aprofundando-o-tema-página-8c6dee4b",
@@ -1767,9 +1827,9 @@
       "estruturaOk": true,
       "sha256": "9283b85a7a50a3f3ec34e9993d494344e8586504c874cb6cb7e007ad319377ff",
       "bytes": 308,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM230-S7-s7---em-síntese-página-ef985ae8",
@@ -1779,9 +1839,9 @@
       "estruturaOk": true,
       "sha256": "7965b91d52a3d63285168ca4efefd1bb2f47452acefbd626c823ed9d8ee9ea56",
       "bytes": 2056,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S1-s1---início-página-231d2203",
@@ -1791,9 +1851,9 @@
       "estruturaOk": true,
       "sha256": "9ead41e8b56d0da62de15642e626ff78384ac28d34ddab66df9a88a74818e81d",
       "bytes": 4382,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S1-s1---videoaulas-página-cf8dc84a",
@@ -1803,9 +1863,9 @@
       "estruturaOk": true,
       "sha256": "e458784122df5b73b5a31acaf624dbd669987d2705ee8385d94e3cc12609ca3b",
       "bytes": 423,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S1-s1---texto-base---empreendedorismo-(leia-a-unidade-1-“empreendedorismo”)-4b7c79ca",
@@ -1815,42 +1875,45 @@
       "estruturaOk": true,
       "sha256": "cc61dbc436e8c12c6081ae86c8da0f44e59244ce0862645ff411659402bcd0dc",
       "bytes": 58351,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S1-s1---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-1-3dc81cc1",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S1-s1---texto-base---empreendedorismo-(leia-o-capítulo-1-_o-empreendedorismo-e-a-mentalidade--862b643c",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S1-s1---vídeo-base---palestra-empreendedorismo-e-seus-reflexos-para-o-brasil-(veja-até-25min)-50a116b7",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S1-s1---aprofundando-o-tema-página-82af0da2",
@@ -1860,9 +1923,9 @@
       "estruturaOk": true,
       "sha256": "188220a8f715b577e9cccc8f0d83da8cadb932d136bc2e538093f00dade7c520",
       "bytes": 558,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S1-s1---em-síntese-página-1c968436",
@@ -1872,9 +1935,9 @@
       "estruturaOk": true,
       "sha256": "033bedd649d7c102f2a4dc3c967a97416fd98b48b0a6404bd28a88f2225ca71f",
       "bytes": 1224,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2---início-página-8eaf5bf1",
@@ -1884,9 +1947,9 @@
       "estruturaOk": true,
       "sha256": "59e074b86fc9a921319424089a4a6b9de2cf2c46210b7f70ec57dd45cc46ed33",
       "bytes": 5156,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2---videoaulas-página-cc16ff97",
@@ -1896,31 +1959,33 @@
       "estruturaOk": true,
       "sha256": "28ad4f9ba61ffc321a4212baca029eb9d7970127755b464817bd33261cbfef07",
       "bytes": 458,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2---texto-base---empreendedorismo-(leia-a-unidade-2)-e52bae86",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S2-s2---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-2-b0b1df81",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S2-s2---texto-base---entenda-quais-são-os-tipos-de-empresa-para-abrir-no-brasil-url-68b4a4e6",
@@ -1930,9 +1995,9 @@
       "estruturaOk": true,
       "sha256": "9d3e9cf633c1ce38403dd9e7abebd0c731516e31423774022e5d25499bd1ca19",
       "bytes": 45339,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2---texto-base---manual-de-oslo_-diretrizes-para-coleta-e-interpretação-de-dados-sobre-in-231281ef",
@@ -1942,31 +2007,33 @@
       "estruturaOk": true,
       "sha256": "2a450939771f1a61b3f5c1e2d9785cfe3abedcacec3c622532bc3a6192c4be80",
       "bytes": 193,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2--texto-base---manual-de-oslo_-diretrizes-para-coleta-e-interpretação-de-dados-sobre-ino-7c7ee091",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S2-s2---texto-base---introdução-ao-empreendedorismo_-construindo-uma-atitude-empreendedora-(l-118adc4b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S2-s2---aprofundando-o-tema-página-49c30f81",
@@ -1976,9 +2043,9 @@
       "estruturaOk": true,
       "sha256": "1cb7242a19e52f6d4c67d2fcb361aef31663944f19c0e086a951558fa0fbd22f",
       "bytes": 896,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S2-s2---em-síntese-página-165dcf9a",
@@ -1988,9 +2055,9 @@
       "estruturaOk": true,
       "sha256": "ae85612162078d99e3ce0e34cb41f348112fc9008d226d000128ae173fd5818a",
       "bytes": 1558,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S3-s3---início-página-d763b4bf",
@@ -2000,9 +2067,9 @@
       "estruturaOk": true,
       "sha256": "de266f092f3a24d6853de0ec23ec2bd4e1967bc36db81804619c1f09e4f67843",
       "bytes": 5725,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S3-s3---videoaulas-página-f5f85dd3",
@@ -2012,53 +2079,57 @@
       "estruturaOk": true,
       "sha256": "60c6b5eb7ada7dee88aed1399878b9ee5170d4c3844e7518b44faced6846c0d3",
       "bytes": 420,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S3-s3---texto-base---empreendedorismo-(leia-a-unidade-4)-adbbebeb",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S3-s3---texto-base---empreendedorismo-corporativo-(leia-o-capítulo-6-)-7796d86a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S3-s3---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-7-70dfc7de",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S3-s3---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-as-seções-12-012f7c36",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S3-s3---aprofundando-o-tema-página-df4047ba",
@@ -2068,9 +2139,9 @@
       "estruturaOk": true,
       "sha256": "6bfe22b257f0e0c5920a34ac2849e5fdef527d0277dd06a51d453ad42cc888d5",
       "bytes": 1352,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S3-s3---em-síntese-página-cdfc5ae7",
@@ -2080,9 +2151,9 @@
       "estruturaOk": true,
       "sha256": "b0708c84b8983aaf28c9fdb1db867da7f6c1f06112f1e25b4d90162c32086735",
       "bytes": 1534,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S4-s4---início-página-9c51cd3e",
@@ -2092,9 +2163,9 @@
       "estruturaOk": true,
       "sha256": "011fad3c5acfb789030b0ae24cbb49b5bd7b7a158d516538abef4f28f2da0b50",
       "bytes": 4163,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S4-s4---videoaulas-página-c721ad77",
@@ -2104,64 +2175,69 @@
       "estruturaOk": true,
       "sha256": "d4689df06db1e175901f411a31f8f81ea41c7b0a9f8cdbbedf177fab15bf38ff",
       "bytes": 467,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S4-s4---texto-base---empreendedorismo-(leia-o-capítulo-7-)-7660d2db",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S4-s4---texto-base---empreendedorismo-corporativo-(leia-o-capítulo-8)-f663c90d",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S4-s4---texto-base---plano-de-negócios_-exemplos-práticos-(leia-o-capítulo-1)-d9232081",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S4-s4---vídeo-base---como-fazer-um-plano-de-negócios-2d85c57e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S4-s4---vídeo-base---planejamento-estratégico-de-negócios_-planejamento-de-recursos-humanos-u-8c7df2f1",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S4-s4---aprofundando-o-tema-página-4a590234",
@@ -2171,9 +2247,9 @@
       "estruturaOk": true,
       "sha256": "22e9a880630a3ec8bbaf24033ed593e53de6b5f6c65089e490fbdf69844fcaee",
       "bytes": 1539,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S4-s4---em-síntese-página-13b29194",
@@ -2183,9 +2259,9 @@
       "estruturaOk": true,
       "sha256": "0cf12e841de2f3021ececb7632248456059aa7939e7552769060e12865ac86a0",
       "bytes": 2090,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S5-s5---início-página-8927976f",
@@ -2195,9 +2271,9 @@
       "estruturaOk": true,
       "sha256": "fc52ed0e54052d210e5990613bd00f18020d8b786df102723f09de58b443970c",
       "bytes": 5183,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S5-s5---videoaulas-página-7e9aa495",
@@ -2207,64 +2283,69 @@
       "estruturaOk": true,
       "sha256": "a7aa817269894f08a4a9ea050a84c8eacacf6d5ce1a43fa77b75f934a17526b4",
       "bytes": 484,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S5-s5---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-2-907e3192",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S5-s5---texto-base---empreendedorismo-(leia-a-unidade-3,-páginas-79-110)-beec7221",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S5-s5---texto-base---plano-de-negócios_-seu-guia-definitivo-(leia-o-subtítulo-_2.-mercado-e-c-1014c15c",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S5-s5---texto-base---plano-de-negócios_-seu-guia-definitivo-(leia-o-subtítulo-_4.-produtos-e--6dd0d8a5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S5-s5---texto-base---plano-de-negócios_-seu-guia-definitivo-(leia-os-subtítulos-_6.-marketing-28235ca0",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S5-s5---aprofundando-o-tema-página-e947a1a5",
@@ -2274,9 +2355,9 @@
       "estruturaOk": true,
       "sha256": "f0b77d7b6230ae9e12119439f2fa1db514b0585c9414f9ba25b8bfac64f54bb2",
       "bytes": 375,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S5-s5---em-síntese-página-82e2e48e",
@@ -2286,9 +2367,9 @@
       "estruturaOk": true,
       "sha256": "16d09d19a2701a7727e6b0c9b72796858af038b0ba1d5e1d76d7ea8ab5ca5702",
       "bytes": 1806,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S6-s6---início-página-851c4a89",
@@ -2298,9 +2379,9 @@
       "estruturaOk": true,
       "sha256": "db3fa266f6b075a7b89778d23efdce16f709f93399dd5586d925f9b7a80886b8",
       "bytes": 5718,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S6-s6---videoaulas-página-c5e44aa4",
@@ -2310,42 +2391,45 @@
       "estruturaOk": true,
       "sha256": "e33c3ae0cf847f7f60af5571c41f0efca4b3d64a59e00c75c2eeef48f1c0e62b",
       "bytes": 443,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S6-s6---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-9-62bd3d6e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S6-s6---texto-base---como-elaborar-o-plano-de-negócios-(leia-o-capítulo-7-_plano-operacional_-7f109c38",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S6-s6---vídeo-base---planejamento-estratégico-de-ti-(peti)_-passo-a-passo-para-uma-análise-co-fd765024",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S6-s6---aprofundando-o-tema-página-2f4230cd",
@@ -2355,9 +2439,9 @@
       "estruturaOk": true,
       "sha256": "1fe1ca04fa07e2d0e61449d61667f1666e92fa69e6991cb0391b6b28234e04b6",
       "bytes": 1854,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S6-s6---em-síntese-página-7f47c882",
@@ -2367,9 +2451,9 @@
       "estruturaOk": true,
       "sha256": "ff98f693914b7ab5155398a6bdf601696df92c3d13c10c8e0eec08f61466b688",
       "bytes": 2180,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S7-s7---início-página-15f10e2b",
@@ -2379,42 +2463,45 @@
       "estruturaOk": true,
       "sha256": "794e1f0f1ee4d1b7003c4e05d06c54a99ca597a4e1331e1ba2048b302e3da5ef",
       "bytes": 4960,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S7-s7---videoaulas-página-612010b1",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S7-s7---texto-base---empreendedorismo_-dando-asas-ao-espírito-empreendedor-(leia-o-capítulo-1-a31a2518",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S7-s7---texto-base---como-elaborar-o-plano-de-negócios-(leia-o-capítulo-8-)-23e651d3",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM270-S7-s7---aprofundando-o-tema-página-7a59bcbd",
@@ -2424,9 +2511,9 @@
       "estruturaOk": true,
       "sha256": "28459e3aaa83aef2520133d06356f5175df975129c06e508342289e02bc3a7fe",
       "bytes": 1910,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM270-S7-s7---em-síntese-página-c67ffc57",
@@ -2436,9 +2523,9 @@
       "estruturaOk": true,
       "sha256": "ff1c83ab5311c8311c28d809a7c30f4d92fa2ba2e80d2fdcb01c74e19e3f4a82",
       "bytes": 1409,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S1-s1---início-página-fc0b881d",
@@ -2448,9 +2535,9 @@
       "estruturaOk": true,
       "sha256": "8f71e030b883376adba58a260eca9242d508867a16a4c89d6b5fc09a8abc1806",
       "bytes": 5224,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S1-s1---videoaulas-página-9ccffc92",
@@ -2460,9 +2547,9 @@
       "estruturaOk": true,
       "sha256": "1df72d07b81ad25f797b50cf182ca9dd303fb5439117d1fc5c74951a6e20df3f",
       "bytes": 407,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S1-s1---material-base-página-67de07cf",
@@ -2472,9 +2559,9 @@
       "estruturaOk": true,
       "sha256": "fb1c9b95733f5320540341845294b8e4db3c658041f0e29207c2b013046e85eb",
       "bytes": 1007,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S1-s1---aprofundando-o-tema-página-4a0a8e01",
@@ -2484,9 +2571,9 @@
       "estruturaOk": true,
       "sha256": "88cfa6b4664335973ad63df8b5e4e42927f0081c55407200c7f482a6e50e4fc9",
       "bytes": 1118,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S1-s1---em-síntese-página-a00145a7",
@@ -2496,9 +2583,9 @@
       "estruturaOk": true,
       "sha256": "92302a82e06ba88794a7d0b93c6b4f2c02e096253245ce1f79ced390cf4235a4",
       "bytes": 1429,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S2-s2---início-página-2b6423e6",
@@ -2508,9 +2595,9 @@
       "estruturaOk": true,
       "sha256": "48c83b60d38dd1c26117b87e4be213881ee9fcb8a999f4221b068804df3eb658",
       "bytes": 4062,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S2-s2---videoaulas-página-d055df25",
@@ -2520,9 +2607,9 @@
       "estruturaOk": true,
       "sha256": "74f467e477111845603c2ebed649115241f08a126e46a835191e6a45a744100e",
       "bytes": 360,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S2-s2---material-base-página-d63a4a73",
@@ -2532,9 +2619,9 @@
       "estruturaOk": true,
       "sha256": "6d7b9f1f14b55672fcab1b5b69b2c6c30e157ca50d3b81d70148657b5fde590e",
       "bytes": 612,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S2-s2---aprofundando-o-tema-página-da5deef1",
@@ -2544,9 +2631,9 @@
       "estruturaOk": true,
       "sha256": "4c0be836f066cdf3bfce275af1f06a62ac72531aa6afcf5b61e2d6d9f2e47f17",
       "bytes": 1995,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S2-s2---em-síntese-página-9782872a",
@@ -2556,9 +2643,9 @@
       "estruturaOk": true,
       "sha256": "57260260c93ea9751ad1c546e742e9ece803077823ae38d052601adf72deb06c",
       "bytes": 1317,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S3-s3---início-página-04327658",
@@ -2568,9 +2655,9 @@
       "estruturaOk": true,
       "sha256": "1cc7734af310175b487948b96707f75af98a75e09260a6cb400379ccae64ec15",
       "bytes": 6316,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S3-s3---videoaulas-página-4a30793e",
@@ -2580,9 +2667,9 @@
       "estruturaOk": true,
       "sha256": "9e7ea8c4758ac174f92ca9da708d3e4b4c56a5fd79f614971e1cda251d3d48bf",
       "bytes": 500,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S3-s3---material-base-página-156355c0",
@@ -2592,9 +2679,9 @@
       "estruturaOk": true,
       "sha256": "8b81af112d9d9350c2ae349d409eab9e659476263b6fd8efd4d9395df40d873e",
       "bytes": 338,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S3-s3---aprofundando-o-tema-página-84311664",
@@ -2604,9 +2691,9 @@
       "estruturaOk": true,
       "sha256": "924f0a5223461db09f427d0dfa5c88a173b5a0ff81e5a26e3f33696a24f87cd1",
       "bytes": 1899,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S3-s3---em-síntese-página-60040227",
@@ -2616,9 +2703,9 @@
       "estruturaOk": true,
       "sha256": "57e9ef9de184dfb8ba2123dbf41d0f08ba9d398f2f7a9b1dd7566d0dde9c02ac",
       "bytes": 1329,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S4-s4---início-página-4c56b9f5",
@@ -2628,9 +2715,9 @@
       "estruturaOk": true,
       "sha256": "95cb1dab9d79f0e2a5870f836f421f72017ce1afa0d96efc590953d2bbe68943",
       "bytes": 4616,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S4-s4---videoaulas-página-0614f2b3",
@@ -2640,9 +2727,9 @@
       "estruturaOk": true,
       "sha256": "f0f20fb0b4ca6960043f51143597f187719c281526b05b73024ba52f295a779b",
       "bytes": 971,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S4-s4---material-base-página-2ff1b3cf",
@@ -2652,9 +2739,9 @@
       "estruturaOk": true,
       "sha256": "f5c1a294bc832f16d08972f21c59ca557b9964a10bf675477c0949c0ab127166",
       "bytes": 695,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S4-s4---aprofundando-o-tema-página-f180c9a9",
@@ -2664,9 +2751,9 @@
       "estruturaOk": true,
       "sha256": "82561208c0b7a86a2a5379e70fc9bc918fd73956f1b95bcb6d08d3a8d0a76e22",
       "bytes": 3431,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S4-s4---em-síntese-página-193d8883",
@@ -2676,9 +2763,9 @@
       "estruturaOk": true,
       "sha256": "076355097829f457ae1a306705add4666989c2cea5c0edfb739ca6c49c557fcd",
       "bytes": 1133,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S5-s5---início-página-4c931251",
@@ -2688,9 +2775,9 @@
       "estruturaOk": true,
       "sha256": "bcad91344deebed0e32861a7e2b1a6baf80aba9cc71aa72bcfceecd5bf911c88",
       "bytes": 5169,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S5-s5---videoaulas-página-9700d858",
@@ -2700,9 +2787,9 @@
       "estruturaOk": true,
       "sha256": "12813e5945e2018d1fe7cffa1f7753dbb31ffb448b60de4b1f080d82729a22b3",
       "bytes": 496,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S5-s5---material-base-página-4f3601e5",
@@ -2712,9 +2799,9 @@
       "estruturaOk": true,
       "sha256": "faff75c94504188a3c814bda6d89ac2ba105bde17e8938f9cd6456e98e96980b",
       "bytes": 1392,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S5-s5---aprofundando-o-tema-página-ff52a51c",
@@ -2724,9 +2811,9 @@
       "estruturaOk": true,
       "sha256": "05aaa45bb82a5f4056a7799784af8ac7f5cfaa7c5b661babcbadecc3e393c49a",
       "bytes": 3560,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S5-s5---em-síntese-página-67ca95ed",
@@ -2736,9 +2823,9 @@
       "estruturaOk": true,
       "sha256": "1eda67356867e3f8d8bdfc87ba94d27cae06b174e18a01f11b287ad26d581589",
       "bytes": 1140,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S6-s6---início-página-e64c4888",
@@ -2748,9 +2835,9 @@
       "estruturaOk": true,
       "sha256": "361025f77e004bc84adad1569e740c3295275a938056acea08ddf6f4830b0068",
       "bytes": 4096,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S6-s6---videoaulas-página-a949438c",
@@ -2760,20 +2847,21 @@
       "estruturaOk": true,
       "sha256": "d9aa5b9639eaa1d529e10fd5bb9bfad3a9b482ee7a8a2af8b7dcbfba702c1bff",
       "bytes": 424,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S6-s6---texto-base---comunicação-organizacional,-transformações-e-mudanças,-comunicação-digit-e88045df",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM290-S6-s6---aprofundando-o-tema-página-3915e006",
@@ -2783,9 +2871,9 @@
       "estruturaOk": true,
       "sha256": "17001276ee3e914d3b29dd029087c3e39b24fe09cb62f25e6a5bd853d95eecc7",
       "bytes": 2694,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S6-s6---em-síntese-página-f2d8d82a",
@@ -2795,9 +2883,9 @@
       "estruturaOk": true,
       "sha256": "0d85ceb05691e0148e35384834f7f021d35dd6a8078beb52ed67eb92b119ba39",
       "bytes": 1086,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S7-s7---início-página-cfd55b50",
@@ -2807,9 +2895,9 @@
       "estruturaOk": true,
       "sha256": "edeed85709bc448c914423e3f0ce39c4eb6300d97a4069bd52c093666d247619",
       "bytes": 3811,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S7-s7---videoaulas-página-ecdb9ba9",
@@ -2819,20 +2907,21 @@
       "estruturaOk": true,
       "sha256": "e88ec2c236ffbb62dbf18bd6ca1592b5cf20e98fb4e620c71fb34f059501978a",
       "bytes": 364,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S7-s7---texto-base---métricas-e-avaliação-em-comunicação-organizacional-(leia-o-capítulo-16)-8d9de090",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "ADM290-S7-s7---aprofundando-o-tema-página-027b4c60",
@@ -2842,9 +2931,9 @@
       "estruturaOk": true,
       "sha256": "c47349b8e045c9c73eac5424e95386f9cff22421410828b686533c0941b1660d",
       "bytes": 2215,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "ADM290-S7-s7---em-síntese-página-afd9dbd4",
@@ -2854,9 +2943,9 @@
       "estruturaOk": true,
       "sha256": "0011755ee7b72dc8031a73eed07460b61bcdc0b5af2d3d1a2005a0c52febb447",
       "bytes": 1162,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S1-s1---início-página-a43fe540",
@@ -2866,9 +2955,9 @@
       "estruturaOk": true,
       "sha256": "e6432e5913ad60bb47ec56b647502f506686074562bf29fbe51e4e09c9483faa",
       "bytes": 4842,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S1-s1---videoaula-página-c5b8b5bb",
@@ -2878,31 +2967,33 @@
       "estruturaOk": true,
       "sha256": "a9d6b811468454a634d23dc2c3713e7e7624111938f5ad55b99c0e16623e5c0e",
       "bytes": 528,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S1-s1---texto-base-1_-gestão-eficaz-de-projetos_-como-gerenciar-com-excelência-projetos-tradi-1ec1acc3",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S1-s1---texto-base-2_-desenvolvimento-ágil-limpo_-de-volta-às-origens-(leia-o-capítulo-1---in-b40cd381",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S1-s1---aprofundando-o-tema-página-c9349428",
@@ -2912,9 +3003,9 @@
       "estruturaOk": true,
       "sha256": "427ed18894a2e965c3df4072be04c5b7c76cb671ccdf92999699384052ab10c3",
       "bytes": 545,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S1-s1---em-síntese-página-24435220",
@@ -2924,9 +3015,9 @@
       "estruturaOk": true,
       "sha256": "63247e9a23d21fe0ef27fea9cbfa93afd6bb1c50a6d41e745d10274fd8c0759b",
       "bytes": 1291,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S2-s2---início-página-8e6d8566",
@@ -2936,9 +3027,9 @@
       "estruturaOk": true,
       "sha256": "205228b2d8ca70de1128259a5101e54b9e6e128800f052acc8125af1dfca4d32",
       "bytes": 6550,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S2-s2---videoaulas-página-11eae12b",
@@ -2948,20 +3039,21 @@
       "estruturaOk": true,
       "sha256": "14208eb281a45d6a88409be2078165cbe7b339bd88f83f0dbfc19fb20d734183",
       "bytes": 534,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S2-s2---texto-base_-gestão-eficaz-de-projetos_-como-gerenciar-com-excelência-projetos-tradici-5e436f8c",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S2-s2---aprofundando-o-tema-página-10010de7",
@@ -2971,9 +3063,9 @@
       "estruturaOk": true,
       "sha256": "30599fc97bd81c2c3d19f1bb16af770a0df3da9792b429a8aa7ad405c8d8a02f",
       "bytes": 1550,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S2-s2---em-síntese-página-eeffdd3b",
@@ -2983,9 +3075,9 @@
       "estruturaOk": true,
       "sha256": "cca6b18be02154bdc60372d56aa4d543b6a5ef414f39729243918d7bd7005e67",
       "bytes": 1564,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S3-s3---início-página-218da1e5",
@@ -2995,42 +3087,45 @@
       "estruturaOk": true,
       "sha256": "d40c363409fc989b94f7dd39444db509427d25072ec3df54c54fb9a2d27ede93",
       "bytes": 5150,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S3-s3---videoaula-página-4a8e654a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S3-s3---texto-base-1_-liderando-a-transformação-lean-nas-empresa-(leia-o-capítulo-2-–-o-que-é-318d0f21",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S3-s3---texto-base-2_-liderando-a-transformação-lean-nas-empresa-(leia-o-capítulo-7-–-constru-ed9dc0fe",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S3-s3---aprofundando-o-tema-página-2d3d7786",
@@ -3040,9 +3135,9 @@
       "estruturaOk": true,
       "sha256": "722fa93844ef9b5f2c3298e009efee209ec73c5bfff2f5339442b5631a617e22",
       "bytes": 1013,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S3-s3---em-síntese-página-9822fd50",
@@ -3052,9 +3147,9 @@
       "estruturaOk": true,
       "sha256": "633125f340ce59789203d4b33ee354869b2b3f73b0e08c178e63e6d6d2246da7",
       "bytes": 1526,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S4-s4---início-página-4d5c71c8",
@@ -3064,9 +3159,9 @@
       "estruturaOk": true,
       "sha256": "0bb880c34291817b9acc79bebe33d2e0ce31d91e6633f097e3089ed982ff8368",
       "bytes": 5512,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S4-s4---videoaulas-página-6e32b2f0",
@@ -3076,9 +3171,9 @@
       "estruturaOk": true,
       "sha256": "0f45693f531904185efa7e61ebb74859022e95ada25090485c403064206495c0",
       "bytes": 616,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S4-s4---texto-base_-fundamentos-de-gestão-de-projetos-(leia-o-capítulo-6,-p.-217-250)-257f9217",
@@ -3088,9 +3183,9 @@
       "estruturaOk": true,
       "sha256": "0b60bdec2a9d7466b0514c6a38b7379b73b6a0266372f36fa0ec015b69039c50",
       "bytes": 40997,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S4-s4---aprofundando-o-tema-página-977a11dc",
@@ -3100,9 +3195,9 @@
       "estruturaOk": true,
       "sha256": "6d754f289589fe48bfaf5c35c79aa4458795db5a244e5f4d72433124f19a45fd",
       "bytes": 1956,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S4-s4---em-síntese-página-ec4984c3",
@@ -3112,9 +3207,9 @@
       "estruturaOk": true,
       "sha256": "94a2c7a9369072652d7a51b721556e2f38b20b9ec96dbe2f3a548451ecbf097d",
       "bytes": 1722,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S5-s5---início-página-52f9f72d",
@@ -3124,9 +3219,9 @@
       "estruturaOk": true,
       "sha256": "82361a42a8ab6fa6c54a6f4cb2bf0d3a5e5408dcf8f19a94628213db4cfa5dd1",
       "bytes": 4654,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S5-s5---videoaulas-página-d6a57512",
@@ -3136,20 +3231,21 @@
       "estruturaOk": true,
       "sha256": "3fe1dbbf37aaf40dd82606ea8661a469c59dea313e2ada1f0d31e0ec5c4012e9",
       "bytes": 1042,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S5-s5---texto-base-_-agile-scrum-master-no-gerenciamento-avançado-de-projetos-(leia-as-página-3d495d92",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S5-s5---aprofundando-o-tema-página-014c0add",
@@ -3159,9 +3255,9 @@
       "estruturaOk": true,
       "sha256": "7a092c53f43be3346533c598acc7d7ba577e605c922db940bd06493c790fdf2d",
       "bytes": 471,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S5-s5---em-síntese-página-678126e5",
@@ -3171,9 +3267,9 @@
       "estruturaOk": true,
       "sha256": "5770d3f585c27b2fe2da83da02b4881b3544f624c61e928accf846ebc50726fa",
       "bytes": 1760,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S6-s6---início-página-a9eb1fba",
@@ -3183,9 +3279,9 @@
       "estruturaOk": true,
       "sha256": "ed7d592ed486821c3c5bd54f7a390573ad34dbb2e605384bfe6e0ec5f337ded5",
       "bytes": 5365,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S6-s6---videoaulas-página-86886f3f",
@@ -3195,20 +3291,21 @@
       "estruturaOk": true,
       "sha256": "c03e84c578532b75d1ebee871738dec0416f58e02864fc92beb38b4055cec93e",
       "bytes": 638,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S6-s6---texto-base_-cases-de-scrum-6ec09c54",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S6-s6---aprofundando-o-tema-página-26aa1ae6",
@@ -3218,9 +3315,9 @@
       "estruturaOk": true,
       "sha256": "a79bcc7140ba5c740e4db086ec8280125dcfd3bcc0010e6e4b14d993ddc03578",
       "bytes": 615,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S6-s6---em-síntese-página-524d94b3",
@@ -3230,9 +3327,9 @@
       "estruturaOk": true,
       "sha256": "80ed376cbe6ed9877b686f0b9a8598f30d4fa1268472299f21c6449e78614fe0",
       "bytes": 1895,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S7-s7---início-página-7c70d794",
@@ -3242,9 +3339,9 @@
       "estruturaOk": true,
       "sha256": "e986ae4274fcaac01632abea7966fe7597ab08d59d0b977e123217ba1ed48d3a",
       "bytes": 5971,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S7-s7---videoaulas-página-c673d3cd",
@@ -3254,31 +3351,33 @@
       "estruturaOk": true,
       "sha256": "cf74cd452842ceb2733d48f450cd65abec2975aaed2c88639ca795ce26acd64b",
       "bytes": 533,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S7-s7---texto-base-_-desenvolvimento-de-software-com-scrum_-aplicando-métodos-ágeis-com-suces-33da1d5a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S7-s7---texto-base-_-scrum-essencial_-um-guia-prático-para-o-mais-popular-processo-ágil-(leia-9a41314b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "CIN200-S7-s7---aprofundando-o-tema-página-09f80108",
@@ -3288,9 +3387,9 @@
       "estruturaOk": true,
       "sha256": "e8d6312dd0a9aa8723ad42988eb19e1787522b129e1db615b1f13a7e68237cd5",
       "bytes": 753,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "CIN200-S7-s7---em-síntese-página-ae9119a8",
@@ -3300,9 +3399,9 @@
       "estruturaOk": true,
       "sha256": "f44d5ed5d64cd18a741d1fc8c3c95592defe2e7e506b19cd12166d25a8eb8768",
       "bytes": 2137,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---introdução-à-ética_-conceitos-fundamentais-página-c74c6060",
@@ -3312,20 +3411,21 @@
       "estruturaOk": true,
       "sha256": "5e34f68b2c7d57c7a9d409ca55da096c7c67f5961819bbc964f409673bf4ebe3",
       "bytes": 5137,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---texto-base---ética-e-cidadania-–-introdução-à-ética-e-moral-(unidade-2-págs.-27-65)-k-c4a99e69",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S1-s1---texto-base---ética---introdução-à-ética-(pág.-23--36)-2e126d93",
@@ -3335,9 +3435,9 @@
       "estruturaOk": true,
       "sha256": "3f4ddfac5009e1d25493a8936cdc82fe9dbd87631ce35367f28cc5cde45a472a",
       "bytes": 226,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---vídeo-base---qual-o-significado-de-ética_-url-90aac5de",
@@ -3347,9 +3447,9 @@
       "estruturaOk": true,
       "sha256": "bce0d99e05b3eb712544ce7c80f81cb4f72e91a2ccf6fae9645549cc2bb9ea85",
       "bytes": 137,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---videoaula-1---introdução-à-ética_-conceitos-fundamentais-página-1274c9e6",
@@ -3359,9 +3459,9 @@
       "estruturaOk": true,
       "sha256": "d354954d5e00d24f64a822c9904661665b9d3b943e9d8b8c098ce16149ca7c5d",
       "bytes": 538,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---videoaula-2---racionalidade-e-liberdade-página-83634d0e",
@@ -3371,9 +3471,9 @@
       "estruturaOk": true,
       "sha256": "e0d4bfacc484b900ae38b8c93e77fa86ca2cad2a7fd5892c4224ff29d8cf910a",
       "bytes": 330,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---aprofundando-o-tema-página-c81416e1",
@@ -3383,9 +3483,9 @@
       "estruturaOk": true,
       "sha256": "f3894409eb35aa20ad18e6959efb68afaaf3e1452eaf24f0dec01f2ca5f83f01",
       "bytes": 573,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S1-s1---em-síntese-página-60c75211",
@@ -3395,9 +3495,9 @@
       "estruturaOk": true,
       "sha256": "11eaffc2b76a15f11571d0ca43d635bd08745022966c6fb265b04a14cd1c60bf",
       "bytes": 1877,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---ética-e-moral-página-eb89af8e",
@@ -3407,9 +3507,9 @@
       "estruturaOk": true,
       "sha256": "9737eb4f38351180977942de19f403d5c5c78ffea91b4bcf722a10303d7d7de3",
       "bytes": 5341,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---videoaula-3---ética-e-moral-página-d077061b",
@@ -3419,9 +3519,9 @@
       "estruturaOk": true,
       "sha256": "13b397878bd4f4a0c326c2045b567091a392e6a3352ef5cf85c419942adadcdc",
       "bytes": 379,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---videoaula-4---multiculturalismo-e-relativismo-página-8eb5dab1",
@@ -3431,9 +3531,9 @@
       "estruturaOk": true,
       "sha256": "5ba33052a1916139e02d714f6475838f94e17dc1e4314efedeb308bde5ce1403",
       "bytes": 332,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---material-base-página-763fe191",
@@ -3443,9 +3543,9 @@
       "estruturaOk": true,
       "sha256": "c8b16df2a2fafff81c8715a6585ee41fa3d6473c314de5451b343e0f254591cb",
       "bytes": 983,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---aprofundando-o-tema-página-5a7cbf28",
@@ -3455,9 +3555,9 @@
       "estruturaOk": true,
       "sha256": "ff0b7b722f5a4ea41db92e294051487d257f35af64fa35794534a1dd3f475203",
       "bytes": 611,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S2-s2---em-síntese-página-dfdb5450",
@@ -3467,9 +3567,9 @@
       "estruturaOk": true,
       "sha256": "53155c4d2f3b09b5873e84bb52a3c4083477065b273645b286e1d143fbc14cc9",
       "bytes": 1798,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S3-s3---cidadania-página-df0edce6",
@@ -3479,31 +3579,33 @@
       "estruturaOk": true,
       "sha256": "77f52bfdda2e09c6937995ffb082b278610990587fff54db3cf8eacb6bb2e06b",
       "bytes": 6010,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S3-s3---texto-base---política-e-cidadania-a460142f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S3-s3---texto-base---cidadania-73f7fc3f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S3-s3---videoaula-5---cidadania-página-df995c93",
@@ -3513,9 +3615,9 @@
       "estruturaOk": true,
       "sha256": "746ffcca1221bf93e6607e069bd5d51880180e9d2e92f1a14e81f8cc0957fb44",
       "bytes": 368,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S3-s3---videoaula-6---esclarecimento-página-bfd70e16",
@@ -3525,9 +3627,9 @@
       "estruturaOk": true,
       "sha256": "bcad797894a9fc8c7c21c1f2ae9b02bb7024ec43477f2d62190ea76061bc5aca",
       "bytes": 379,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S3-s3---aprofundando-o-tema-página-8e0c18dd",
@@ -3537,9 +3639,9 @@
       "estruturaOk": true,
       "sha256": "4bb3fd41031e41f5944f02fb87629958c6076073934fa3fd6684bccfa89bad15",
       "bytes": 750,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S3-s3---em-síntese-página-e4c2882a",
@@ -3549,9 +3651,9 @@
       "estruturaOk": true,
       "sha256": "db53d1e1dd3ad6a2af60762b29eb8c9c0c404c9209acc78d115e657367690806",
       "bytes": 1765,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---indivíduo-e-sociedade-página-730978da",
@@ -3561,20 +3663,21 @@
       "estruturaOk": true,
       "sha256": "15735c8dfe297eaec2cc3133a389c480e6d7e05d584f8bd8524596c18816a91e",
       "bytes": 7535,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---texto-base---do-estado-moderno-ao-contemporâneo-(leia-o-capítulo-“a-construção-do-est-ebaa5394",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S4-s4---videoaula-7---direitos-do-cidadão-página-3614532d",
@@ -3584,9 +3687,9 @@
       "estruturaOk": true,
       "sha256": "ed9717df49cbd5d59937afcde6cba153f73e77dcc03d95d5f1f4a90b95e1a7f9",
       "bytes": 622,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---videoaula-8---ética-e-direitos-humanos-página-ab045b90",
@@ -3596,9 +3699,9 @@
       "estruturaOk": true,
       "sha256": "f295c86ecd51595771cf1bc1e16d376b452d21eb28fefc91579d5e7f96b4354c",
       "bytes": 599,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---vídeo-base---o-que-é-estado-democrático-de-direito_-9374c292",
@@ -3608,9 +3711,9 @@
       "estruturaOk": true,
       "sha256": "dd46331d7393b752cd45dad9371d712a40d37cc2a18b1220fb4915764c7707ec",
       "bytes": 189,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---texto-base---cidadania-e-direitos-humanos-7cad049e",
@@ -3620,9 +3723,9 @@
       "estruturaOk": true,
       "sha256": "83dac4ede2b66077a5fbb0a776fc845721e963ba44c881c163c07da719f2f0ee",
       "bytes": 193,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---aprofundando-o-tema-página-490b5282",
@@ -3632,9 +3735,9 @@
       "estruturaOk": true,
       "sha256": "a4ff102e1b26157e475468dffc7a7eaf672cb5b58d2bc361b55952c5533c9647",
       "bytes": 460,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S4-s4---em-síntese-página-4c2334d3",
@@ -3644,9 +3747,9 @@
       "estruturaOk": true,
       "sha256": "33a0f39f337d150a502f2b886f9f7d6e687bd0d45033dc70a76b87efe97ff993",
       "bytes": 1972,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---ética-aplicada-página-86cfb78b",
@@ -3656,9 +3759,9 @@
       "estruturaOk": true,
       "sha256": "8f4588ef16e14bd774f7f3213838ccc0b575a314aefe39a2064c14d08e752ce8",
       "bytes": 6642,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---texto-base---o-significado-do-trabalho-em-tempos-de-reestruturação-produtiva-url-d6a1f217",
@@ -3668,9 +3771,9 @@
       "estruturaOk": true,
       "sha256": "197681279ba6da09a1c85ab9fc7f6d08407144054ae1989b828931c7d2988cd3",
       "bytes": 207,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---texto-base---ética-profissional-url-be901345",
@@ -3680,20 +3783,21 @@
       "estruturaOk": true,
       "sha256": "512fb72aa11937350f2d515d0942b946f3dc18c07ecdb8bd4e7aa4a385305130",
       "bytes": 115,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---texto-base---ética-e-sociedade-df808de3",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S5-s5---videoaula-9---ética-profissional-página-0812e42e",
@@ -3703,9 +3807,9 @@
       "estruturaOk": true,
       "sha256": "11553d1c9482adc90fcf1e14d6a66a92aca400b4957c425c121df98b7201fc07",
       "bytes": 470,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---videoaula-10---ética-e-mundo-do-trabalho-página-5d3915cc",
@@ -3715,9 +3819,9 @@
       "estruturaOk": true,
       "sha256": "7cd16783bacb4b1bcd78dbc7de7c44d91e0bb74cbbcae87a58c16aa4a2c38a13",
       "bytes": 404,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---aprofundando-o-tema-página-b73ed494",
@@ -3727,9 +3831,9 @@
       "estruturaOk": true,
       "sha256": "0e51321de1d6a5955f5eaa71e3d61c4a40c55773a0f847248ca941495c22a707",
       "bytes": 438,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S5-s5---em-síntese-página-4cbee2b2",
@@ -3739,9 +3843,9 @@
       "estruturaOk": true,
       "sha256": "e57d18ed22b99c4cadff194911c564ba0462f0cc56f2d1e982a64a78ec7e8d77",
       "bytes": 1925,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---ética-e-direitos-humanos-página-337289c2",
@@ -3751,9 +3855,9 @@
       "estruturaOk": true,
       "sha256": "70d0b4fe75f227aa61d8aff2e36daabe080bf2386a69af0a95c0d675e50ff5b8",
       "bytes": 5767,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---texto-base---dignidade-da-pessoa-humana-url-1c093940",
@@ -3763,20 +3867,21 @@
       "estruturaOk": true,
       "sha256": "fdefb7aecc480c62eacad7dda95a69aa9b47e88c40f3dd55c68c12018ee48e76",
       "bytes": 129,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---texto-base---direitos-humanos_-universalismo-e-especificidade-06946353",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S6-s6---videoaula-11---diversidade,-inclusão-e-relações-étnico-raciais-página-dddc797b",
@@ -3786,9 +3891,9 @@
       "estruturaOk": true,
       "sha256": "61d8f47036faeb4b74cd64c50472e5ca651437045d187a9d5422ce10c8ce59e3",
       "bytes": 543,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---videoaula-12---pessoa-humana-e-dignidade-página-f478c5f7",
@@ -3798,9 +3903,9 @@
       "estruturaOk": true,
       "sha256": "a9eb64d87a1b886914c8d332167cd75d26901e313242e5d96d2aaff5fe012dec",
       "bytes": 467,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---aprofundando-o-tema-página-d9c3c9df",
@@ -3810,9 +3915,9 @@
       "estruturaOk": true,
       "sha256": "7a06e7390063ba2132468dd4a72ce344fff031607ce0b389999d170b8626c0e9",
       "bytes": 625,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S6-s6---em-síntese-página-f2841e45",
@@ -3822,9 +3927,9 @@
       "estruturaOk": true,
       "sha256": "3b76bb0b938e1df359a022dd0d13a5316af794c15565ee26da155732894fd297",
       "bytes": 1352,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---ética,-educação-e-sociedade-página-2f399413",
@@ -3834,9 +3939,9 @@
       "estruturaOk": true,
       "sha256": "2114a2d438680b146f70f6176b7dbf8618ed0122c10a2b1a64e8e405600a5aea",
       "bytes": 5356,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---texto-base---ética-na-pesquisa-url-d7ba5b28",
@@ -3846,20 +3951,21 @@
       "estruturaOk": true,
       "sha256": "ccdbf2e0dfa7051c99452b7e5c09987bb46cafbf637e36df365900134ad4f033",
       "bytes": 113,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---texto-base---ética-e-cidadania-na-sociedade-tecnológica-095b2f5e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18491-S7-s7---videoaula-13---educação-e-sustentabilidade-página-30079ad6",
@@ -3869,9 +3975,9 @@
       "estruturaOk": true,
       "sha256": "85ad757a393bf98cc4019b804f3a4eecec24cf0d6dcc2c189d142d9450ac6657",
       "bytes": 414,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---videoaula-14---ética-acadêmica-página-906cf8a3",
@@ -3881,9 +3987,9 @@
       "estruturaOk": true,
       "sha256": "e3f1b65c53f352f6892cd245fb989f10c3a2e6476fd8eed3c053fef92bb53591",
       "bytes": 404,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---aprofundando-o-tema-página-95487876",
@@ -3893,9 +3999,9 @@
       "estruturaOk": true,
       "sha256": "2b227fff0cededba8a2ab847c84b2a3c2b8de24d50ebcf26f70dd36544ee1316",
       "bytes": 703,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18491-S7-s7---em-síntese-página-6e499dee",
@@ -3905,9 +4011,9 @@
       "estruturaOk": true,
       "sha256": "36c0077e73e0514689f7fbf70f005b0b22a1841ef90188cf9a6dbada74e4f603",
       "bytes": 1643,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S1-s1---início-página-7f9dd7a6",
@@ -3917,9 +4023,9 @@
       "estruturaOk": true,
       "sha256": "ccdb5fadeaed156c7477700fedfbd792d76f27722b2b901b8b59d310f9f6f30d",
       "bytes": 5523,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S1-s1---videoaulas-página-08468b24",
@@ -3929,20 +4035,21 @@
       "estruturaOk": true,
       "sha256": "0880c61772bf26d0bef806658327d08136269d4da4e1b6bcf3d3fd661215882c",
       "bytes": 1050,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S1-s1---texto-base---metodologia-científica-(leia-a-seção-1.1-até-1.1.4)-3efcbb1e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S1-s1---aprofundando-o-tema-página-70a3d229",
@@ -3952,9 +4059,9 @@
       "estruturaOk": true,
       "sha256": "52fe955565b5f24ecf2e75eb6ad914a2a635c5923823f80ae2c5cf5db06ffee2",
       "bytes": 444,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S1-s1---exercício-de-apoio-página-eeafda3b",
@@ -3964,9 +4071,9 @@
       "estruturaOk": true,
       "sha256": "b30106cadd97d39494f3664e608328fd8790b85eba970a770202338eb004fb0e",
       "bytes": 726,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S1-s1---em-síntese-página-6158820e",
@@ -3976,9 +4083,9 @@
       "estruturaOk": true,
       "sha256": "38dd72ed1a2ac31e3d88308a5286d9ea2a17533a99838574d58d2e9d6d860667",
       "bytes": 1183,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---início-página-843e8043",
@@ -3988,9 +4095,9 @@
       "estruturaOk": true,
       "sha256": "ec5720870689a471fd0b132d584c808de14a5e5925b42a2dca85bfb6e363da4e",
       "bytes": 5098,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---videoaulas-página-4b541f57",
@@ -4000,31 +4107,33 @@
       "estruturaOk": true,
       "sha256": "e5ea58657a74de68eedb221d3938c791c9d48a718977231a5c1b522dfbcf7ac1",
       "bytes": 553,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---texto-base---metodologia-científica-(leia-a-seção-1.3)-e9ff9106",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S2-s2---texto-base---metodologia-científica-(leia-as-seções-3.1-a-3.2)-54d91168",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S2-s2---material-base---estratégias-de-leitura-acadêmica-24937cb0",
@@ -4034,9 +4143,9 @@
       "estruturaOk": true,
       "sha256": "a031cbffaebf2f819230af5a1c5b2ad6244560e89caedeeced0419abbc47743f",
       "bytes": 2461,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---aprofundando-o-tema-página-39467677",
@@ -4046,9 +4155,9 @@
       "estruturaOk": true,
       "sha256": "ecd0bfdd377d5496837683353edf86d6420b4e9e7ce5148cc3300eb0a5215388",
       "bytes": 621,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---exercício-de-apoio-página-503f57eb",
@@ -4058,9 +4167,9 @@
       "estruturaOk": true,
       "sha256": "248c206a09a1db43e216144815da37810d1346e5f598396d064906fc01676e2c",
       "bytes": 870,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S2-s2---em-síntese-página-8f5f1401",
@@ -4070,9 +4179,9 @@
       "estruturaOk": true,
       "sha256": "bbdcbfe1713cbe29a9ec4249f90519116ae1f76c8fdc8fde31054978ad95537b",
       "bytes": 1005,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---início-página-96dde3df",
@@ -4082,9 +4191,9 @@
       "estruturaOk": true,
       "sha256": "ecaf31bdf6fcc8afaf8a85f6f547df2ba03a97cdd1fd3ec89fceec26a0e2e931",
       "bytes": 5548,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---videoaulas-página-ba80e2cc",
@@ -4094,20 +4203,21 @@
       "estruturaOk": true,
       "sha256": "4929d19091359e7c996452db3a81d9bb863bcea6f61d7f9d657256af82cc7707",
       "bytes": 559,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---texto-base---introdução-à-metodologia-da-pesquisa_-um-guia-para-iniciantes-(leia-o-ca-9e36d04a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S3-s3---material-de-apoio---estratégias-de-leitura-acadêmica-292040b1",
@@ -4117,9 +4227,9 @@
       "estruturaOk": true,
       "sha256": "ebdbbd8c7e28868eced1f3b269b203b7dd00711f6714eb2670284ef6ef36a69d",
       "bytes": 1953,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---aprofundando-o-tema-página-d5b6c06f",
@@ -4129,9 +4239,9 @@
       "estruturaOk": true,
       "sha256": "31c0317a3543e593fc96ff553df14b4c698f0dc1f1d0713fb92715efe6c3f377",
       "bytes": 374,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---exercício-de-apoio-página-6e92f83a",
@@ -4141,9 +4251,9 @@
       "estruturaOk": true,
       "sha256": "f499aee21b28e281aed8747006468b55d5a2a2b9fd6a21026118c1620052348a",
       "bytes": 334,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S3-s3---em-síntese-página-cbab8083",
@@ -4153,9 +4263,9 @@
       "estruturaOk": true,
       "sha256": "bbdf766508522db60432f62a968a518f96d7aecbbe8d6c4afbe24029def5bbea",
       "bytes": 831,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---início-página-bfa9f6a2",
@@ -4165,9 +4275,9 @@
       "estruturaOk": true,
       "sha256": "cd0b77fd24b5d792aa1aab51415d8527fa0d20c95b085b555b52bddae1810ef5",
       "bytes": 5579,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---videoaulas-página-24699165",
@@ -4177,31 +4287,33 @@
       "estruturaOk": true,
       "sha256": "71918da628c46a07a6125815ff31a38cdb3b71025b013d3ecdbc0e64371b4927",
       "bytes": 389,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---texto-base---introdução-à-metodologia-da-pesquisa_-um-guia-para-iniciantes-(leia-o-ca-ad393554",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S4-s4---material-base---normas-para-trabalhos-acadêmicos-55923cdd",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S4-s4---material-base---reescrita-acadêmica-ef329036",
@@ -4211,9 +4323,9 @@
       "estruturaOk": true,
       "sha256": "8d6ee6bf7b6456398eeaa5a5a3a709ead49496b7b4eba65d3fc8c891d609d021",
       "bytes": 1102,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---aprofundando-o-tema-página-b3cb2772",
@@ -4223,9 +4335,9 @@
       "estruturaOk": true,
       "sha256": "f789f75a1fda39cd2bca00dc991712e2876582be8469d2045242d00ebfc5a7de",
       "bytes": 425,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---exercício-de-apoio-página-5fa366a3",
@@ -4235,9 +4347,9 @@
       "estruturaOk": true,
       "sha256": "0ea16fe1068a176b42414a4d162779c32955e5b1667fb78aea7ec45bfff51220",
       "bytes": 548,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S4-s4---em-síntese-página-1e511e37",
@@ -4247,9 +4359,9 @@
       "estruturaOk": true,
       "sha256": "50bc5cf60314c5964f8bef47c983fe6ddc1d3b5ccbaeb42173facb56712cfd25",
       "bytes": 955,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S5-s5---início-página-3aadb1f0",
@@ -4259,9 +4371,9 @@
       "estruturaOk": true,
       "sha256": "7fa500230a4eae514aa5131a9f4e018abc2f23cd7e271e9f0567580993358bf7",
       "bytes": 6637,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S5-s5---videoaulas-página-fe07e748",
@@ -4271,20 +4383,21 @@
       "estruturaOk": true,
       "sha256": "8f11ccfcca645dc9c7e4c7043ed9fb4bf9f6641391214d2de3804a20ef984487",
       "bytes": 411,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S5-s5---texto-base---análise-de-dados-qualitativos-(leia-o-capítulo-1,-“natureza-da-análise-q-3487dbbe",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S5-s5---vídeos-base-página-7dcdbb7d",
@@ -4294,9 +4407,9 @@
       "estruturaOk": true,
       "sha256": "84b458c69aa136178ccd9736f32468bafa0b40f77710d2be6d4e7dcb7122b143",
       "bytes": 626,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S5-s5---aprofundando-o-tema-página-4cdae84d",
@@ -4306,9 +4419,9 @@
       "estruturaOk": true,
       "sha256": "e39f5ea75e6b94a4586cebf45f9f4820981264e423eae4a80913ca02ed8972d3",
       "bytes": 439,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S5-s5---em-síntese-página-f0002821",
@@ -4318,9 +4431,9 @@
       "estruturaOk": true,
       "sha256": "6d7299147cd3ad4101b689160bb8480cb3cbb614f68a0d165dcab20c3ff77844",
       "bytes": 776,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S6-s6---início-página-98ecc1e5",
@@ -4330,9 +4443,9 @@
       "estruturaOk": true,
       "sha256": "8419cd0845f16a02a120d5ef0496029bd7e228858b22128421331db6b1a4d8c3",
       "bytes": 4675,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S6-s6---videoaulas-página-639be648",
@@ -4342,9 +4455,9 @@
       "estruturaOk": true,
       "sha256": "8bc8e0eac653dc8a7b6b393b6c45ddb864a1cb98c96f59cf06d04615a8c3b39e",
       "bytes": 354,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S6-s6---texto-base---metodologia-científica-(leia-o-capítulo-6,-p.-73-89)-09ade55d",
@@ -4354,9 +4467,9 @@
       "estruturaOk": true,
       "sha256": "3b8dc45364ed189c3341d5cb50c0949a8ed1476cb83390929d1a842f2618082d",
       "bytes": 14136,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S6-s6---aprofundando-o-tema-página-fb40c14a",
@@ -4366,9 +4479,9 @@
       "estruturaOk": true,
       "sha256": "baea888d9102ed61655b7a8c4a8171776cb1b94ceed413803e3107cfb994ea64",
       "bytes": 397,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S6-s6---em-síntese-página-63aae35d",
@@ -4378,20 +4491,21 @@
       "estruturaOk": true,
       "sha256": "a1c47a2cd9446f9989299ca63068c1127ac4e7e13169fca5af25e024579fe9e0",
       "bytes": 781,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S7-s7---início-página-02a4b19f",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "INCONCLUSIVE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S7-s7---videoaulas-página-e0e88350",
@@ -4401,31 +4515,33 @@
       "estruturaOk": true,
       "sha256": "b51eec8a6c7a03acfcc454c5b531f6b3ba14cd407182f3c091c95ef9a6d51740",
       "bytes": 359,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S7-s7---texto-base---metodologia-científica-(leia-a-seção-7.2,-p.-108-a-125)-eced6bd1",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S7-s7---texto-base---introdução-à-metodologia-da-pesquisa_-um-guia-para-iniciantes-(leia-o-ca-03becca2",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18539-S7-s7---aprofundando-o-tema-página-08932a12",
@@ -4435,9 +4551,9 @@
       "estruturaOk": true,
       "sha256": "4cd71b801129295f74738c3ec9c8f80a5e9da99aebc7f686cc04c2234f6170a7",
       "bytes": 411,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S7-s7---exercício-de-apoio-página-c5a9b52d",
@@ -4447,9 +4563,9 @@
       "estruturaOk": true,
       "sha256": "1dc30e283e7c7bef36ef4524513223c5cbfa9f49f6ee8ab6b560cfa6d69e43b4",
       "bytes": 1457,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18539-S7-s7---em-síntese-página-04d2004c",
@@ -4459,9 +4575,9 @@
       "estruturaOk": true,
       "sha256": "15447b8a741446aa6c314c9dcfbd441d615fd8a86d32f983be6279fc946d4590",
       "bytes": 843,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---início-página-26bf251e",
@@ -4471,9 +4587,9 @@
       "estruturaOk": true,
       "sha256": "6b9db3ead83273ea2faf088436a8674fe84b9c0e41c1a5f974132d62d046e813",
       "bytes": 4021,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---videoaulas-página-7757704e",
@@ -4483,20 +4599,21 @@
       "estruturaOk": true,
       "sha256": "428fa091277d4c7bac4389f32e70b70740ca18e25c6b1c052e8e87fd878df124",
       "bytes": 1098,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---texto-base---manual-compacto-de-matemática_-ensino-fundamental-(leia-as-páginas-11-20-686a84a5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18554-S1-s1---texto-base---teoria-dos-números-para-professores-do-ensino-fundamental-(leia-as-págin-95989f28",
@@ -4506,9 +4623,9 @@
       "estruturaOk": true,
       "sha256": "980a015d25e9da6085c8cbdc84e3e095600b617e83db1b1c43e33bc818213f23",
       "bytes": 257,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---texto-base---fundamentos-de-matemática-(leia-as-páginas-111-119)-74b8c186",
@@ -4518,9 +4635,9 @@
       "estruturaOk": true,
       "sha256": "418565040fa0fa913fd1324b266e8c13b22dd79659fd1e801684ad7e1acaeb2c",
       "bytes": 303,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---vídeo-base-1-página-83253d11",
@@ -4530,9 +4647,9 @@
       "estruturaOk": true,
       "sha256": "7319cf884b6da956faa606a318e09b158814f08409839e8e85027767042804f8",
       "bytes": 261,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---vídeo-base-2-página-51ce2ae6",
@@ -4542,9 +4659,9 @@
       "estruturaOk": true,
       "sha256": "f34672dd8d7546d9699b1456f5a602216dc261aa5d52eb44890f6861088a71f0",
       "bytes": 258,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---material-base---trabalhando-com-conjuntos-3797d9bd",
@@ -4554,9 +4671,9 @@
       "estruturaOk": true,
       "sha256": "e1e7465aa6380136c134a17578ae66feec0a2a68ad8f0a260c52ad7eb01fc91d",
       "bytes": 157,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---aprofundando-o-tema-página-19627bfe",
@@ -4566,9 +4683,9 @@
       "estruturaOk": true,
       "sha256": "79308c77b496a36e206edd56ac6561bdd756c73a79cc954a4a3356db4bcaff32",
       "bytes": 669,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S1-s1---em-síntese-página-9994b707",
@@ -4578,9 +4695,9 @@
       "estruturaOk": true,
       "sha256": "b5e883de558f3cba41b341e9ede1e29a80ab126fc38226cdd75296204863f008",
       "bytes": 1752,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---início-página-071b211e",
@@ -4590,9 +4707,9 @@
       "estruturaOk": true,
       "sha256": "8fc3bef2ebffc7896e65844644630b4110f022d06f48cd9c9150318a73ea3014",
       "bytes": 3661,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---videoaulas-página-f24e66cf",
@@ -4602,9 +4719,9 @@
       "estruturaOk": true,
       "sha256": "34ebfac69244839d682e98ebc6ad48dce7fe23c79a25f847d3af537f915d0f8c",
       "bytes": 1292,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---texto-base---fundamentos-de-matemática-(leia-as-páginas-21-24)-aeba51e2",
@@ -4614,31 +4731,33 @@
       "estruturaOk": true,
       "sha256": "d881b3b94e21da018f0109d0b33575bf7529dbc737c9f2ab63097788a4900ce3",
       "bytes": 330,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---texto-base---manual-compacto-de-matemática_-ensino-fundamental-(leia-as-páginas-74-11-b3b92ffc",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18554-S2-s2---texto-base---manual-compacto-de-matemática_-ensino-fundamental-(leia-as-páginas-43-49-08f2c0a5",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18554-S2-s2---texto-base-–-matemática-básica_-para-administração,-economia,-contabilidade-e-negócio-675e7461",
@@ -4648,9 +4767,9 @@
       "estruturaOk": true,
       "sha256": "f45a6ed4e5733a2f9581ac2cafc6078f228f14d79d24cffba4fbebabeb36ecff",
       "bytes": 307,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---material-base-página-4fe1f49e",
@@ -4660,9 +4779,9 @@
       "estruturaOk": true,
       "sha256": "68f8c6191e6c852da258e0129e500dd24bf308cfe12391550e5fb357eab380fc",
       "bytes": 293,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---aprofundando-o-tema-página-3d05cb0f",
@@ -4672,9 +4791,9 @@
       "estruturaOk": true,
       "sha256": "02440c196a114ba6f54b344c5c7e7580cce8ea64adc24092e44d416f536c8764",
       "bytes": 402,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S2-s2---em-síntese-página-993d7a2e",
@@ -4684,9 +4803,9 @@
       "estruturaOk": true,
       "sha256": "c8c55dae4cb60bc81dd47b4b25f312e65541a7210831912afccf027a7b8b1e60",
       "bytes": 1720,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---início-página-3988767b",
@@ -4696,9 +4815,9 @@
       "estruturaOk": true,
       "sha256": "a8b5b7cce44dd772a0b4e6bd12157a682ae9d3415f157df55ebf0c11ee2ce0bc",
       "bytes": 3604,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---videoaulas-página-1f627678",
@@ -4708,9 +4827,9 @@
       "estruturaOk": true,
       "sha256": "ab27281ed71c6817e6941f857f89906e9eaaad8d5d25d766074cf632b71b7381",
       "bytes": 2284,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---texto-base---fundamentos-de-matemática-(leia-as-páginas-145-153)-e192c01a",
@@ -4720,9 +4839,9 @@
       "estruturaOk": true,
       "sha256": "094f33aacd8a3c1a1d29282e713db402ec1643b763c75e2755286f6cb8a21d62",
       "bytes": 303,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---material-base-página-03e751c8",
@@ -4732,9 +4851,9 @@
       "estruturaOk": true,
       "sha256": "701e0586f63daeba67a60b7266a6a6743b34726b6d5d78b214320dbf139cac10",
       "bytes": 462,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---aprofundando-o-tema-página-8ad8f971",
@@ -4744,9 +4863,9 @@
       "estruturaOk": true,
       "sha256": "0690c24de3ea7a4971163bff2dc0954f2de9a540d441e2338a6781ed73f6e3c6",
       "bytes": 498,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S3-s3---em-síntese-página-d66173f8",
@@ -4756,9 +4875,9 @@
       "estruturaOk": true,
       "sha256": "8e29cd92c063a22e4c8fee2e8ffffb1ac07e6a29ed1f5ae5a62e57c330029bd4",
       "bytes": 1672,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S4-s4---início-página-bd64836d",
@@ -4768,9 +4887,9 @@
       "estruturaOk": true,
       "sha256": "5e0508a4e0eea54cf6ca70dca5eb397cbd9c912295440a1addb39e9dfbe59c54",
       "bytes": 3460,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S4-s4---videoaulas-página-031cd71f",
@@ -4780,9 +4899,9 @@
       "estruturaOk": true,
       "sha256": "788637d35db8c05a8d1c5c41b1b80bf5afea7f2d9a9bc6e30d5ddf7d805c2fe7",
       "bytes": 2118,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S4-s4---aprofundando-o-tema-página-87c3f7ca",
@@ -4792,9 +4911,9 @@
       "estruturaOk": true,
       "sha256": "316c78488ec5cbb5be8c5f95e39612981c2ae4da163db51cd5e4ecbda686c82b",
       "bytes": 524,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S4-s4---em-síntese-página-a8ff0a95",
@@ -4804,9 +4923,9 @@
       "estruturaOk": true,
       "sha256": "241044b67b30aa4b444ee942fc1b5a6c4a573fa8695284c95f91d5b4331469ec",
       "bytes": 1267,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S5-s5---início-página-692e0413",
@@ -4816,9 +4935,9 @@
       "estruturaOk": true,
       "sha256": "64288f36ade1ffbf83bd6647dda252dc380fbe22dfd6504e38b77a905451118e",
       "bytes": 3080,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S5-s5---vídeos-base-página-fed67c9e",
@@ -4828,9 +4947,9 @@
       "estruturaOk": true,
       "sha256": "f3d88bbc760f6337d6c5a6a48adb403acad529fa0e830227213cb74049ea7739",
       "bytes": 938,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S5-s5---texto-base---fundamentos-de-matemática-(leia-as-páginas-41-54)-6a63666a",
@@ -4840,9 +4959,9 @@
       "estruturaOk": true,
       "sha256": "2145d4395564d26627d74ba7f78b41ceb793b026568633888a43ad8df624ce96",
       "bytes": 299,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S5-s5---aprofundando-o-tema-página-f59bea56",
@@ -4852,9 +4971,9 @@
       "estruturaOk": true,
       "sha256": "eaf87691aef184cb2a70cd55806dc56ee780cabf7340790a3ee69b35661cab8e",
       "bytes": 333,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S5-s5---em-síntese-página-c128169c",
@@ -4864,9 +4983,9 @@
       "estruturaOk": true,
       "sha256": "c2b681624a1e28664b75580d5f8efc49963f3b8871c88f7de30cc4c83c8432ea",
       "bytes": 1088,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---início-página-ab8657c5",
@@ -4876,9 +4995,9 @@
       "estruturaOk": true,
       "sha256": "6530befd739607510777ef2f520f0a559474ddf80bf969f756cae7291c19e8eb",
       "bytes": 2477,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---videoaulas-página-f0571d7f",
@@ -4888,20 +5007,21 @@
       "estruturaOk": true,
       "sha256": "598a42694a49769d3cf1111509a3bb110726a12bc7b1990ae072b4a2f2d011e9",
       "bytes": 748,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---texto-base---manual-compacto-de-matemática_-ensino-fundamental-(leia-as-páginas-297-3-9b3ffa6e",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "D18554-S6-s6---texto-base---fundamentos-de-matemática-(leia-as-páginas-55-82)-d9931c4f",
@@ -4911,9 +5031,9 @@
       "estruturaOk": true,
       "sha256": "cea828ec3f7b8ab3949d4dd86a25d3c3884394d7900a7ad0923a490432034a02",
       "bytes": 299,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---material-base-página-b78a6ce7",
@@ -4923,9 +5043,9 @@
       "estruturaOk": true,
       "sha256": "4092497a26d4eb93a0e48954256dc5f820fba31df4103a591d33da4545a9e950",
       "bytes": 576,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---aprofundando-o-tema-página-9448da31",
@@ -4935,9 +5055,9 @@
       "estruturaOk": true,
       "sha256": "b741dacec2e738942d4d972e79f257f4130806763c4924e21cccdf6a24e805b7",
       "bytes": 419,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S6-s6---em-síntese-página-c52345d1",
@@ -4947,9 +5067,9 @@
       "estruturaOk": true,
       "sha256": "1f065eb496dadf29c07b925af34b2dd536fed9807a198bafb9db89b3d839df16",
       "bytes": 1352,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S7-s7---início-página-f8039f67",
@@ -4959,9 +5079,9 @@
       "estruturaOk": true,
       "sha256": "3b5a61759b270ac4e4891fbf72819c81c05b4f55a2f9c6525aeed370cd2fe073",
       "bytes": 2709,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S7-s7---videoaulas-página-383591f7",
@@ -4971,9 +5091,9 @@
       "estruturaOk": true,
       "sha256": "4123e8ef3bf52ae3289cfc7d9fb5c4d56271ec68672162e42a16169642b50577",
       "bytes": 692,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S7-s7---material-base-página-202c1f23",
@@ -4983,9 +5103,9 @@
       "estruturaOk": true,
       "sha256": "b70d69b8a0207926eb983bcf50fc2aacb3065a6cbb0f0984dd907473e84aa835",
       "bytes": 926,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "D18554-S7-s7---em-síntese-página-72dec00d",
@@ -4995,9 +5115,9 @@
       "estruturaOk": true,
       "sha256": "f6fd3349e2932f7b60b4bc62c1047df645fcac02e046ad1bcea53905c5d83321",
       "bytes": 2287,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S1-s1---início-página-e116c610",
@@ -5007,9 +5127,9 @@
       "estruturaOk": true,
       "sha256": "21d61f8b86ab85144fbaa38ee96fac2dde1b28e4d88de7cad3cb8fbb9509979b",
       "bytes": 5700,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S1-s1---videoaulas-página-27edacfb",
@@ -5019,42 +5139,45 @@
       "estruturaOk": true,
       "sha256": "208405ef2a53acc19a85bc5d33ad2a3280004adf61b725c8aa9a54d642e9da84",
       "bytes": 412,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S1-s1---texto-base-1.2---sociologia-geral,-8ª-edição-(leia-o-capítulo-2---história-da-sociolo-fccd6198",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S1-s1---texto-base-1.3---introdução-à-sociologia-(leia-o-capítulo-3---os-pensadores-clássicos-f1438835",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S1-s1---texto-base-1.4---sociologia-(leia-o-capítulo-1---entendendo-sociologia,-p.-14-20)-6182194a",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S1-s1---aprofundando-o-tema-página-50f38581",
@@ -5064,9 +5187,9 @@
       "estruturaOk": true,
       "sha256": "7aecd37ffd6a7aac722d69c6321e2bd42838d89de9a765c9b2c2cbef25f0d26c",
       "bytes": 762,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S1-s1---em-síntese-página-296faf50",
@@ -5076,9 +5199,9 @@
       "estruturaOk": true,
       "sha256": "dd471aefcf169ef8987b8af13c949b158e1939f09e2bbe8241d8041f0ed40a45",
       "bytes": 1595,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S2-s2---início-página-e6ede142",
@@ -5088,9 +5211,9 @@
       "estruturaOk": true,
       "sha256": "8604db1905b554e89dbf7bdb3ff3aff8d9e51d5e5c627e8a15468eb0d6ffdca8",
       "bytes": 5129,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S2-s2---videoaulas-página-a6ff7d67",
@@ -5100,20 +5223,21 @@
       "estruturaOk": true,
       "sha256": "dc8ed0f2b0cb0c40079582be9980f9aaf944c7662cad3229e28dc5b4a5f6a42f",
       "bytes": 503,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S2-s2---texto-base-2.1---sociologia-(leia-o-capítulo-3---cultura,-p.-68-93)-4a4e0d5c",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S2-s2---aprofundando-o-tema-página-1bcf6c67",
@@ -5123,9 +5247,9 @@
       "estruturaOk": true,
       "sha256": "22deb5ada0a4c01cc3a7354ea5144e388a0c4903d91872606ea557f9b1f0276f",
       "bytes": 1174,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S2-s2---em-síntese-página-6b28553f",
@@ -5135,9 +5259,9 @@
       "estruturaOk": true,
       "sha256": "0a6991bc2c162a52be1a9211c16c213860a0295f1aa3aac14c1a3ac025df96b4",
       "bytes": 2315,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S3-s3---início-página-7ed780e0",
@@ -5147,9 +5271,9 @@
       "estruturaOk": true,
       "sha256": "0c0212dcbcbe973ed2e8da441a58a44ea655e035314feeaa4951109d08ae74b8",
       "bytes": 5523,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S3-s3---videoaulas-página-6fadc1a4",
@@ -5159,31 +5283,33 @@
       "estruturaOk": true,
       "sha256": "5c251c4b37224f03184e16b0bceaa91e8c58f334a7854654237a6d9c5ef05f1f",
       "bytes": 448,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S3-s3---texto-base-3.1---sociologia-(leia-o-capítulo-5---interação-social-e-estrutura-social,-f7d6477b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S3-s3---texto-base-3.2---sociologia-(leia-o-capítulo-6---grupos-e-organizações,-p.143-165)-1ffee9b4",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S3-s3---aprofundando-o-tema-página-750ab948",
@@ -5193,9 +5319,9 @@
       "estruturaOk": true,
       "sha256": "b28490cd899dfdfb563c5b2e631e04507290e94180899bdb4f16f7cb9528f52a",
       "bytes": 977,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S3-s3---em-síntese-página-6e8ce3f0",
@@ -5205,9 +5331,9 @@
       "estruturaOk": true,
       "sha256": "3f526e1f1f918ad1024c97c87b0f878a2ac3b8c3b728acbf4875ff393951035c",
       "bytes": 2038,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S4-s4---início-página-bee3ab40",
@@ -5217,9 +5343,9 @@
       "estruturaOk": true,
       "sha256": "d79bfbdd5216c3bfe66492c09722f4b5874990e688a31d650e45042dde508b74",
       "bytes": 5985,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S4-s4---videoaulas-página-9f571cac",
@@ -5229,31 +5355,33 @@
       "estruturaOk": true,
       "sha256": "33b8c5ce4f11c838bbd3d3b5cfcddcb7bf2cf1c689a373913c7a2d332e89d9d8",
       "bytes": 471,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S4-s4---texto-base-4.1---sociologia-(leia-o-capítulo-8---desvio-e-controle-social,-p.-187-215-0919b420",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S4-s4---texto-base-4.2---sociologia-(leia-o-capítulo-9---a-estratificação-nos-estados-unidos--035b5da8",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S4-s4---aprofundando-o-tema-página-17cfcfae",
@@ -5263,9 +5391,9 @@
       "estruturaOk": true,
       "sha256": "8108c5b25c5921a808e4bba04c31df746284fdfceb5e1b51c12c4346d12931da",
       "bytes": 1185,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S4-s4---em-síntese-página-d66ccee8",
@@ -5275,9 +5403,9 @@
       "estruturaOk": true,
       "sha256": "1942a5b71d57756ef549ef64f5fcb5782309ab214b44918d08ed518af318180a",
       "bytes": 1970,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S5-s5---início-página-b626347e",
@@ -5287,9 +5415,9 @@
       "estruturaOk": true,
       "sha256": "d5a60cc272ede356ee7dd520b700fa8e651da3319e2d8eea5bdcd4550a9e8696",
       "bytes": 4514,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S5-s5---videoaulas-página-043a80f3",
@@ -5299,42 +5427,45 @@
       "estruturaOk": true,
       "sha256": "bd630809ce2d6cd75cd560bee48237c4523414bb5e2f418d3e3c2428dbb5934b",
       "bytes": 440,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S5-s5---texto-base-5.1---sociologia-(leia-o-capítulo-16---movimentos-sociais,-mudanças-sociai-dabd8971",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S5-s5---texto-base-5.2---sociologia-(leia-o-capítulo-16---movimentos-sociais,-mudanças-sociai-bece90aa",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S5-s5---texto-base-5.3---sociologia-(leia-o-capítulo-16---movimentos-sociais,-mudanças-sociai-70d1c87b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S5-s5---aprofundando-o-tema-página-9bd1638d",
@@ -5344,9 +5475,9 @@
       "estruturaOk": true,
       "sha256": "0db79065d6d923353a993de24b18ab9c24e986aca001814d93ea9db6bc8be1a2",
       "bytes": 1094,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S5-s5---em-síntese-página-bd0878ee",
@@ -5356,9 +5487,9 @@
       "estruturaOk": true,
       "sha256": "17b29c050527d08e994bdff08f9470fdd69c8df327d106314b634ee4f743e89f",
       "bytes": 1351,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S6-s6---início-página-6db4d737",
@@ -5368,9 +5499,9 @@
       "estruturaOk": true,
       "sha256": "ae84b75d12dc3fc588b65f787181d588a771ff21958ab6f6a14c65538413faa4",
       "bytes": 4050,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S6-s6---videoaulas-página-29bb7777",
@@ -5380,31 +5511,33 @@
       "estruturaOk": true,
       "sha256": "7014baae197a66e07b277b54eb0c8bb2a52f3217a2d788df088badb2e0a05252",
       "bytes": 552,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S6-s6---texto-base-6.1---sociologia-(leia-o-capítulo-10---desigualdade-étnica-e-racial,-p.-23-6f0b3c5b",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S6-s6---texto-base-6.2---sociologia-(leia-o-capítulo-16---gênero-e-sexualidade,-p.-275-283)-bdddb6c9",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S6-s6---aprofundando-o-tema-página-7259b877",
@@ -5414,9 +5547,9 @@
       "estruturaOk": true,
       "sha256": "4dfcd33228980b59300a4f54dff2f23afc82f4a7d11480a7fac2efb506352ff5",
       "bytes": 790,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S6-s6---em-síntese-página-7162d345",
@@ -5426,9 +5559,9 @@
       "estruturaOk": true,
       "sha256": "6c8fa44c1879d881fb13c9fcbad95a65f82d4ddeda9d0a5b0a6cfd9e9f97a52d",
       "bytes": 1824,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S7-s7---início-página-664e9030",
@@ -5438,9 +5571,9 @@
       "estruturaOk": true,
       "sha256": "18446851658e665b9ce5c569e40ad89f10ec87ed16f07b946a18a0201067af96",
       "bytes": 4219,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S7-s7---videoaulas-página-7746c766",
@@ -5450,31 +5583,33 @@
       "estruturaOk": true,
       "sha256": "43c30cadf97738de466fc1f686001d7916599007147cffd574b9a405673201af",
       "bytes": 513,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S7-s7---texto-base-7.1---sociologia-(leia-o-capítulo-14---governo,-economia-e-meio-ambiente,--fd1b01b7",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S7-s7---texto-base-7.2---sociologia-(leia-o-capítulo-14---governo,-economia-e-meio-ambiente,--5230aa17",
       "existe": false,
       "vazio": false,
       "ilegivel": false,
-      "estruturaOk": false,
+      "estruturaOk": null,
       "sha256": null,
       "bytes": 0,
-      "coerencia": "OK",
-      "resultado": "PASS"
+      "tamanhoOk": null,
+      "resultado": "NOT_APPLICABLE",
+      "motivo": "sem-arquivo-esperado"
     },
     {
       "resource_id": "SOC200-S7-s7---aprofundando-o-tema-página-4a38bdda",
@@ -5484,9 +5619,9 @@
       "estruturaOk": true,
       "sha256": "9e1135ae1ca5f4f15530808e80b02d6476ff27ddf6a0dda2362f8a9fad697a81",
       "bytes": 875,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     },
     {
       "resource_id": "SOC200-S7-s7---em-síntese-página-16063c5a",
@@ -5496,9 +5631,9 @@
       "estruturaOk": true,
       "sha256": "9cb3bf36b19b07d4d671a95feef089058fce468af1e48265160dc61286e11598",
       "bytes": 1956,
-      "coerencia": "OK",
+      "tamanhoOk": "OK",
       "resultado": "PASS",
-      "coerenciaTamanho": "OK"
+      "motivo": null
     }
   ]
 }

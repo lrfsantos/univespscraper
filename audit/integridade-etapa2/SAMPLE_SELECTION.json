@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-22T05:57:30.084Z",
+  "gerado_em": "2026-11-22T06:17:05.315Z",
   "criterio": "estratificada determinística (ordenação por resource_id)",
   "total": 60,
   "justificativa": {
@@ -16,7 +16,15 @@
     "failed": {
       "criterio": "cobrir causas/leitores distintos, round-robin",
       "alvo": 12,
-      "selecionados": 12
+      "selecionados": 12,
+      "causasCobertas": [
+        "clique-nao-abriu-recurso|unknown",
+        "formato=bvleitor status=inaccessible fal|bvleitor",
+        "formato=bvpdf status=inaccessible falha=|bvpdf",
+        "formato=reader-auth status=inaccessible |reader",
+        "formato=unknown status=inaccessible falh|unknown",
+        "page.evaluate: Execution context was des|unknown"
+      ]
     },
     "unclassified": {
       "criterio": "distribuídos entre disciplinas/semanas, round-robin",
@@ -32,8 +40,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 950,
-      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L18"
     },
     {
       "estrato": "integral",
@@ -42,8 +52,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 427,
-      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "ADM220 Comportamento Humano nas Organizações Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "integral",
@@ -52,8 +64,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 539,
-      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "ADM230 Gestão Contábil Turma 002\\QUALITY.md#L14"
     },
     {
       "estrato": "integral",
@@ -62,8 +76,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 508,
-      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L16"
     },
     {
       "estrato": "integral",
@@ -72,8 +88,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1063,
-      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "ADM290 Digital Workplace e tendências em RH Turma 002\\QUALITY.md#L13"
     },
     {
       "estrato": "integral",
@@ -82,8 +100,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 492,
-      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\05_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L14"
     },
     {
       "estrato": "integral",
@@ -92,8 +112,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 513,
-      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\07_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L16"
     },
     {
       "estrato": "integral",
@@ -102,8 +124,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 396,
-      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\04_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "D18539 LEGADO_INT100 - Projetos e Métodos para a Produção do Conhecimento\\QUALITY.md#L13"
     },
     {
       "estrato": "integral",
@@ -112,8 +136,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 606,
-      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\09_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "D18554 LEGADO_MMB002 - Matemática Básica\\QUALITY.md#L18"
     },
     {
       "estrato": "integral",
@@ -122,8 +148,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 705,
-      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md"
+      "output_file": "SEMANA_1\\06_S1 - Aprofundando o tema Página.md",
+      "evidence_reference": "SOC200 Sociologia Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "integral",
@@ -132,8 +160,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1266,
-      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md",
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L19"
     },
     {
       "estrato": "integral",
@@ -142,8 +172,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1812,
-      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md",
+      "evidence_reference": "ADM220 Comportamento Humano nas Organizações Turma 002\\QUALITY.md#L16"
     },
     {
       "estrato": "integral",
@@ -152,8 +184,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1854,
-      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md",
+      "evidence_reference": "ADM230 Gestão Contábil Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "integral",
@@ -162,8 +196,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1152,
-      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md",
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L17"
     },
     {
       "estrato": "integral",
@@ -172,8 +208,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1355,
-      "output_file": "SEMANA_1\\05_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\05_S1 - Em síntese Página.md",
+      "evidence_reference": "ADM290 Digital Workplace e tendências em RH Turma 002\\QUALITY.md#L14"
     },
     {
       "estrato": "integral",
@@ -182,8 +220,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1224,
-      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md",
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "integral",
@@ -192,8 +232,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1794,
-      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\08_S1 - Em síntese Página.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L17"
     },
     {
       "estrato": "integral",
@@ -202,8 +244,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1113,
-      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\06_S1 - Em síntese Página.md",
+      "evidence_reference": "D18539 LEGADO_INT100 - Projetos e Métodos para a Produção do Conhecimento\\QUALITY.md#L15"
     },
     {
       "estrato": "integral",
@@ -212,8 +256,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1649,
-      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\10_S1 - Em síntese Página.md",
+      "evidence_reference": "D18554 LEGADO_MMB002 - Matemática Básica\\QUALITY.md#L19"
     },
     {
       "estrato": "integral",
@@ -222,8 +268,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 1516,
-      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md"
+      "output_file": "SEMANA_1\\07_S1 - Em síntese Página.md",
+      "evidence_reference": "SOC200 Sociologia Turma 002\\QUALITY.md#L16"
     },
     {
       "estrato": "integral",
@@ -232,8 +280,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 255,
-      "output_file": "SEMANA_1\\02_S1 - Videoaula 1 - Revolução Industrial e o surgimento do administrador Página.md"
+      "output_file": "SEMANA_1\\02_S1 - Videoaula 1 - Revolução Industrial e o surgimento do administrador Página.md",
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L11"
     },
     {
       "estrato": "integral",
@@ -242,8 +292,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 6081,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "ADM220 Comportamento Humano nas Organizações Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -252,8 +304,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 2205,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "ADM230 Gestão Contábil Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -262,8 +316,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 4219,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -272,8 +328,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 5041,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "ADM290 Digital Workplace e tendências em RH Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -282,8 +340,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 4645,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -292,8 +352,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 4936,
-      "output_file": "SEMANA_1\\01_S1 - Introdução à Ética_ conceitos fundamentais Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Introdução à Ética_ conceitos fundamentais Página.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -302,8 +364,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 682,
-      "output_file": "SEMANA_1\\05_S1 - Exercício de apoio Página.md"
+      "output_file": "SEMANA_1\\05_S1 - Exercício de apoio Página.md",
+      "evidence_reference": "D18539 LEGADO_INT100 - Projetos e Métodos para a Produção do Conhecimento\\QUALITY.md#L14"
     },
     {
       "estrato": "integral",
@@ -312,8 +376,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 3848,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "D18554 LEGADO_MMB002 - Matemática Básica\\QUALITY.md#L10"
     },
     {
       "estrato": "integral",
@@ -322,8 +388,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "integral",
+      "reason": null,
       "chars": 5479,
-      "output_file": "SEMANA_1\\01_S1 - Início Página.md"
+      "output_file": "SEMANA_1\\01_S1 - Início Página.md",
+      "evidence_reference": "SOC200 Sociologia Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "partial",
@@ -332,8 +400,10 @@
       "week": 1,
       "detected_type": "pdf",
       "reconciled_status": "partial",
+      "reason": "formato=pdf status=partial falha=-",
       "chars": 121,
-      "output_file": "SEMANA_1\\05_S1 - Texto-base 1 - Teorias da administração (p. 4-18 e 42-46 ).md"
+      "output_file": "SEMANA_1\\05_S1 - Texto-base 1 - Teorias da administração (p. 4-18 e 42-46 ).md",
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L14"
     },
     {
       "estrato": "partial",
@@ -342,8 +412,10 @@
       "week": 2,
       "detected_type": "unknown",
       "reconciled_status": "partial",
+      "reason": "incompleto",
       "chars": 38,
-      "output_file": "SEMANA_2\\14_S2 - Texto-base - Manual de Oslo_ diretrizes para coleta e interpretação de dados sobre in.md"
+      "output_file": "SEMANA_2\\14_S2 - Texto-base - Manual de Oslo_ diretrizes para coleta e interpretação de dados sobre in.md",
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L23"
     },
     {
       "estrato": "partial",
@@ -352,8 +424,10 @@
       "week": 4,
       "detected_type": "pdf",
       "reconciled_status": "partial",
+      "reason": "formato=pdf status=partial falha=-",
       "chars": 39527,
-      "output_file": "SEMANA_4\\20_S4 - Texto-base_ Fundamentos de Gestão de Projetos (Leia o capítulo 6, p. 217-250).md"
+      "output_file": "SEMANA_4\\20_S4 - Texto-base_ Fundamentos de Gestão de Projetos (Leia o capítulo 6, p. 217-250).md",
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L29"
     },
     {
       "estrato": "partial",
@@ -362,8 +436,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "partial",
+      "reason": "incompleto",
       "chars": 78,
-      "output_file": "SEMANA_1\\04_S1 - Vídeo-base - Qual o significado de ética_ URL.md"
+      "output_file": "SEMANA_1\\04_S1 - Vídeo-base - Qual o significado de ética_ URL.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L13"
     },
     {
       "estrato": "partial",
@@ -372,8 +448,10 @@
       "week": 5,
       "detected_type": "unknown",
       "reconciled_status": "partial",
+      "reason": "incompleto",
       "chars": 68,
-      "output_file": "SEMANA_5\\32_S5 - Texto-base - Ética profissional URL.md"
+      "output_file": "SEMANA_5\\32_S5 - Texto-base - Ética profissional URL.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L41"
     },
     {
       "estrato": "partial",
@@ -382,8 +460,10 @@
       "week": 6,
       "detected_type": "unknown",
       "reconciled_status": "partial",
+      "reason": "incompleto",
       "chars": 76,
-      "output_file": "SEMANA_6\\39_S6 - Texto-base - Dignidade da pessoa humana URL.md"
+      "output_file": "SEMANA_6\\39_S6 - Texto-base - Dignidade da pessoa humana URL.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L48"
     },
     {
       "estrato": "partial",
@@ -392,8 +472,10 @@
       "week": 7,
       "detected_type": "unknown",
       "reconciled_status": "partial",
+      "reason": "incompleto",
       "chars": 67,
-      "output_file": "SEMANA_7\\46_S7 - Texto-base - Ética na pesquisa URL.md"
+      "output_file": "SEMANA_7\\46_S7 - Texto-base - Ética na pesquisa URL.md",
+      "evidence_reference": "D18491 LEGADO_SOC100 - Ética, Cidadania e Sociedade\\QUALITY.md#L55"
     },
     {
       "estrato": "failed",
@@ -402,8 +484,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "clique-nao-abriu-recurso",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "failed",
@@ -412,8 +496,10 @@
       "week": 6,
       "detected_type": "bvleitor",
       "reconciled_status": "failed",
+      "reason": "formato=bvleitor status=inaccessible falha=reader-selection-required",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM290 Digital Workplace e tendências em RH Turma 002\\QUALITY.md#L37"
     },
     {
       "estrato": "failed",
@@ -422,8 +508,10 @@
       "week": 2,
       "detected_type": "bvpdf",
       "reconciled_status": "failed",
+      "reason": "formato=bvpdf status=inaccessible falha=reader-selection-required",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L24"
     },
     {
       "estrato": "failed",
@@ -432,8 +520,10 @@
       "week": 1,
       "detected_type": "reader",
       "reconciled_status": "failed",
+      "reason": "formato=reader-auth status=inaccessible falha=reader-auth",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L14"
     },
     {
       "estrato": "failed",
@@ -442,8 +532,10 @@
       "week": 3,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "formato=unknown status=inaccessible falha=network",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L36"
     },
     {
       "estrato": "failed",
@@ -452,8 +544,10 @@
       "week": 2,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L24"
     },
     {
       "estrato": "failed",
@@ -462,8 +556,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "clique-nao-abriu-recurso",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L16"
     },
     {
       "estrato": "failed",
@@ -472,8 +568,10 @@
       "week": 7,
       "detected_type": "bvleitor",
       "reconciled_status": "failed",
+      "reason": "formato=bvleitor status=inaccessible falha=reader-selection-required",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM290 Digital Workplace e tendências em RH Turma 002\\QUALITY.md#L42"
     },
     {
       "estrato": "failed",
@@ -482,8 +580,10 @@
       "week": 2,
       "detected_type": "bvpdf",
       "reconciled_status": "failed",
+      "reason": "formato=bvpdf status=inaccessible falha=reader-selection-required",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L25"
     },
     {
       "estrato": "failed",
@@ -492,8 +592,10 @@
       "week": 1,
       "detected_type": "reader",
       "reconciled_status": "failed",
+      "reason": "formato=reader-auth status=inaccessible falha=reader-auth",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L12"
     },
     {
       "estrato": "failed",
@@ -502,8 +604,10 @@
       "week": 4,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "formato=unknown status=inaccessible falha=network",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L44"
     },
     {
       "estrato": "failed",
@@ -512,8 +616,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "failed",
+      "reason": "clique-nao-abriu-recurso",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L17"
     },
     {
       "estrato": "unclassified",
@@ -522,8 +628,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L10"
     },
     {
       "estrato": "unclassified",
@@ -532,8 +640,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM220 Comportamento Humano nas Organizações Turma 002\\QUALITY.md#L13"
     },
     {
       "estrato": "unclassified",
@@ -542,8 +652,10 @@
       "week": 2,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM230 Gestão Contábil Turma 002\\QUALITY.md#L19"
     },
     {
       "estrato": "unclassified",
@@ -552,8 +664,10 @@
       "week": 1,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L15"
     },
     {
       "estrato": "unclassified",
@@ -562,8 +676,10 @@
       "week": 3,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L22"
     },
     {
       "estrato": "unclassified",
@@ -572,8 +688,10 @@
       "week": 3,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "D18539 LEGADO_INT100 - Projetos e Métodos para a Produção do Conhecimento\\QUALITY.md#L26"
     },
     {
       "estrato": "unclassified",
@@ -582,8 +700,10 @@
       "week": 2,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM210 Estudos Organizacionais Turma 002\\QUALITY.md#L28"
     },
     {
       "estrato": "unclassified",
@@ -592,8 +712,10 @@
       "week": 2,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM220 Comportamento Humano nas Organizações Turma 002\\QUALITY.md#L20"
     },
     {
       "estrato": "unclassified",
@@ -602,8 +724,10 @@
       "week": 3,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM230 Gestão Contábil Turma 002\\QUALITY.md#L25"
     },
     {
       "estrato": "unclassified",
@@ -612,8 +736,10 @@
       "week": 4,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "ADM270 Empreendedorismo e Inovação Turma 002\\QUALITY.md#L41"
     },
     {
       "estrato": "unclassified",
@@ -622,8 +748,10 @@
       "week": 6,
       "detected_type": "unknown",
       "reconciled_status": "unclassified",
+      "reason": "sem-evidencia-suficiente",
       "chars": 0,
-      "output_file": null
+      "output_file": null,
+      "evidence_reference": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L39"
     }
   ]
 }

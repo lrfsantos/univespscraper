@@ -1,53 +1,69 @@
 {
-  "date": "2026-11-22T06:05:13.208Z",
+  "date": "2026-11-22T06:22:24.747Z",
   "summary": {
-    "total": 8,
-    "passed": 8,
+    "total": 10,
+    "passed": 10,
     "failed": 0
   },
   "results": [
     {
       "id": "I1",
-      "title": "integral com arquivo valido = OK",
-      "status": "PASS"
+      "title": "arquivo valido integral = PASS",
+      "status": "PASS",
+      "detail": "PASS"
     },
     {
       "id": "I2",
-      "title": "integral sem arquivo = MISCLASSIFIED",
-      "status": "PASS"
+      "title": "failed sem arquivo = NOT_APPLICABLE (nunca PASS/no_text)",
+      "status": "PASS",
+      "detail": "NOT_APPLICABLE"
     },
     {
       "id": "I3",
-      "title": "failed sem arquivo NÃO vira no_text/misclassified",
-      "status": "PASS"
+      "title": "unclassified sem arquivo = INCONCLUSIVE",
+      "status": "PASS",
+      "detail": "INCONCLUSIVE"
     },
     {
       "id": "I4",
-      "title": "partial com conteudo exige arquivo",
-      "status": "PASS"
+      "title": "arquivo esperado ausente = FAIL",
+      "status": "PASS",
+      "detail": "arquivo-ausente"
     },
     {
       "id": "I5",
+      "title": "arquivo na semana errada = FAIL (estrutura participa)",
+      "status": "PASS",
+      "detail": "semana-disciplina-errada"
+    },
+    {
+      "id": "I6",
+      "title": "arquivo vazio = FAIL",
+      "status": "PASS",
+      "detail": "arquivo-vazio"
+    },
+    {
+      "id": "I7",
+      "title": "mesmo arquivo em 2 registros = FAIL compartilhado",
+      "status": "PASS",
+      "detail": "{\"total\":2,\"PASS\":0,\"FAIL\":2,\"NOT_APPLICABLE\":0,\"INCONCLUSIVE\":0}"
+    },
+    {
+      "id": "I8",
       "title": "amostra estratificada: 30/7/12/11 = 60",
       "status": "PASS",
       "detail": "{\"integral\":30,\"partial\":7,\"failed\":12,\"unclassified\":11}"
     },
     {
-      "id": "I6",
+      "id": "I9",
       "title": "integrais da amostra: >=3 por disciplina",
       "status": "PASS",
       "detail": "{\"D0\":3,\"D1\":3,\"D2\":3,\"D3\":3,\"D4\":3,\"D5\":3,\"D6\":3,\"D7\":3,\"D8\":3,\"D9\":3}"
     },
     {
-      "id": "I7",
+      "id": "I10",
       "title": "seleção determinística (mesma entrada -> mesma amostra)",
       "status": "PASS"
-    },
-    {
-      "id": "I8",
-      "title": "auditoria: arquivo valido PASS, falha OK, inexistente MISCLASSIFIED",
-      "status": "PASS",
-      "detail": "{\"total\":3,\"PASS\":2,\"MISCLASSIFIED\":1,\"INCONCLUSIVE\":0}"
     }
   ]
 }
