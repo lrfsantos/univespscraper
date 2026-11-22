@@ -1,0 +1,93 @@
+// Frente 1 — testes simulados do fluxo de navegação mod/url -> destino final.
+// Sem AVA, sem login, sem credenciais: usa objetos win/app falsos.
+const fs = require('fs');
+const path = require('path');
+const { seguirDestinoUrl } = require('./lib/url-navigation');
+const { avaliarCapturaUrl, classificarPagina, avaliarDestinoNavegacao } = require('./lib/url-capture');
+
+const OUT = path.join(__dirname, '..', 'audit-temp', 'URLFLOW_RESULTS.json');
+const results = [];
+const record = (e) => { results.push(e); console.log(`[${e.status}] ${e.id}: ${e.title}`); };
+const ok = (c) => (c ? 'PASS' : 'FAIL');
+
+const CURSO = 'https://ava.univesp.br/course/view.php?id=18491';
+const INTER = 'https://ava.univesp.br/mod/url/view.php?id=86028';
+const EXTERNO = 'https://www.youtube.com/watch?v=xaoHPwa9sqk';
+const LIVRO = 'https://app.minhabiblioteca.com.br/reader/books/9788597021653/pageid/42';
+
+function fakeWin(urlAtual, { popup = null, clicou = true } = {}) {
+  let url = urlAtual;
+  return {
+    url: () => url,
+    setUrl: (u) => { url = u; },
+    evaluate: async () => clicou,
+    waitForEvent: async () => Promise.resolve(popup),
+    waitForTimeout: async () => {},
+  };
+}
+
+(async () => {
+  record({ id: 'UF1', title: 'texto vazio com destino valido = falha honesta, zero arquivo', status: ok((function () {
+    const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: EXTERNO, texto: '' });
+    return r.acao === 'sem-texto' && r.status === 'inaccessible' && r.detail === 'destino-sem-texto-consultavel' && r.chars === 0;
+  })()) });
+  record({ id: 'UF2', title: 'classificacao: curso=origem, mod/url e mod/page=intermediaria, externa', status: ok(
+    classificarPagina(CURSO) === 'origem' && classificarPagina(INTER) === 'intermediaria' &&
+    classificarPagina('https://ava.univesp.br/mod/page/view.php?id=1') === 'intermediaria' &&
+    classificarPagina(EXTERNO) === 'externa') });
+  record({ id: 'UF3', title: 'popup externo = usar janela aberta pelo clique', status: ok((function () {
+    const popup = { url: () => EXTERNO };
+    const win = fakeWin(INTER, { popup });
+    return avaliarDestinoNavegacao({ origemUrl: CURSO, janelaUrl: INTER, janelas: [{ url: CURSO }, { url: INTER }, { url: EXTERNO }] }).acao === 'usar-janela';
+  })()) });
+  record({ id: 'UF4', title: 'navegacao externa na mesma janela = usar atual', status: ok(
+    avaliarDestinoNavegacao({ origemUrl: CURSO, janelaUrl: EXTERNO, janelas: [{ url: CURSO }, { url: EXTERNO }] }).acao === 'usar-atual' ||
+    avaliarDestinoNavegacao({ origemUrl: CURSO, janelaUrl: EXTERNO, janelas: [{ url: CURSO }, { url: EXTERNO }] }).acao === 'usar-janela') });
+  record({ id: 'UF5', title: 'pagina intermediaria sem destino = sem-destino', status: ok(
+    avaliarDestinoNavegacao({ origemUrl: CURSO, janelaUrl: INTER, janelas: [{ url: CURSO }, { url: INTER }] }).acao === 'sem-destino') });
+  record({ id: 'UF6', title: 'helper puro nao conhece baseline; filtro e feito na integracao (UF10)', status: ok((function () {
+    const antiga = { url: () => LIVRO };
+    const win = fakeWin(INTER);
+    const r = avaliarDestinoNavegacao({ origemUrl: CURSO, janelaUrl: INTER, janelas: [{ url: antiga.url() }, { url: win.url() }] });
+    return r.acao === 'usar-janela'; // decisão crua; a integração descarta pela baseline
+  })()) });
+
+  // integração simulada do seguimento real
+  const popup = { url: () => EXTERNO };
+  const winPopup = fakeWin(INTER, { popup });
+  const appPopup = { windows: () => [winPopup] };
+  record({ id: 'UF7', title: 'integracao: popup externo retornado como destino', status: ok((await seguirDestinoUrl(appPopup, winPopup, CURSO)) === popup) });
+
+  const winSame = fakeWin(INTER);
+  const appSame = { windows: () => [winSame] };
+  winSame.setUrl(EXTERNO); // simula navegação externa na mesma janela após o clique
+  record({ id: 'UF8', title: 'integracao: navegacao externa na mesma janela retorna a propria janela', status: ok((await seguirDestinoUrl(appSame, winSame, CURSO)) === winSame) });
+
+  const winInter = fakeWin(INTER);
+  const appInter = { windows: () => [winInter] };
+  record({ id: 'UF9', title: 'integracao: intermediaria sem destino retorna null', status: ok((await seguirDestinoUrl(appInter, winInter, CURSO)) === null) });
+
+  const winOld = fakeWin(INTER);
+  const oldExternal = { url: () => LIVRO };
+  const appOld = { windows: () => [oldExternal, winOld] };
+  record({ id: 'UF10', title: 'integracao: aba antiga externa ignorada (retorna null)', status: ok((await seguirDestinoUrl(appOld, winOld, CURSO)) === null) });
+
+  record({ id: 'UF11', title: 'about:blank rejeitado como destino', status: ok((function () {
+    const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: 'about:blank', texto: 'conteudo' });
+    return r.acao === 'sem-destino' && r.chars === 0;
+  })()) });
+  record({ id: 'UF12', title: 'pagina de erro rejeitada (404 / Página não encontrada)', status: ok((function () {
+    const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: EXTERNO, texto: '404\nPágina não encontrada\nIr para Home' });
+    return r.acao === 'pagina-erro' && r.detail === 'pagina-de-erro' && r.chars === 0;
+  })()) });
+  record({ id: 'UF13', title: 'URL assinada nao aparece em evidencia', status: ok((function () {
+    const assinada = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?dummy=placeholder';
+    const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: assinada, texto: 'texto' });
+    return r.status === 'ok' && !/dummy=|code=|ABCDEF/.test(r.detail) && r.detail.includes('/Leitor/Publicacao/3789');
+  })()) });
+
+  const fails = results.filter((r) => r.status !== 'PASS').length;
+  fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
+  console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
+  process.exit(fails ? 1 : 0);
+})();

@@ -16,6 +16,7 @@ const markdown = require('../src/extract/markdown');
 const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
+const { seguirDestinoUrl } = require('./lib/url-navigation');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -62,6 +63,9 @@ async function gotoSafe(win, url) {
 // âncoras, fóruns, questionários e lives (fora do escopo do produto).
 const RESOURCE_RE = /\/mod\/(page|url|resource|lti|book)\/view\.php\?|\.pdf($|[?#])|assets\.univesp\.br/i;
 
+// Recursos mod/url abrem uma página intermediária do AVA; seguirDestinoUrl()
+// (poc/lib/url-navigation.js) clica no link real e escolhe a aba final.
+//
 // Clique REAL no link do recurso dentro da página da disciplina (como usuário).
 async function clickResource(app, win, courseUrl, id, resourceUrl) {
   if (!RESOURCE_RE.test(String(resourceUrl || ''))) return null;
@@ -97,14 +101,21 @@ async function clickResource(app, win, courseUrl, id, resourceUrl) {
   }
   if (!clicked) return null;
   const popup = await popupPromise;
-  if (popup) return popup;
+  if (popup) {
+    const pu = typeof popup.url === 'function' ? popup.url() : '';
+    return urlCapture.AVA_URL_VIEW_RE.test(String(pu)) ? (await seguirDestinoUrl(app, popup, courseUrl) || null) : popup;
+  }
   await win.waitForTimeout(700);
   // Moodle abre materiais em nova aba; seguir a janela criada pelo clique.
   const opened = app.windows().filter((w) => !baseline.has(w));
-  if (opened.length === 1) return opened[0];
+  if (opened.length === 1) {
+    const u = typeof opened[0].url === 'function' ? opened[0].url() : '';
+    return urlCapture.AVA_URL_VIEW_RE.test(String(u)) ? (await seguirDestinoUrl(app, opened[0], courseUrl) || null) : opened[0];
+  }
   if (opened.length > 1) return null; // ambiguidade: falha conservadora
   await win.waitForTimeout(700);
   const after = win.url();
+  if (urlCapture.AVA_URL_VIEW_RE.test(String(after))) return await seguirDestinoUrl(app, win, courseUrl) || null;
   if (after !== before && (String(after).includes('id=' + id) || String(after).includes('assets.univesp.br'))) return win;
   log(`    clique-sem-navegacao id=${id} antes=${books.sanitizeUrlForReport(before)} depois=${books.sanitizeUrlForReport(after)} janelas=${app.windows().length}`);
   return null;
@@ -130,7 +141,7 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
           subKind: cls.subKind, origemUrl: courseUrl,
           destinoUrl: typeof win.url === 'function' ? win.url() : '', texto: text,
         });
-        if (cap.acao === 'sem-destino' || cap.acao === 'interface') {
+        if (cap.acao === 'sem-destino' || cap.acao === 'interface' || cap.acao === 'sem-texto' || cap.acao === 'pagina-erro') {
           out.status = cap.status; out.detail = cap.detail; out.chars = 0; out.file = null;
           return out;
         }
