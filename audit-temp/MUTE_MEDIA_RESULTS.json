@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-22T01:44:30.938Z",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "M1",
+      "title": "instala e silencia janelas existentes",
+      "status": "PASS",
+      "detail": "muted=true"
+    },
+    {
+      "id": "M2",
+      "title": "popup novo tambem nasce silenciado",
+      "status": "PASS",
+      "detail": "muted=true"
+    },
+    {
+      "id": "M3",
+      "title": "injeção DOM cobre players que ignoram muted",
+      "status": "PASS",
+      "detail": "scripts=1"
+    },
+    {
+      "id": "M4",
+      "title": "instalação é idempotente",
+      "status": "PASS",
+      "detail": "reason=ja-instalado"
+    },
+    {
+      "id": "M5",
+      "title": "janela fechada é ignorada sem erro",
+      "status": "PASS",
+      "detail": "muted=null"
+    },
+    {
+      "id": "M6",
+      "title": "regra instalada no app principal E no navegador auxiliar",
+      "status": "PASS",
+      "detail": "main.js + browser.js"
+    }
+  ]
+}

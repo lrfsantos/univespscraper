@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-21T18:07:44.744Z",
+  "date": "2026-11-22T01:44:16.505Z",
   "summary": {
     "total": 26,
     "passed": 26,
@@ -52,7 +52,7 @@
       "id": "P8",
       "title": "Classico sessao expirada resolve sem pendencia",
       "status": "PASS",
-      "detail": "stoppedBy=undefined ms=1"
+      "detail": "stoppedBy=undefined ms=0"
     },
     {
       "id": "P9",

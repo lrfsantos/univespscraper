@@ -56,7 +56,7 @@ async function login(win) {
         }
       }
       if (books.length) {
-        console.log(`DISCIPLINA ${c.code || '?'} ${c.title.slice(0, 45)} | livros=${books.length}`);
+        console.log(`DISCIPLINA id=${c.id} ${c.code || '?'} ${c.title.slice(0, 45)} | livros=${books.length}`);
         for (const b of books) console.log(`  id=${b.id} sub=${b.sub} texto=${JSON.stringify(b.text)}`);
       }
     }

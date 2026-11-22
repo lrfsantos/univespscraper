@@ -1,5 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const { installTempProfile } = require('./profile');
+const { installUniversalMute } = require('./mute-media');
 
 // Instância "browser" auxiliar de automação (Fases A1-A7).
 // É lançada via playwright-core._electron pelo processo principal (main.js),
@@ -27,6 +28,7 @@ function chromiumUserAgent() {
 
 function applyBrowserDefaults() {
   app.userAgentFallback = chromiumUserAgent();
+  installUniversalMute(app);
 }
 
 let auxWindow = null;

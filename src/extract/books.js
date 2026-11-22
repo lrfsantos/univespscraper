@@ -2345,8 +2345,11 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
     const fmt = pearson.detectBookFormat({ bodyText: page.bodyText, url: page.href });
     attempts.push('formato=' + fmt.format);
 
-    // 4) Escolhe o leitor (Beta primeiro; fallback Clássico após falha).
-    const preferred = pearson.chooseReaderPreference(choices);
+    // Preferência aprendida (memória local do runner) tem prioridade sobre a
+    // heurística padrão Beta→Clássico quando uma sessão anterior provou que o
+    // Clássico funciona para aquele tipo de leitor.
+    const learned = opts && (opts.preferred === 'beta' || opts.preferred === 'classic') ? opts.preferred : null;
+    const preferred = learned || pearson.chooseReaderPreference(choices);
     if (!preferred) return null;
     attempts.push('leitor-preferido=' + preferred);
 

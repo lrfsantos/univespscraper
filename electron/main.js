@@ -3,12 +3,17 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { _electron } = require('playwright-core');
+const { installUniversalMute } = require('./mute-media');
 const { installTempProfile } = require('./profile');
 const { makeWorkDir, cleanupWorkDir, cleanupResidualWorkDirs } = require('./workdir');
 const { createBrowserWindow: createAuxWindow, applyBrowserDefaults } = require('./browser');
 const { buildAuxEnv } = require('./env');
 const { discoverAllCourses } = require('./my-courses');
 const { makeFlowLogger, discoverCourses, discoverWeeks, discoverResourcesFromSection, extractResource, buildSelectionPlan, flattenEmbeddedEntries, sanitizeReason, authExpiredEntries, buildCourseStructure, buildTopLevelDocs, zipBaseName, createZip, validateZip, finalizeZip, overallStatus, isDoneStatus, waitForManualLogin, confirmLoggedIn, isLoggedIn, safeName, BASE } = require('./flow');
+
+// Regra universal: qualquer janela do app (inclusive popups de vídeos do AVA)
+// nasce com áudio silenciado — nenhum vídeo atrapalha o estudante/usuário.
+installUniversalMute(app);
 
 // UNIVESP Study Tool — app integrado (Fases A1-A7/B1/B4).
 // Fluxo: o estudante abre o app, uma janela de navegador VISÍVEL é aberta no AVA,

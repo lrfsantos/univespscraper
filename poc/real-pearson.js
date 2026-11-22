@@ -72,7 +72,7 @@ async function login(win) {
         stopped: r.stoppedBy || null, boundaryKnown: r.boundaryKnown === null || r.boundaryKnown === undefined ? null : r.boundaryKnown,
       } : null;
       console.log(`CASO ${c.label}: janelas antes=${before} depois=${after} resultado=${JSON.stringify(summary)}`);
-      if (r && r.attempts) console.log(`  tentativas=${JSON.stringify(r.attempts.filter((a) => /localizar|fronteira=|paginas-extraidas|fallback|janela|navegacao|selecionar/.test(a)))}`);
+      if (r && r.attempts) console.log(`  tentativas=${JSON.stringify(r.attempts)}`);
     }
     // Fecha somente janelas abertas por esta validação (baseline preservado).
     const opened = books.allWindows(app).filter((w) => !baseline.has(w));

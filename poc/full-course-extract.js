@@ -1,0 +1,235 @@
+// Extração COMPLETA de uma disciplina, navegando pela UI real do AVA autenticado.
+// Uso: node poc/full-course-extract.js <courseId> [<courseId> ...]
+// Saída: <Desktop>\univesp\<CODIGO>\ ... (pasta criada se necessário).
+// Credenciais vêm de UNIVESP_USERNAME/UNIVESP_PASSWORD (ambiente local).
+// Nunca registra senhas, tokens, códigos de URL nem URLs assinadas.
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { _electron } = require('playwright-core');
+const discovery = require('../electron/discovery');
+const pages = require('../src/extract/pages');
+const pdfs = require('../src/extract/pdfs');
+const videos = require('../src/extract/videos');
+const books = require('../src/extract/books');
+const markdown = require('../src/extract/markdown');
+const learning = require('./lib/reader-learning');
+
+const USERNAME = process.env.UNIVESP_USERNAME;
+const PASSWORD = process.env.UNIVESP_PASSWORD;
+if (!USERNAME || !PASSWORD) throw new Error('variaveis de ambiente ausentes');
+const BASE = 'https://ava.univesp.br';
+const ROOT = process.env.UNIVESP_OUT || path.join(os.homedir(), 'Desktop', 'univesp');
+const IDS = process.argv.slice(2).map(Number).filter(Number.isFinite);
+
+function log(line) { console.log(`[${new Date().toISOString()}] ${line}`); }
+function safeName(s) { return String(s || 'recurso').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 90); }
+function cleanTitle(s, id) { return String(s || '').replace(/\s*\|\s*.*$/, '').replace(/\s+Ferramenta externa\s*$/i, '').replace(/\s+/g, ' ').trim() || `Recurso ${id}`; }
+
+async function login(win) {
+  await win.goto(`${BASE}/custom/univesp_saml.php?wantsurl=${encodeURIComponent(BASE + '/')}&login_hint=${encodeURIComponent(USERNAME)}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await win.waitForSelector('form[name="f"]', { timeout: 30000 });
+  await win.fill('input#password', PASSWORD);
+  await Promise.all([win.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {}), win.click('button[type="submit"]')]);
+  const dl = Date.now() + 120000;
+  while (Date.now() < dl) {
+    const u = win.url();
+    if (u.includes('ava.univesp.br') && !/login|saml/.test(u) && await win.evaluate(() => !document.querySelector('form[name="f"]')).catch(() => false)) return true;
+    await win.waitForTimeout(1500);
+  }
+  return false;
+}
+
+async function withTimeout(promise, ms, label) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout-' + label)), ms); })]); }
+  finally { clearTimeout(timer); }
+}
+
+// Somente links de MATERIAL — ignora controles da UI ("Contrair Expandir"),
+// âncoras, fóruns, questionários e lives (fora do escopo do produto).
+const RESOURCE_RE = /\/mod\/(page|url|resource|lti|book)\/view\.php\?|\.pdf($|[?#])|assets\.univesp\.br/i;
+
+// Clique REAL no link do recurso dentro da página da disciplina (como usuário).
+async function clickResource(app, win, courseUrl, id, resourceUrl) {
+  if (!RESOURCE_RE.test(String(resourceUrl || ''))) return null;
+  await win.goto(courseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await win.waitForTimeout(500);
+  const before = win.url();
+  const locator = win.locator(`a[href*="id=${id}"]:not(.courseindex-link):not(.courseindex-chevron)`).first();
+  if (!(await locator.count().catch(() => 0))) return null;
+  const baseline = new Set(app.windows());
+  let clicked = false;
+  try {
+    await locator.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+    await locator.click({ timeout: 7000 });
+    clicked = true;
+  } catch (e) {
+    try {
+      await locator.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+      await locator.click({ timeout: 5000, force: true });
+      clicked = true;
+    } catch (e2) {
+      try {
+        const okDom = await win.evaluate((i) => {
+          const a = Array.from(document.querySelectorAll('a[href*="id=' + i + '"]')).find((e) => !e.classList.contains('courseindex-link'));
+          if (!a) return false;
+          a.click();
+          return true;
+        }, id).catch(() => false);
+        clicked = !!okDom;
+      } catch {}
+      if (!clicked) log(`    clique-falhou id=${id} motivo=${String(e2 && e2.message || e2).slice(0, 160).replace(/\s+/g, ' ')}`);
+    }
+  }
+  if (!clicked) return null;
+  await win.waitForTimeout(700);
+  // Moodle abre materiais em nova aba; seguir a janela criada pelo clique.
+  const opened = app.windows().filter((w) => !baseline.has(w));
+  if (opened.length === 1) return opened[0];
+  if (opened.length > 1) return null; // ambiguidade: falha conservadora
+  await win.waitForTimeout(700);
+  const after = win.url();
+  if (after !== before && (String(after).includes('id=' + id) || String(after).includes('assets.univesp.br'))) return win;
+  return null;
+}
+
+async function extractResource({ app, win, r, dir, seq, state, course, week }) {
+  const cls = discovery.classifyResource(r);
+  const title = cleanTitle(r.text, r.id);
+  const base = path.join(dir, String(seq).padStart(2, '0') + '_' + safeName(title));
+  const out = { id: r.id, title, kind: cls.kind, sub: cls.subKind || null, status: 'partial', chars: 0, detail: null, file: null };
+  try {
+    if (cls.kind === 'page' || cls.kind === 'unknown') {
+      // Leitura direta da página JÁ aberta pelo clique (sem novo goto/espera).
+      const res = await withTimeout(win.evaluate(() => {
+        const scope = document.querySelector('.ava-scope') || document.querySelector('[role="main"]') || document.body;
+        return { text: scope ? scope.innerText : '', title: document.title };
+      }), 10000, 'page');
+      const text = String(res && res.text || '');
+      out.chars = text.length;
+      out.status = text.length >= 100 ? 'integral' : 'partial';
+      out.file = path.basename(base) + '.md';
+      fs.writeFileSync(base + '.md', `# ${title}\n\n${text}\n`);
+    } else if (cls.kind === 'pdf') {
+      const tmp = path.join(os.tmpdir(), `univesp-pdf-${r.id}-${Date.now()}.pdf`);
+      const res = await withTimeout(pdfs.extractPdf({ url: r.url, filePath: tmp, request: win.request || (win.context && win.context().request), useElectronNet: false, timeoutMs: 20000 }), 25000, 'pdf');
+      const text = String(res && (res.text || '') || '');
+      const npages = res && res.pages ? res.pages.length : 0;
+      out.chars = text.length;
+      out.status = res && res.ok !== false && text.length >= 100 ? 'integral' : 'partial';
+      out.detail = `paginas=${npages}`;
+      out.file = path.basename(base) + '.md';
+      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status}\n\n${text}\n`);
+      try { fs.rmSync(tmp, { force: true }); } catch {}
+    } else if (cls.kind === 'video') {
+      const res = await withTimeout(videos.extractVideo({ url: r.url, title, fetchFn: globalThis.fetch, timeoutMs: 10000 }), 15000, 'video');
+      const text = String(res && (res.text || res.transcript || '') || '');
+      out.chars = text.length;
+      out.status = text.length >= 80 ? 'integral' : 'partial';
+      out.detail = res && res.status ? String(res.status) : null;
+      out.file = path.basename(base) + '.md';
+      fs.writeFileSync(base + '.md', `# ${title}\n\n${text}\n`);
+    } else if (cls.kind === 'book') {
+      const expected = discovery.parseExpectedFromResource({ text: r.text, url: r.url });
+      // Aprendizado: se uma sessão anterior ensinou que o Clássico funciona
+      // para este tipo de leitor, tenta ele antes do Beta.
+      const opts = { observeTimeoutMs: 5000, waitTimeoutMs: 8000 };
+      if (Object.values((state && state.preferencias) || {}).includes('classic')) opts.preferred = 'classic';
+      const res = await withTimeout(books.extractBook({ app, win, launchUrl: r.url, expected, opts }), 30000, 'book');
+      const text = String(res && (res.text || '') || '');
+      out.chars = text.length;
+      out.status = res && res.status === 'integral' ? 'integral' : 'partial';
+      out.detail = `formato=${res && res.format} status=${res && res.status} falha=${res && res.failureType || '-'}`;
+      out.file = path.basename(base) + '.md';
+      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
+    }
+  } catch (e) {
+    out.status = 'inaccessible';
+    out.detail = String(e && e.message || e).slice(0, 160);
+  }
+  // Salva link SANITIZADO + assinatura do leitor para treinar a navegação.
+  if (out.status !== 'integral' && state && /formato=|reader|pagina-nao/i.test(out.detail || '')) {
+    const diag = await win.evaluate(() => ({
+      url: location.href,
+      ids: Array.from(document.querySelectorAll('[id]')).map((e) => e.id)
+        .filter((x) => /^(pdf|pdf-novo|summary|input-navigate|ExibicaoAtual|divBookMark|page-canvas|id_)/i.test(x)).slice(0, 12),
+    })).catch(() => null);
+    const formato = ((out.detail || '').match(/formato=(\w+)/) || [])[1] || 'unknown';
+    const motivo = ((out.detail || '').match(/falha=([\w-]+)/) || [])[1] || (out.detail || 'erro').slice(0, 40);
+    learning.learnFailure(state, {
+      disciplina: course && course.code, semana: week, titulo: out.title, recursoId: out.id,
+      url: (diag && diag.url) || r.url, formato, motivo, idsObservados: (diag && diag.ids) || [],
+    });
+  }
+  return out;
+}
+
+async function extractCourse({ app, win, course, rootDir, state }) {
+  const code = course.code || ('D' + course.id);
+  const dir = path.join(rootDir, safeName(code + ' ' + course.title));
+  fs.mkdirSync(dir, { recursive: true });
+  log(`INICIO disciplina=${code} id=${course.id}`);
+  await win.goto(course.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await win.waitForTimeout(2000);
+  const html = await win.evaluate(() => document.documentElement.outerHTML);
+  const sections = discovery.parseSectionsFromHtml(html);
+  const results = [];
+  let seq = 0;
+  const maxWeeks = Number(process.env.UNIVESP_MAX_WEEKS) > 0 ? Number(process.env.UNIVESP_MAX_WEEKS) : Infinity;
+  for (const sec of sections) {
+    if (!sec.relevant) continue;
+    if (results.length && sec.order > sections.find((s) => s.relevant).order + maxWeeks - 1) break;
+    const res = discovery.parseResourcesFromSectionHtml(sec.block, BASE);
+    const links = res.links.filter((l) => !discovery.isIgnoredActivity(l.text || '') && !/live\s+com\s+facilitador/i.test(l.text || '') && RESOURCE_RE.test(String(l.url || '')));
+    if (!links.length) continue;
+    const weekDir = path.join(dir, safeName('SEMANA_' + sec.id));
+    fs.mkdirSync(weekDir, { recursive: true });
+    log(`SEMANA ${sec.id} recursos=${links.length}`);
+    for (const link of links) {
+      seq++;
+      const id = (String(link.url).match(/[?&]id=(\d+)/) || [])[1] || String(seq);
+      const target = await clickResource(app, win, course.url, id, link.url);
+      if (!target) { results.push({ id, title: link.text, week: sec.id, status: 'inaccessible', detail: 'clique-nao-abriu-recurso', chars: 0 }); continue; }
+      const r = await extractResource({ app, win: target, r: link, dir: weekDir, seq, state, course, week: sec.id });
+      r.week = sec.id;
+      results.push(r);
+      log(`  ${sec.id}/${r.title.slice(0, 45)} => ${r.status} chars=${r.chars} ${r.detail || ''}`);
+      // Fecha a aba aberta pelo clique (como usuário), preservando a original.
+      if (target !== win) { try { await target.close().catch(() => {}); } catch {} }
+    }
+  }
+  const total = results.length;
+  const integral = results.filter((r) => r.status === 'integral').length;
+  const empty = results.filter((r) => r.chars === 0).length;
+  const quality = { disciplina: code, total, integrais: integral, semTexto: empty, status: integral === total ? 'PASS' : 'REVIEW' };
+  fs.writeFileSync(path.join(dir, 'QUALITY.md'), ['# Qualidade da extração', '', `- Disciplina: ${course.title} (${code})`, `- Recursos: ${total}`, `- Integrais: ${integral}`, `- Sem texto: ${empty}`, `- Resultado: ${quality.status}`, '', '## Detalhes', ...results.map((r) => `- S${r.week} ${r.title}: ${r.status} (${r.chars} chars)${r.detail ? ' — ' + r.detail : ''}`)].join('\n'));
+  log(`FIM disciplina=${code} total=${total} integrais=${integral} semTexto=${empty}`);
+  return quality;
+}
+
+(async () => {
+  fs.mkdirSync(ROOT, { recursive: true });
+  const learningFile = path.join(ROOT, 'APRENDIZADO.json');
+  const state = learning.load(learningFile);
+  const electronPath = require('electron');
+  const app = await _electron.launch({ args: [path.join(__dirname, '..', 'electron', 'browser.js')], executablePath: typeof electronPath === 'string' ? electronPath : process.execPath });
+  try {
+    const win = await app.firstWindow();
+    await win.waitForSelector('body', { timeout: 30000 });
+    if (!(await login(win))) throw new Error('login-nao-concluido');
+    log('LOGIN=OK');
+    await win.goto(BASE + '/my/courses.php', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await win.waitForTimeout(2500);
+    const html = await win.evaluate(() => document.documentElement.outerHTML);
+    const courses = discovery.parseCoursesFromHtml(html, BASE).filter((c) => c.available !== false);
+    log(`CURSOS=${courses.length}`);
+    const targets = IDS.length ? IDS.map((id) => courses.find((c) => String(c.id) === String(id))).filter(Boolean) : courses;
+    const summary = [];
+    for (const c of targets) summary.push(await extractCourse({ app, win, course: c, rootDir: ROOT, state }));
+    learning.save(learningFile, state);
+    fs.writeFileSync(path.join(ROOT, 'ERROS_LEITURA.md'), learning.renderMarkdown(state));
+    fs.writeFileSync(path.join(ROOT, 'RESUMO_GERAL.md'), ['# Resumo das extrações', '', ...summary.map((s) => `- ${s.disciplina}: ${s.integrais}/${s.total} integrais, ${s.semTexto} sem texto — ${s.status}`)].join('\n'));
+    log('CONCLUIDO=' + JSON.stringify(summary));
+  } finally { await app.close().catch(() => {}); }
+})().catch((e) => { console.error('FATAL', String(e && e.message || e)); process.exit(1); });
