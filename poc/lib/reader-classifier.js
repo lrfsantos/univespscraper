@@ -21,7 +21,8 @@ function leitorDeHost(hostname) {
 }
 
 // { url, hostname, texto, frames = [{url}], sinais = [] }
-function classificarLeitor({ url, hostname, texto, frames = [], sinais = [] } = {}) {
+function classificarLeitor({ url, hostname, texto, frames = [], sinais = [], leituraOk = true } = {}) {
+  if (!leituraOk) return { leitor: null, dominio: 'indeterminado', formato: null, motivo: 'inconclusivo' };
   const host = String(hostname || hostnameDe(url) || '').toLowerCase();
   const leitor = leitorDeHost(host);
   const txt = String(texto || '');
@@ -42,12 +43,31 @@ function classificarLeitor({ url, hostname, texto, frames = [], sinais = [] } = 
   if (!urlsFrames.length) return { leitor, dominio: 'conhecido', formato: null, motivo: 'iframe-inacessivel' };
   if (!frameConteudo) return { leitor, dominio: 'conhecido', formato: null, motivo: 'iframe-sem-conteudo-consultavel' };
 
-  const formato = /jigsaw|pages\/\d+\/content/.test(frameConteudo) ? 'pageid'
-    : /vitalsource|bookshelf/.test(frameConteudo) ? 'vitalsource'
-      : /Leitor\/Publicacao\/\d+\/pdf\//.test(frameConteudo) ? 'bvpdf' : 'epub';
+  const formato = leitor === 'vitalsource' ? 'vitalsource'
+    : leitor === 'minhabiblioteca' && /jigsaw|pages\/\d+\/content/.test(frameConteudo) ? 'pageid'
+      : leitor === 'bvirtual' && /\/pdf\/\d+/.test(frameConteudo) ? 'bvpdf'
+        : 'epub';
   return { leitor, dominio: 'conhecido', formato, motivo: null };
 }
 
-function deveGravarConteudo(classificacao) { return Boolean(classificacao && !classificacao.motivo); }
+const fs = require('fs');
+const path = require('path');
 
-module.exports = { classificarLeitor, leitorDeHost, hostnameDe, deveGravarConteudo, LEITORES };
+function deveGravarConteudo(classificacao) { return Boolean(classificacao && !classificacao.motivo); }
+function ehDominioInstitucional(host) {
+  const h = String(host || '').toLowerCase();
+  return h === 'univesp.br' || h.endsWith('.univesp.br');
+}
+function devePersistirBook(res) {
+  const texto = String((res && res.text) || '');
+  return Boolean(res && res.status !== 'inaccessible' && texto.trim().length > 0);
+}
+function persistirMarkdownBook({ resultado, classificacao, caminhoBase, titulo, detalhe }) {
+  if (!deveGravarConteudo(classificacao) || !devePersistirBook(resultado)) return { arquivo: null, gravado: false };
+  fs.mkdirSync(path.dirname(caminhoBase), { recursive: true });
+  const arquivo = caminhoBase + '.md';
+  fs.writeFileSync(arquivo, `# ${titulo}\n\nStatus: ${resultado.status} (${detalhe || ''})\n\n${resultado.text}\n`);
+  return { arquivo, gravado: true };
+}
+
+module.exports = { classificarLeitor, leitorDeHost, hostnameDe, deveGravarConteudo, ehDominioInstitucional, devePersistirBook, persistirMarkdownBook, LEITORES };

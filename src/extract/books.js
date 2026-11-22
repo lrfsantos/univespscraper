@@ -161,7 +161,7 @@ function classifyReader({ frames, windows }) {
     const m = anyUrl.match(/plataforma\.bvirtual|leitor\.bvirtual|\/Leitor\//);
     return { format: m && m[0].includes('leitor.') ? 'bvleitor' : 'bvpdf', readerUrl: null };
   }
-  if (/(vitalsource|logout|sess[ãa]o expirou|session expired)/i.test(anyUrl)) {
+  if (/(not[- ]?authorized|not authorized|acesso negado|sess[ãa]o expirou|session expired|logout|forbidden|unauthorized)/i.test(anyUrl)) {
     return { format: 'reader-auth', readerUrl: null, failureType: 'reader-auth' };
   }
   if (!urls.length) return { format: 'unknown', readerUrl: null, failureType: 'no-frames' };
