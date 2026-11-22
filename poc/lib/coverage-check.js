@@ -1,7 +1,12 @@
 // Frente 3 — detecção de cobertura incompleta sem inventar conteúdo.
 // Uma página curta NÃO é automaticamente capa: exigimos sinais de folha de
 // título (autor/edição/editora) e ausência de parágrafo de corpo.
-const SINAIS_CAPA = /(2[ªa]|1[ªa]|3[ªa])\s*edição|editora|copyright|©|professor da|universidade|sumário|índice/i;
+const GRUPOS_SINAL_CAPA = [
+  /\b(1[ªa]|2[ªa]|3[ªa])\s*edição\b/i,
+  /\beditora\b|\bcopyright\b|©/i,
+  /\bprofessor da\b|\bfaculdade\b|\buniversidade\b/i,
+  /\bsumário\b|\bíndice\b/i,
+];
 
 // Calibração local (auditoria Fase 2.2 + agente local): o texto impresso do
 // CIN200 S4 vai até 248, embora o título declare 217-250. Não exigir 249-250.
@@ -35,8 +40,10 @@ function ehSomenteCapa(texto) {
   if (linhas.length > 12) return false;
   const temCorpo = linhas.some((x) => x.length >= 70);
   if (temCorpo) return false;
-  const sinalEmLinhaCurta = linhas.some((x) => x.length < 70 && SINAIS_CAPA.test(x));
-  return sinalEmLinhaCurta && linhas.length <= 10;
+  // Exige SINAIS ESTRUTURAIS de pelo menos dois grupos diferentes: uma palavra
+  // isolada ("universidade", "editora") não basta para descartar conteúdo.
+  const grupos = GRUPOS_SINAL_CAPA.filter((re) => re.test(t)).length;
+  return grupos >= 2 && linhas.length <= 10;
 }
 
 function intervaloDeclarado(titulo) {
@@ -50,8 +57,8 @@ function intervaloDeclarado(titulo) {
 // { texto, titulo, ultimaPaginaImpressa, fimCalibrado }
 // Quando o título declara intervalo mas a fonte foi calibrada localmente para
 // outro fim (ex.: CIN200 impresso até 248), fimCalibrado tem precedência.
-function avaliarCobertura({ texto, titulo, ultimaPaginaImpressa, fimCalibrado } = {}) {
-  if (ehSomenteCapa(texto)) {
+function avaliarCobertura({ texto, titulo, ultimaPaginaImpressa, fimCalibrado, textoCapa } = {}) {
+  if (ehSomenteCapa(textoCapa != null ? textoCapa : texto)) {
     return { acao: 'so-capa', status: 'partial', detail: 'somente-folha-de-titulo', requerAvanco: true };
   }
   const faixa = intervaloDeclarado(titulo);

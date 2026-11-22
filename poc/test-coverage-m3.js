@@ -56,6 +56,10 @@ record({ id: 'C15', title: 'ultima pagina fisica sem numero = inconclusivo, nao 
   return r.acao === 'inconclusivo' && r.status === 'partial';
 })()) });
 record({ id: 'C16', title: 'heuristica de capa nao dispara com termo editorial dentro do corpo', status: ok(ehSomenteCapa('A universidade publicou este capitulo sobre metodos de pesquisa e suas aplicacoes praticas em diferentes contextos de ensino superior no pais inteiro.') === false) });
+record({ id: 'C17', title: 'texto curto legitimo com "universidade" nao e capa', status: ok(ehSomenteCapa('A universidade define regras para a avaliação.') === false) });
+record({ id: 'C18', title: 'texto curto legitimo com "editora" nao e capa', status: ok(ehSomenteCapa('A editora publicou novos livros sobre metodos.') === false) });
+record({ id: 'C19', title: 'sumario/indice que E conteudo solicitado nao e descartado', status: ok(ehSomenteCapa('Sumário\n1 Introdução\n2 Metodologia\n3 Resultados') === false) });
+record({ id: 'C20', title: 'folha de titulo verdadeira (2 sinais) continua sendo capa', status: ok(ehSomenteCapa(CAPA) === true) });
 
 const fails = results.filter((r) => r.status !== 'PASS').length;
 fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));

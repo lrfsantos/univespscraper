@@ -17,7 +17,6 @@ const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
-const cobertura = require('./lib/coverage-check');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -156,37 +155,11 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       // NÃO existem res.text nem res.ok — status vem pronto do módulo (statusFor).
       const tmp = path.join(os.tmpdir(), `univesp-pdf-${r.id}-${Date.now()}.pdf`);
       const res = await withTimeout(pdfs.extractPdf({ url: r.url, filePath: tmp, request: win.request || (win.context && win.context().request), useElectronNet: false, timeoutMs: 20000 }), 25000, 'pdf');
-      let text = ((res && res.pages) || []).map((p) => p.text).filter(Boolean).join('\n\n');
-      out.chars = text.length;
-      out.status = (res && res.status) || 'partial';
-      out.detail = `paginas=${(res && res.pages ? res.pages.length : 0)}/${(res && res.totalPagesArquivo) || '?'}`;
-      // Frente 3: capa sem corpo, avanço até conteúdo e verificação da ÚLTIMA
-      // PÁGINA FÍSICA (não do último número impresso encontrado).
-      if (res && res.status !== 'inaccessible') {
-        const detectadas = (res.printedPagination && res.printedPagination.detected) || [];
-        const ultimaFisica = detectadas.length ? detectadas[detectadas.length - 1] : null;
-        const contexto = { courseId: course && course.code };
-        const aval0 = cobertura.avaliarCobertura({
-          texto: text, titulo: title,
-          ultimaPaginaImpressa: Number.isInteger(ultimaFisica) ? ultimaFisica : null,
-          fimCalibrado: cobertura.fimCalibradoParaTitulo(title, contexto),
-        });
-        if (aval0.acao === 'so-capa' && Array.isArray(res.pages) && res.pages.length > 1) {
-          const avanco = cobertura.avancarAteConteudo(res.pages.slice(1));
-          if (avanco.indice >= 0) {
-            const restante = res.pages.slice(avanco.indice + 1).map((p) => p.text).filter(Boolean).join('\n\n');
-            text = restante || avanco.texto;
-            out.detail += ` avanco-pagina-${avanco.indice + 2}`;
-          } else out.detail += ' avanco-sem-conteudo';
-          out.chars = text.length;
-        }
-        const aval = cobertura.avaliarCobertura({
-          texto: text, titulo: title,
-          ultimaPaginaImpressa: Number.isInteger(ultimaFisica) ? ultimaFisica : null,
-          fimCalibrado: cobertura.fimCalibradoParaTitulo(title, contexto),
-        });
-        if (aval.status) { out.status = aval.status; out.detail += ' ' + aval.detail; }
-      }
+      const resultadoPdf = require('./lib/pdf-flow').processarResultadoPdf(res, { title, courseId: course && course.code });
+      let text = resultadoPdf.texto;
+      out.chars = resultadoPdf.chars;
+      out.status = resultadoPdf.status;
+      out.detail = resultadoPdf.detail;
       out.file = path.basename(base) + '.md';
       fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
       try { fs.rmSync(tmp, { force: true }); } catch {}
