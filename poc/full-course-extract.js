@@ -27,7 +27,7 @@ function safeName(s) { return String(s || 'recurso').replace(/[<>:"/\\|?*\x00-\x
 function cleanTitle(s, id) { return String(s || '').replace(/\s*\|\s*.*$/, '').replace(/\s+Ferramenta externa\s*$/i, '').replace(/\s+/g, ' ').trim() || `Recurso ${id}`; }
 
 async function login(win) {
-  await win.goto(`${BASE}/custom/univesp_saml.php?wantsurl=${encodeURIComponent(BASE + '/')}&login_hint=${encodeURIComponent(USERNAME)}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!(await gotoSafe(win, `${BASE}/custom/univesp_saml.php?wantsurl=${encodeURIComponent(BASE + '/')}&login_hint=${encodeURIComponent(USERNAME)}`))) return false;
   await win.waitForSelector('form[name="f"]', { timeout: 30000 });
   await win.fill('input#password', PASSWORD);
   await Promise.all([win.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {}), win.click('button[type="submit"]')]);
@@ -46,6 +46,15 @@ async function withTimeout(promise, ms, label) {
   finally { clearTimeout(timer); }
 }
 
+// AVA pode travar uma navegação esporadicamente — tenta de novo antes de falhar.
+async function gotoSafe(win, url) {
+  for (let i = 0; i < 3; i++) {
+    try { await win.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 }); return true; }
+    catch (e) { if (i === 2) return false; await win.waitForTimeout(1500); }
+  }
+  return false;
+}
+
 // Somente links de MATERIAL — ignora controles da UI ("Contrair Expandir"),
 // âncoras, fóruns, questionários e lives (fora do escopo do produto).
 const RESOURCE_RE = /\/mod\/(page|url|resource|lti|book)\/view\.php\?|\.pdf($|[?#])|assets\.univesp\.br/i;
@@ -53,12 +62,13 @@ const RESOURCE_RE = /\/mod\/(page|url|resource|lti|book)\/view\.php\?|\.pdf($|[?
 // Clique REAL no link do recurso dentro da página da disciplina (como usuário).
 async function clickResource(app, win, courseUrl, id, resourceUrl) {
   if (!RESOURCE_RE.test(String(resourceUrl || ''))) return null;
-  await win.goto(courseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!(await gotoSafe(win, courseUrl))) return null;
   await win.waitForTimeout(500);
   const before = win.url();
   const locator = win.locator(`a[href*="id=${id}"]:not(.courseindex-link):not(.courseindex-chevron)`).first();
   if (!(await locator.count().catch(() => 0))) return null;
   const baseline = new Set(app.windows());
+  const popupPromise = win.waitForEvent('popup', { timeout: 2000 }).catch(() => null);
   let clicked = false;
   try {
     await locator.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
@@ -83,6 +93,8 @@ async function clickResource(app, win, courseUrl, id, resourceUrl) {
     }
   }
   if (!clicked) return null;
+  const popup = await popupPromise;
+  if (popup) return popup;
   await win.waitForTimeout(700);
   // Moodle abre materiais em nova aba; seguir a janela criada pelo clique.
   const opened = app.windows().filter((w) => !baseline.has(w));
@@ -91,6 +103,7 @@ async function clickResource(app, win, courseUrl, id, resourceUrl) {
   await win.waitForTimeout(700);
   const after = win.url();
   if (after !== before && (String(after).includes('id=' + id) || String(after).includes('assets.univesp.br'))) return win;
+  log(`    clique-sem-navegacao id=${id} antes=${books.sanitizeUrlForReport(before)} depois=${books.sanitizeUrlForReport(after)} janelas=${app.windows().length}`);
   return null;
 }
 
@@ -170,8 +183,8 @@ async function extractCourse({ app, win, course, rootDir, state }) {
   const dir = path.join(rootDir, safeName(code + ' ' + course.title));
   fs.mkdirSync(dir, { recursive: true });
   log(`INICIO disciplina=${code} id=${course.id}`);
-  await win.goto(course.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await win.waitForTimeout(2000);
+  if (!(await gotoSafe(win, course.url))) throw new Error('curso-nao-abriu');
+  await win.waitForTimeout(1500);
   const html = await win.evaluate(() => document.documentElement.outerHTML);
   const sections = discovery.parseSectionsFromHtml(html);
   const results = [];
@@ -189,7 +202,12 @@ async function extractCourse({ app, win, course, rootDir, state }) {
     for (const link of links) {
       seq++;
       const id = (String(link.url).match(/[?&]id=(\d+)/) || [])[1] || String(seq);
-      const target = await clickResource(app, win, course.url, id, link.url);
+      let target = await clickResource(app, win, course.url, id, link.url);
+      if (!target) {
+        // Cursos legados abrem o material fora do Electron (sem popup):
+        // usa a URL do link da própria UI, na janela autenticada.
+        if (await gotoSafe(win, link.url)) target = win;
+      }
       if (!target) { results.push({ id, title: link.text, week: sec.id, status: 'inaccessible', detail: 'clique-nao-abriu-recurso', chars: 0 }); continue; }
       const r = await extractResource({ app, win: target, r: link, dir: weekDir, seq, state, course, week: sec.id });
       r.week = sec.id;
@@ -219,7 +237,7 @@ async function extractCourse({ app, win, course, rootDir, state }) {
     await win.waitForSelector('body', { timeout: 30000 });
     if (!(await login(win))) throw new Error('login-nao-concluido');
     log('LOGIN=OK');
-    await win.goto(BASE + '/my/courses.php', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await gotoSafe(win, BASE + '/my/courses.php');
     await win.waitForTimeout(2500);
     const html = await win.evaluate(() => document.documentElement.outerHTML);
     const courses = discovery.parseCoursesFromHtml(html, BASE).filter((c) => c.available !== false);
