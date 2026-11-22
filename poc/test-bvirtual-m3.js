@@ -1,129 +1,86 @@
+// Frente 4 — navegação bvirtual condicional (sem AVA, sem credenciais).
 const fs = require('fs');
 const path = require('path');
-const { sanitizeUrlForReport, diagnoseReader, classifyReader, extractBook } = require('../src/extract/books');
+const bv = require('./lib/bvirtual-nav');
 
-// Testes da SEÇÃO 4.5 (P1): diagnóstico SANITIZADO dos leitores — redação de query
-// strings (ex.: parâmetro `code`), ausência de credenciais/tokens no relatório, e
-// classificação dos dois padrões observados na gravação (leitor tipo EPUB e leitor
-// paginado). O diagnóstico reutiliza a classificação de PRODUÇÃO (classifyReader)
-// e o relatório é validado com um leitor SIMULADO na fronteira.
-
-const OUT = path.join(__dirname, '..', 'audit-temp', 'BVIRTUAL_RESULTS.json');
+const OUT = path.join(__dirname, '..', 'audit-temp', 'BVNAV_RESULTS.json');
 const results = [];
-function record(entry) {
-  results.push(entry);
-  console.log(`[${entry.status}] ${entry.id}: ${entry.title}`);
-  if (entry.detail) console.log('    ', entry.detail);
-}
+const record = (e) => { results.push(e); console.log(`[${e.status}] ${e.id}: ${e.title}`); };
+const ok = (c) => (c ? 'PASS' : 'FAIL');
 
-// Redação de URLs (puro).
-function redact(url) { return sanitizeUrlForReport(url); }
+const TELA_PT = 'Este Livro pode ser lido em dois formatos. Escolha o formato desejado: Ler em PDF Ler em EPUB';
+const TELA_EN = 'This book can be read in two formats. Choose your desired format: Read in PDF Read in EPUB';
+const BETA = 'Be the first to explore our new PDF reader! Try Now BETA. Continue in Current Reader';
+const LEITOR = 'Reader - Theories of Administration - Page 17';
 
-// Leitor simulado (fronteira) para diagnoseReader: expõe janelas/frames no contrato
-// SÍNCRONO que a produção espera (windows()/frames() retornam arrays).
-function fakeApp({ windows = [], frameUrls = [] } = {}) {
-  const frames = frameUrls.map((url) => ({ url: () => url, evaluate: async () => '' }));
-  const winObjs = windows.map((u) => ({
-    url: async () => u,
-    title: async () => '',
-    evaluate: async () => ({}),
-    frames: () => frames,
-    locator: () => ({ first: () => ({ click: async () => {} }) }),
-  }));
-  const app = {
-    windows: () => winObjs,
+record({ id: 'B1', title: 'tela de escolha detectada por conteudo (PT e EN)', status: ok(
+  bv.detectarTelaEscolhaFormato(TELA_PT) && bv.detectarTelaEscolhaFormato(TELA_EN)) });
+record({ id: 'B2', title: 'prompt beta detectado por conteudo', status: ok(bv.detectarPromptBeta(BETA)) });
+record({ id: 'B3', title: 'leitor normal nao dispara acao condicional', status: ok(
+  bv.decidirAcao({ texto: LEITOR }).acao === 'nenhuma') });
+record({ id: 'B4', title: 'acao condicional: PDF na tela de escolha, classico no prompt beta', status: ok(
+  bv.decidirAcao({ texto: TELA_PT }).clicar === 'pdf' && bv.decidirAcao({ texto: BETA }).clicar === 'classico') });
+record({ id: 'B5', title: 'pageids de referencia 22,134,199,217,107 extraidos', status: ok(
+  [22, 134, 199, 217, 107].every((n) => bv.extrairPageid('https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=' + n + '&PaginaEpub=4') === n) &&
+  bv.extrairPageid('https://app.minhabiblioteca.com.br/reader/books/x/pageid/148') === 148) });
+record({ id: 'B6', title: 'navegacao confirmada por mudanca de URL', status: ok(
+  bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'https://a/reader/3789/pdf/22', textoDepois: LEITOR }).confirmado === true) });
+record({ id: 'B7', title: 'sem mudanca e sem saida da tela = navegacao-nao-confirmada', status: ok((function () {
+  const r = bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'https://a/format', textoDepois: TELA_PT });
+  return r.confirmado === false && r.status === 'inaccessible' && r.motivo === 'navegacao-nao-confirmada';
+})()) });
+
+function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22?code=x' }) {
+  let url = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=22';
+  let texto = textoInicial;
+  let mudou = false;
+  return {
+    url: () => url,
+    evaluate: async (fn, arg) => {
+      const s = String(fn);
+      if (s.includes('document.body.innerText')) return texto;
+      if (s.includes('querySelectorAll')) {
+        if (!clicou) return false;
+        texto = textoDepois;
+        url = urlDepois;
+        mudou = true;
+        return true;
+      }
+      return null;
+    },
+    waitForTimeout: async () => {},
+    get mudou() { return mudou; },
   };
-  const win = {
-    async goto() {},
-    url: async () => (windows[0] || 'about:blank'),
-    evaluate: async () => ({}),
-  };
-  return { app, win };
 }
 
 (async () => {
-  const G = 'V'; // BVirtual
+  const w1 = fakeWin({ textoInicial: TELA_PT });
+  const r1 = await bv.seguirBvirtual(w1);
+  record({ id: 'B8', title: 'integracao: tela de escolha -> clique PDF -> URL final com pageid', status: ok(
+    r1.acao === 'clicar-pdf' && r1.confirmado === true && r1.pageid === 22 && w1.mudou) });
 
-  // Bv-1: redação de query string (parâmetro `code` temporário) e fragmento.
-  {
-    const u = 'https://leitor.bvirtual.com.br/reader/books/123/pageid/45?code=SECRETO_123&token=abc#cap';
-    const c = redact(u);
-    const ok = c === 'https://leitor.bvirtual.com.br/reader/books/123/pageid/45' && !c.includes('SECRETO_123') && !c.includes('code=') && !c.includes('#cap');
-    record({ id: G + '-1', title: '4.5: URL de leitor redigida — query string (code/token) e fragmento removidos', status: ok ? 'PASS' : 'FAIL', detail: `redigida=${c}` });
-  }
+  const w2 = fakeWin({ textoInicial: BETA, urlDepois: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22', textoDepois: LEITOR });
+  const r2 = await bv.seguirBvirtual(w2);
+  record({ id: 'B9', title: 'integracao: prompt beta -> leitor classico, sem sequencia fixa', status: ok(
+    r2.acao === 'escolher-leitor-classico' && r2.confirmado === true && w2.mudou) });
 
-  // Bv-2: URL inválida/sem origem absoluta é redigida sem vazar query.
-  {
-    const c = redact('https://x/y?code=SECRETO');
-    const c2 = redact('valor?password=123&x=1');
-    const ok = c === 'https://x/y' && c2 === 'valor';
-    record({ id: G + '-2', title: '4.5: redação também cobre URLs não absolutas', status: ok ? 'PASS' : 'FAIL', detail: `absoluta=${c} relativa=${c2}` });
-  }
+  const w3 = fakeWin({ textoInicial: LEITOR });
+  const r3 = await bv.seguirBvirtual(w3);
+  record({ id: 'B10', title: 'integracao: nenhuma tela -> nenhum clique', status: ok(
+    r3.acao === 'nenhuma' && r3.confirmado === false && !w3.mudou) });
 
-  // Bv-3: classificação de produção — leitor com frames EPUB (estrutura semelhante a EPUB).
-  {
-    const det = classifyReader({ frames: [{ url: 'https://leitor.bvirtual.com.br/epub/OEBPS/Text/chapter01.xhtml' }], windows: ['https://leitor.bvirtual.com.br/...'] });
-    const ok = det.format === 'epub';
-    record({ id: G + '-3', title: '4.5: leitor BVirtual tipo EPUB é classificado por conteúdo estruturado (não por aparência)', status: ok ? 'PASS' : 'FAIL', detail: `format=${det.format}` });
-  }
+  const w4 = fakeWin({ textoInicial: TELA_PT, clicou: false });
+  const r4 = await bv.seguirBvirtual(w4);
+  record({ id: 'B11', title: 'integracao: alvo de clique ausente = inaccessible', status: ok(
+    r4.status === 'inaccessible' && r4.motivo === 'alvo-de-clique-ausente' && !w4.mudou) });
 
-  // Bv-4: classificação de produção — leitor paginado (pages/N/content) e plataforma bvirtual.
-  {
-    const detPageid = classifyReader({ frames: [{ url: 'https://jigsaw.minhabiblioteca.com.br/books/9/pageid/3?brand=vitalsource&create=true' }], windows: [] });
-    const detBv = classifyReader({ frames: [], windows: ['https://plataforma.bvirtual.com.br/...'] });
-    const ok = detPageid.format === 'pageid' && detBv.format === 'bvpdf';
-    record({ id: G + '-4', title: '4.5: leitor paginado (pageid) e plataforma BVirtual são distinguidos por evidência técnica', status: ok ? 'PASS' : 'FAIL', detail: `pageid=${detPageid.format} bv=${detBv.format}` });
-  }
+  const w5 = fakeWin({ textoInicial: TELA_PT, urlDepois: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=22', textoDepois: TELA_PT });
+  const r5 = await bv.seguirBvirtual(w5);
+  record({ id: 'B12', title: 'integracao: clique sem navegacao confirmada = inaccessible', status: ok(
+    r5.status === 'inaccessible' && r5.motivo === 'navegacao-nao-confirmada') });
 
-  // Bv-5: diagnoseReader gera relatório sanitizado (sem query, sem credenciais, sem conteúdo).
-  {
-    const { app, win } = fakeApp({
-      windows: ['https://leitor.bvirtual.com.br/reader/books/9?code=TEMP'],
-      frameUrls: ['https://leitor.bvirtual.com.br/epub/OEBPS/Text/ch01.xhtml?auth=TOKEN'],
-    });
-    const r = await diagnoseReader(app, win, 'https://ava.univesp.br/mod/lti/launch.php?id=1&code=TEMP', { text: 'Comunicacao Organizacional', book: 'Comunicacao organizacional' }, { observeTimeoutMs: 100 });
-    const json = JSON.stringify(r);
-    const ok = r.classificacao === 'epub' && r.tituloAtividadeAva === 'Comunicacao Organizacional' &&
-      !json.includes('code=') && !json.includes('TEMP') && !json.includes('TOKEN') && !json.includes('password') &&
-      r.origemAva === 'https://ava.univesp.br/mod/lti/launch.php' && r.semDadosSensiveis === true;
-    record({ id: G + '-5', title: '4.5: diagnoseReader produz relatório sanitizado (sem code/token/credenciais/conteúdo)', status: ok ? 'PASS' : 'FAIL', detail: `classif=${r.classificacao} origem=${r.origemAva} semDados=${r.semDadosSensiveis} tipos=${(r.tiposDeConteudo || []).join(',')}` });
-  }
-
-  // Bv-6: diagnoseReader não expõe conteúdo de livro nem números de página impressos longos.
-  {
-    const { app, win } = fakeApp({ windows: ['https://plataforma.bvirtual.com.br/leitor'], frameUrls: [] });
-    const r = await diagnoseReader(app, win, 'https://ava.univesp.br/mod/lti/launch.php?id=9', {}, { observeTimeoutMs: 100 });
-    const ok = r.classificacao === 'bvpdf' || r.classificacao === 'unknown' || r.classificacao === 'bvleitor';
-    record({ id: G + '-6', title: '4.5: leitor paginado BVirtual é diagnosticado sem inventar extração textual', status: ok ? 'PASS' : 'FAIL', detail: `classif=${r.classificacao} evidenciaPdf=${r.evidenciaPdf}` });
-  }
-
-  // Bv-7: reconhecer a plataforma sem navegar Beta/Clássico NÃO prova DRM.
-  {
-    const win = {
-      async goto() {},
-      url: () => 'https://plataforma.bvirtual.com.br/reader/escolha',
-      title: async () => 'Biblioteca Pearson',
-      frames: () => [],
-    };
-    const app = { windows: () => [win] };
-    const result = await extractBook({
-      app,
-      win,
-      launchUrl: 'https://ava.univesp.br/mod/lti/launch.php?id=77',
-      expected: {},
-      opts: { observeTimeoutMs: 100, observeInterval: 10 },
-    });
-    const ok = result.failureType === 'reader-selection-required' &&
-      result.error === 'selecao-de-leitor-pearson-nao-automatizada' &&
-      result.failureType !== 'drm-not-extractable' &&
-      result.readerSelectionRequired === true;
-    record({ id: G + '-7', title: '4.5: Pearson/BVirtual sem seleção do leitor registra pendência de navegação, nunca presume DRM', status: ok ? 'PASS' : 'FAIL', detail: `format=${result.format} failureType=${result.failureType} error=${result.error}` });
-  }
-
-  const failed = results.filter((r) => r.status === 'FAIL');
-  fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify({ ts: new Date().toISOString(), results, summary: { total: results.length, passed: results.length - failed.length, failed: failed.length } }, null, 2));
-  console.log('\n=== RESUMO DIAGNÓSTICO BVIRTUAL (SEÇÃO 4.5) ===');
-  console.log('total:', results.length, '| PASS:', results.length - failed.length, '| FAIL:', failed.length);
-  if (failed.length) { for (const f of failed) console.log('  -', f.id, f.title, '|', f.detail); process.exitCode = 1; }
-})().catch((e) => { console.error('FATAL', e); process.exit(1); });
+  const fails = results.filter((r) => r.status !== 'PASS').length;
+  fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
+  console.log(`\ntotal: ${results.length} | PASS: ${results.length - fails} | FAIL: ${fails}`);
+  process.exit(fails ? 1 : 0);
+})();

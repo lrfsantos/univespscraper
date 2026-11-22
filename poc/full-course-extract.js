@@ -17,6 +17,7 @@ const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
+const { seguirBvirtual } = require('./lib/bvirtual-nav');
 const pdfFlow = require('./lib/pdf-flow');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
@@ -178,13 +179,30 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       // para este tipo de leitor, tenta ele antes do Beta.
       const opts = { observeTimeoutMs: 5000, waitTimeoutMs: 8000 };
       if (Object.values((state && state.preferencias) || {}).includes('classic')) opts.preferred = 'classic';
-      const res = await withTimeout(books.extractBook({ app, win, launchUrl: r.url, expected, opts }), 30000, 'book');
-      const text = String(res && (res.text || '') || '');
-      out.chars = text.length;
-      out.status = res && res.status === 'integral' ? 'integral' : 'partial';
-      out.detail = `formato=${res && res.format} status=${res && res.status} falha=${res && res.failureType || '-'}`;
-      out.file = path.basename(base) + '.md';
-      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
+      // Frente 4: somente em bvirtual, seguir tela de escolha/prompt Beta
+      // condicionalmente; sem confirmação, falha honesta sem arquivo.
+      let bloqueado = false;
+      let navInfo = '';
+      if (/bvirtual|bibliotecavirtual/i.test(String(r.url || ''))) {
+        const nav = await seguirBvirtual(win);
+        if (nav.acao !== 'nenhuma') navInfo = ` navegacao=${nav.acao}:${nav.motivo || 'ok'}`;
+        if (nav.pageid != null) navInfo += ` pageid=${nav.pageid}`;
+        if (nav.status === 'inaccessible') {
+          out.status = 'inaccessible';
+          out.detail = `formato=bv falha=${nav.motivo}${navInfo}`;
+          out.chars = 0; out.file = null;
+          bloqueado = true;
+        }
+      }
+      if (!bloqueado) {
+        const res = await withTimeout(books.extractBook({ app, win, launchUrl: r.url, expected, opts }), 30000, 'book');
+        const text = String(res && (res.text || '') || '');
+        out.chars = text.length;
+        out.status = res && res.status === 'integral' ? 'integral' : 'partial';
+        out.detail = `formato=${res && res.format} status=${res && res.status} falha=${res && res.failureType || '-'}${navInfo}`;
+        out.file = path.basename(base) + '.md';
+        fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
+      }
     }
   } catch (e) {
     out.status = 'inaccessible';
