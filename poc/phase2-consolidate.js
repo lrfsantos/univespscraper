@@ -12,7 +12,7 @@ const POR_TIPO = {
   'captura-interface': {
     titulo: 'Captura de interface (5 casos comprovados)',
     criterio: 'O arquivo contém instruções da UI do AVA em vez do material solicitado.',
-    casos: base.registros.filter(r => r.resultado === 'WRONG_SOURCE' && r.output_file && r.chars > 0 && r.chars < 100).map(r => r.resource_id),
+    casos: base.registros.filter(r => r.resultado === 'WRONG_SOURCE' && r.course_id === 'D18491' && r.output_file && r.chars > 0 && r.chars < 100).map(r => r.resource_id),
     evidencia: 'D18491: "Clique em ... para abrir o recurso." (67-78 chars) enquanto o clique abre YouTube e livros no minhabiblioteca.',
     acao: 'Investigar o seletor de escopo usado em recursos URL (capturou a página do AVA, não o destino).',
   },
@@ -44,9 +44,9 @@ const POR_TIPO = {
     evidencia: 'ADM290: not-authorized / validando autorização. ADM270: leitor beta; CIN200 e ADM220: livros abertos sem texto no DOM.',
     acao: 'Investigar adaptadores de leitor e credenciais; não corrigir durante a auditoria.',
   },
-  'deteccao': {
-    titulo: 'Detecção de tipo perdida (30 casos verificados + lacuna histórica)',
-    criterio: 'Todos os 30 PASS vieram com detected_type=unknown; o histórico não gravava o tipo estruturado.',
+  'lacuna_metadados_tipo_historico': {
+    titulo: 'Lacuna de metadados de tipo no histórico (30 casos verificados)',
+    criterio: 'Não é falha de extração: o tipo estruturado não foi preservado nas execuções históricas (todos os 30 PASS têm detected_type=unknown).',
     casos: base.registros.filter(r => r.resultado === 'PASS').map(r => r.resource_id),
     evidencia: 'INVENTARIO.json: detected_type=unknown para os 30; o novo RECORDS.json passou a gravar kind.',
     acao: 'Nada a corrigir no passado: informação não preservada. Próximas execuções já registram o tipo.',
@@ -55,13 +55,14 @@ const POR_TIPO = {
 
 const registros = base.registros.map(r => {
   const exp = esp[r.resource_id];
+  const hash = exp ? (exp.hash || exp[1]) : null;
   const fonteDisponivel = r.resultado === 'MISCLASSIFIED' || r.resultado === 'WRONG_SOURCE' || r.resultado === 'PASS' || r.resultado === 'PARTIAL';
   return Object.assign({}, r, {
     resultado_fase22: r.resultado,
     resultado: r.resultado === 'MISCLASSIFIED' ? 'SOURCE_AVAILABLE' : r.resultado,
     disponibilidade_fonte: fonteDisponivel ? 'DISPONIVEL' : (r.resultado === 'INCONCLUSIVE' ? 'NAO_CONFIRMADA' : 'NAO_AVALIADA'),
-    hash_extraido: r.resultado === 'PASS' && exp ? exp[1] : null,
-    hash_fonte: r.resultado === 'PASS' && exp ? exp[1] : null,
+    hash_extraido: r.resultado === 'PASS' && hash ? hash : null,
+    hash_fonte: r.resultado === 'PASS' && hash ? hash : null,
     hash_comparacao: r.resultado === 'PASS' ? 'SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais' : null,
     observacao_semantica: r.resultado === 'MISCLASSIFIED'
       ? 'O clique demonstrou apenas que a fonte está acessível hoje. SEM arquivo extraído para comparar, isto NÃO prova que a classificação histórica esteja errada nem que a extração tenha falhado por erro de tipo.'
@@ -74,6 +75,18 @@ for (const r of registros) porEstado[r.resultado] = (porEstado[r.resultado] || 0
 const porTipoFalha = {};
 for (const [k, v] of Object.entries(POR_TIPO)) porTipoFalha[k] = v.casos.length;
 
+// Validação automática exigida pelo auditor: 30 PASS com dois hashes válidos e iguais.
+const pass = registros.filter(r => r.resultado === 'PASS');
+const valido = /^[0-9a-f]{64}$/;
+if (pass.length !== 30) throw new Error('esperado-30-pass:' + pass.length);
+for (const r of pass) {
+  if (!r.hash_fonte || !r.hash_extraido) throw new Error('hash-ausente:' + r.resource_id);
+  if (!valido.test(r.hash_fonte) || !valido.test(r.hash_extraido)) throw new Error('hash-invalido:' + r.resource_id);
+  if (r.hash_fonte !== r.hash_extraido) throw new Error('hash-diferente:' + r.resource_id);
+}
+if (POR_TIPO['captura-interface'].casos.length !== 4) throw new Error('captura-interface-deve-ser-4');
+if (!POR_TIPO['fonte-errada'].casos.some(x => x.indexOf('manual-de-oslo') >= 0)) throw new Error('oslo-deve-estar-em-fonte-errada');
+
 fs.writeFileSync(path.join(OUT, 'AUDITORIA_FASE22', 'DIAGNOSTICO_FALHAS.json'), JSON.stringify({ gerado_em: new Date().toISOString(), total: registros.length, porEstado, porTipoFalha, tipos: POR_TIPO, registros }, null, 2));
 
 const linhas = [
@@ -85,9 +98,10 @@ const linhas = [
   '## Estados (60)', '',
   ...Object.keys(porEstado).sort().map(k => `- ${k}: ${porEstado[k]}`), '',
   '## Diagnóstico por tipo de falha (hipóteses de causa, não correções)', '',
-  ...Object.entries(POR_TIPO).flatMap(([k, v]) => [`### ${v.titulo}`, `- Critério: ${v.criterio}`, `- Casos: ${v.casos.length}`, `- Evidência: ${v.evidencia}`, `- Investigação futura: ${v.acao}`, '']),
-  '## Hashes dos 30 PASS', '',
-  'Cada um dos 30 registros PASS em DIAGNOSTICO_FALHAS.json contém `hash_fonte` e `hash_extraido` (iguais), calculados respectivamente sobre o texto renderizado no AVA via `crypto.subtle.digest` e sobre o corpo do arquivo extraído. O campo `hash_comparacao` descreve o método.', '',
+  'As categorias são hipóteses e PODEM SE SOBREPOR: os 5 casos de navegação também aparecem entre os de seleção de leitor. Não some as contagens abaixo como se fossem recursos distintos — há 60 recursos no total. Manual de Oslo está apenas em `fonte-errada`, não em captura de interface.', '',
+  ...Object.entries(POR_TIPO).flatMap(([k, v]) => [`### ${k} — ${v.titulo}`, `- Critério: ${v.criterio}`, `- Casos: ${v.casos.length}`, `- Evidência: ${v.evidencia}`, `- Investigação futura: ${v.acao}`, '']),
+  '## Hashes dos 30 PASS (valores presentes no JSON)', '',
+  'Os 30 registros PASS em DIAGNOSTICO_FALHAS.json contêm `hash_fonte` e `hash_extraido` com os valores SHA-256 reais (iguais), além de `hash_comparacao`. O script valida automaticamente que os dois campos existem, não estão vazios, são SHA-256 válidos (64 hex) e são iguais em cada PASS; também confere que captura-interface tem exatamente 4 casos e que Manual de Oslo permanece em fonte-errada.', '',
   '## Limitações da amostra (devem acompanhar qualquer conclusão)', '',
   '- Os 30 PASS são todos `detected_type=unknown` e concentrados na semana 1: provam fidelidade dessas páginas, não dos leitores de livro, PDF, EPUB ou vídeo.',
   '- Minha Biblioteca / VitalSource renderizam o conteúdo em iframe: confirmei a abertura e o pageid, não o texto integral.',

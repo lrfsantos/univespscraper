@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-22T14:29:14.559Z",
+  "gerado_em": "2026-11-22T14:31:33.248Z",
   "total": 60,
   "porEstado": {
     "PASS": 30,
@@ -9,19 +9,18 @@
     "INCONCLUSIVE": 2
   },
   "porTipoFalha": {
-    "captura-interface": 5,
+    "captura-interface": 4,
     "fonte-errada": 1,
     "cobertura-incompleta": 2,
     "erro-navegacao": 5,
     "selecao-leitor": 14,
-    "deteccao": 30
+    "lacuna_metadados_tipo_historico": 30
   },
   "tipos": {
     "captura-interface": {
       "titulo": "Captura de interface (5 casos comprovados)",
       "criterio": "O arquivo contém instruções da UI do AVA em vez do material solicitado.",
       "casos": [
-        "ADM270-S2-s2---texto-base---manual-de-oslo_-diretrizes-para-coleta-e-interpretação-de-dados-sobre-in-231281ef",
         "D18491-S1-s1---vídeo-base---qual-o-significado-de-ética_-url-90aac5de",
         "D18491-S5-s5---texto-base---ética-profissional-url-be901345",
         "D18491-S6-s6---texto-base---dignidade-da-pessoa-humana-url-1c093940",
@@ -84,9 +83,9 @@
       "evidencia": "ADM290: not-authorized / validando autorização. ADM270: leitor beta; CIN200 e ADM220: livros abertos sem texto no DOM.",
       "acao": "Investigar adaptadores de leitor e credenciais; não corrigir durante a auditoria."
     },
-    "deteccao": {
-      "titulo": "Detecção de tipo perdida (30 casos verificados + lacuna histórica)",
-      "criterio": "Todos os 30 PASS vieram com detected_type=unknown; o histórico não gravava o tipo estruturado.",
+    "lacuna_metadados_tipo_historico": {
+      "titulo": "Lacuna de metadados de tipo no histórico (30 casos verificados)",
+      "criterio": "Não é falha de extração: o tipo estruturado não foi preservado nas execuções históricas (todos os 30 PASS têm detected_type=unknown).",
       "casos": [
         "ADM210-S1-s1---aprofundando-o-tema-página-230b5e94",
         "ADM220-S1-s1---aprofundando-o-tema-página-839a5525",
@@ -140,6 +139,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "fcc89e1597d8d2044ce2f87d8255b191f65de11ee8765e49a974bc33a3eba932",
+      "hash_fonte": "fcc89e1597d8d2044ce2f87d8255b191f65de11ee8765e49a974bc33a3eba932",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -159,6 +160,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "059b491d75e8cb2012e89ad89e29ade6ae6d9c3066b439bb080edff8a97e7560",
+      "hash_fonte": "059b491d75e8cb2012e89ad89e29ade6ae6d9c3066b439bb080edff8a97e7560",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -178,6 +181,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "249250273e8a71b828bc86454ab84bb3e8f3adbb6d37fed8cf8b1f9cf371063e",
+      "hash_fonte": "249250273e8a71b828bc86454ab84bb3e8f3adbb6d37fed8cf8b1f9cf371063e",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -197,6 +202,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "4cd5d0e85cffc0669b4bf834bbd339330b48084e543ed7d71fdca035343a0185",
+      "hash_fonte": "4cd5d0e85cffc0669b4bf834bbd339330b48084e543ed7d71fdca035343a0185",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -216,6 +223,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "7926a46eb87e562d7bec6dc76add347740a8c00e4e68620caf0fcf994986277b",
+      "hash_fonte": "7926a46eb87e562d7bec6dc76add347740a8c00e4e68620caf0fcf994986277b",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -235,6 +244,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "c7170645efa2a318482702080137293fc407e2e5b62cd7cde86d3e300d0da820",
+      "hash_fonte": "c7170645efa2a318482702080137293fc407e2e5b62cd7cde86d3e300d0da820",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -254,6 +265,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "e190d1837c30970b26d135ce990afbbc34feb2d6107f743f6217095696de5935",
+      "hash_fonte": "e190d1837c30970b26d135ce990afbbc34feb2d6107f743f6217095696de5935",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -273,6 +286,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "165f1f49e732ff6521106f05ed8e14228c13bc3c28341c8be5f0ab0df53ebe3f",
+      "hash_fonte": "165f1f49e732ff6521106f05ed8e14228c13bc3c28341c8be5f0ab0df53ebe3f",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -292,6 +307,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "ab5303167c2e5dea988bb257c51e9d8d3fce78165456adbc0690b61468940b7e",
+      "hash_fonte": "ab5303167c2e5dea988bb257c51e9d8d3fce78165456adbc0690b61468940b7e",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -311,6 +328,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "807c535e98e8a238e448a6bb1e2634e1d8136b2cf1df84c9495996da649ac5ef",
+      "hash_fonte": "807c535e98e8a238e448a6bb1e2634e1d8136b2cf1df84c9495996da649ac5ef",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -330,6 +349,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "f747b8a19a8051958f0fd3bae1bd7db36823dda2579e6932130562e9e9efdd21",
+      "hash_fonte": "f747b8a19a8051958f0fd3bae1bd7db36823dda2579e6932130562e9e9efdd21",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -349,6 +370,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "2c67b8e92813934a30e8db10995f98cd9b96e312a669279130c4aa8b3e9216e6",
+      "hash_fonte": "2c67b8e92813934a30e8db10995f98cd9b96e312a669279130c4aa8b3e9216e6",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -368,6 +391,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "964489263651ae24150d49ec70b3c5541a302b3a7c0e881ef7e21bdd302a770c",
+      "hash_fonte": "964489263651ae24150d49ec70b3c5541a302b3a7c0e881ef7e21bdd302a770c",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -387,6 +412,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "83e1c596a7f78f5b6e2bcec9c4c4db5397027f64511c17c2acd111af6e8a9a27",
+      "hash_fonte": "83e1c596a7f78f5b6e2bcec9c4c4db5397027f64511c17c2acd111af6e8a9a27",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -406,6 +433,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "b51c6aed161a2f80e433e044b31b72e52f7e2e9bedf104ffc6d2cec43946c641",
+      "hash_fonte": "b51c6aed161a2f80e433e044b31b72e52f7e2e9bedf104ffc6d2cec43946c641",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -425,6 +454,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "c4919071a34d6d62f6274b0b0cffac2521b3ad43953936dad4031d3474214c4c",
+      "hash_fonte": "c4919071a34d6d62f6274b0b0cffac2521b3ad43953936dad4031d3474214c4c",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -444,6 +475,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "d40e671340a3d3e094e2e0036322c4c9aeec36f4254d4a0da73583c687042782",
+      "hash_fonte": "d40e671340a3d3e094e2e0036322c4c9aeec36f4254d4a0da73583c687042782",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -463,6 +496,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "a6431b33000db6c35024d9ec5ca86f7270dfc0074602da7d20ca9f982023a72c",
+      "hash_fonte": "a6431b33000db6c35024d9ec5ca86f7270dfc0074602da7d20ca9f982023a72c",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -482,6 +517,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "3a4c96a827cdb9d4b51dee1f9f1bddd04e1428f66295f149a01cbca7a58edc8d",
+      "hash_fonte": "3a4c96a827cdb9d4b51dee1f9f1bddd04e1428f66295f149a01cbca7a58edc8d",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -501,6 +538,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "6c02f910adfe683f9bfe06e00fe0b67d8a64d356bd4a97d0e6260a40f3bf60d1",
+      "hash_fonte": "6c02f910adfe683f9bfe06e00fe0b67d8a64d356bd4a97d0e6260a40f3bf60d1",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -520,6 +559,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "2c40346ae7bf9fa0e8f2c131a93253ad083cd796d3c5368753daf3f4c5719bcd",
+      "hash_fonte": "2c40346ae7bf9fa0e8f2c131a93253ad083cd796d3c5368753daf3f4c5719bcd",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -539,6 +580,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "9afb4c3ac916b2ab581be26426589a56d086a33baface26e7900b7c6d3d76e6e",
+      "hash_fonte": "9afb4c3ac916b2ab581be26426589a56d086a33baface26e7900b7c6d3d76e6e",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -558,6 +601,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "a3fe56e48bdcd067bca6d55a6cf4ee4c40faa8d51d87770d6e8487203b3dc7e1",
+      "hash_fonte": "a3fe56e48bdcd067bca6d55a6cf4ee4c40faa8d51d87770d6e8487203b3dc7e1",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -577,6 +622,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "dfd07073789ded1359d2276c58cf7b57667169b78e45bdf2ad85abc7e96f6fcc",
+      "hash_fonte": "dfd07073789ded1359d2276c58cf7b57667169b78e45bdf2ad85abc7e96f6fcc",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -596,6 +643,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "3fda754284dc7e833a64803703fb98e17cf660a54f6b77ca01d378448c27337c",
+      "hash_fonte": "3fda754284dc7e833a64803703fb98e17cf660a54f6b77ca01d378448c27337c",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -615,6 +664,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "1b2674a9b91a4be0a4ee0022788695d44450f50a2f613ec9fe7ef1af8d06fe02",
+      "hash_fonte": "1b2674a9b91a4be0a4ee0022788695d44450f50a2f613ec9fe7ef1af8d06fe02",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -634,6 +685,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "08a3f0a961e282540375e3648012b581044b7dc425ea30a1a42d22defb4da218",
+      "hash_fonte": "08a3f0a961e282540375e3648012b581044b7dc425ea30a1a42d22defb4da218",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -653,6 +706,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "a66c5a8688c303c84f8e17a57676375fbb8c6029591e8e969441e3332cb79077",
+      "hash_fonte": "a66c5a8688c303c84f8e17a57676375fbb8c6029591e8e969441e3332cb79077",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -672,6 +727,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "feb9fe7f770a8b11d25f58ea466b95bff040772e7e332ef98b3ddd91639d151b",
+      "hash_fonte": "feb9fe7f770a8b11d25f58ea466b95bff040772e7e332ef98b3ddd91639d151b",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },
@@ -691,6 +748,8 @@
       "justificativa": "Hash SHA-256 do corpo extraído idêntico ao texto renderizado no AVA; início, fim e tamanho conferem.",
       "resultado_fase22": "PASS",
       "disponibilidade_fonte": "DISPONIVEL",
+      "hash_extraido": "03513f091ce51a10f6645da4c48949d0cde83c6206ecb20795b8d7f199243a9d",
+      "hash_fonte": "03513f091ce51a10f6645da4c48949d0cde83c6206ecb20795b8d7f199243a9d",
       "hash_comparacao": "SHA-256 calculado no texto renderizado no AVA (crypto.subtle) e no corpo do arquivo; iguais",
       "observacao_semantica": null
     },

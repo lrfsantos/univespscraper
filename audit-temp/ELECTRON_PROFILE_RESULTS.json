@@ -1,23 +1,23 @@
 {
-  "ts": "2026-11-22T14:26:48.217Z",
+  "ts": "2026-11-22T14:34:48.807Z",
   "results": [
     {
       "id": "E-1",
       "title": "Perfil criado em %TEMP% exclusivo (prefixo univesp-profile-)",
       "status": "PASS",
-      "detail": "dir=<TEMP>\\univesp-profile-1795357607875-de4cbbbf tmp=<TEMP>"
+      "detail": "dir=<TEMP>\\univesp-profile-1795358088422-9e19063f tmp=<TEMP>"
     },
     {
       "id": "E-2",
       "title": "installTempProfile configura userData/sessionData no diretório temporário exclusivo",
       "status": "PASS",
-      "detail": "userData=<TEMP>\\univesp-profile-1795357607879-b81d31b1"
+      "detail": "userData=<TEMP>\\univesp-profile-1795358088430-2e96c0f3"
     },
     {
       "id": "E-3",
       "title": "Isolamento: cada execução usa um diretório de perfil DISTINTO",
       "status": "PASS",
-      "detail": "a=<TEMP>\\univesp-profile-1795357607884-3063c482 b=<TEMP>\\univesp-profile-1795357607885-4e8e06a2"
+      "detail": "a=<TEMP>\\univesp-profile-1795358088434-2ca55414 b=<TEMP>\\univesp-profile-1795358088436-78b54eea"
     },
     {
       "id": "E-4",
@@ -41,7 +41,7 @@
       "id": "E-7",
       "title": "B2: perfil tem lock OWNER.json com o PID do processo dono",
       "status": "PASS",
-      "detail": "ownerPid=14368 esperado=14368"
+      "detail": "ownerPid=28332 esperado=28332"
     },
     {
       "id": "E-8",
