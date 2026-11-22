@@ -91,13 +91,20 @@ async function executarFluxoBook({ classificacao, leituraOk = true, extrair }) {
 function avaliarEvidenciasLeitor({ urlPrincipal, texto, frames = [], leituraOk = true } = {}) {
   if (!leituraOk) return { classificacao: { leitor: null, motivo: 'inconclusivo' }, hostExterno: null };
   const lista = Array.isArray(frames) ? frames : [];
+  // Frame relevante cujo conteúdo não pôde ser lido não autoriza a extração.
+  if (lista.some((f) => f && f.leituraOk === false && !ehDominioInstitucional(hostnameDe(f.url)))) {
+    return { classificacao: { leitor: null, motivo: 'inconclusivo' }, hostExterno: null };
+  }
   const urls = [String(urlPrincipal || ''), ...lista.map((f) => String((f && f.url) || f || ''))].filter(Boolean);
   const externas = urls.map((u) => ({ u, host: hostnameDe(u) }))
     .filter((x) => x.host && !ehDominioInstitucional(x.host));
   const preferida = externas.find((x) => leitorDeHost(x.host)) || externas[0] || null;
   if (!preferida) return { classificacao: { leitor: null, motivo: 'inconclusivo' }, hostExterno: null };
   return {
-    classificacao: classificarLeitor({ url: preferida.u, hostname: preferida.host, texto, frames: lista, leituraOk: true }),
+    classificacao: classificarLeitor({
+      url: preferida.u, hostname: preferida.host, texto,
+      frames: lista, sinais: lista.map((f) => String((f && f.texto) || '')), leituraOk: true,
+    }),
     hostExterno: preferida.host,
   };
 }

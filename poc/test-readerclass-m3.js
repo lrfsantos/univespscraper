@@ -93,12 +93,14 @@ record({ id: 'RC17', title: 'integracao: leitor com motivo nao persiste mesmo co
 
   const AVA = 'https://ava.univesp.br/mod/lti/view.php?id=263859';
   const casosFrame = [
-    ['RC23', 'pagina institucional + iframe VitalSource com not-authorized bloqueia',
-      { urlPrincipal: AVA, texto: 'not authorized', frames: [{ url: 'https://bookshelf.vitalsource.com/books/x/pages/12/content' }] }, 'sem-autorizacao'],
-    ['RC24', 'pagina institucional + selecao pendente no leitor bloqueia',
-      { urlPrincipal: AVA, texto: 'Escolha o formato desejado', frames: [{ url: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789' }] }, 'reader-selection-required'],
+    ['RC23', 'iframe VitalSource com not-authorized somente no frame bloqueia',
+      { urlPrincipal: AVA, texto: '', frames: [{ url: 'https://bookshelf.vitalsource.com/books/x/pages/12/content', texto: 'not authorized' }] }, 'sem-autorizacao'],
+    ['RC24', 'selecao pendente somente no iframe bloqueia',
+      { urlPrincipal: AVA, texto: '', frames: [{ url: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789', texto: 'Escolha o formato desejado' }] }, 'reader-selection-required'],
     ['RC25', 'host vazio/ilegivel gera inconclusivo e bloqueia',
       { urlPrincipal: '', texto: '', frames: [] }, 'evidencias-inconclusivas'],
+    ['RC27', 'frame relevante ilegivel gera inconclusivo e bloqueia',
+      { urlPrincipal: AVA, texto: '', frames: [{ url: 'https://bookshelf.vitalsource.com/books/x/pages/12/content', texto: '', leituraOk: false }] }, 'evidencias-inconclusivas'],
   ];
   for (const [id, titulo, evid, esperado] of casosFrame) {
     const aval = avaliarEvidenciasLeitor(evid);

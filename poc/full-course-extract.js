@@ -212,7 +212,13 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
           for (const f of lista) {
             let u = '';
             try { u = typeof f.url === 'function' ? f.url() : ''; } catch { leituraEvidentiasOk = false; }
-            frames.push({ url: String(u || '') });
+            let textoFrame = '';
+            const hostFrame = hostnameDe(u);
+            if (hostFrame && !ehDominioInstitucional(hostFrame)) {
+              try { textoFrame = String(await f.evaluate(() => document.body.innerText)); }
+              catch { leituraEvidentiasOk = false; }
+            }
+            frames.push({ url: String(u || ''), texto: textoFrame, leituraOk: leituraEvidentiasOk });
           }
         } catch { leituraEvidentiasOk = false; }
         const avaliacao = avaliarEvidenciasLeitor({
