@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-22T14:38:03.027Z",
+  "gerado_em": "2026-11-22T17:09:32.522Z",
   "total": 60,
   "porEstado": {
     "PASS": 30,
@@ -45,7 +45,7 @@
         "ADM210-S1-s1---texto-base-1---teorias-da-administração-(p.-4-18-e-42-46-)-12bd976b",
         "CIN200-S4-s4---texto-base_-fundamentos-de-gestão-de-projetos-(leia-o-capítulo-6,-p.-217-250)-257f9217"
       ],
-      "evidencia": "ADM210: só a página de título; CIN200: capítulo 217-250 correto, sem verificação página a página.",
+      "evidencia": "ADM210: só a página de título; CIN200: texto da p.217 impressa até a p.248, com lacunas 249–250 (falsos positivos corrigidos na justificativa do registro).",
       "acao": "Investigar paginação/seleção de páginas dos leitores."
     },
     "erro-navegacao": {
@@ -808,7 +808,7 @@
       "evidencia_historica": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L29",
       "resultado": "PARTIAL",
       "trecho_comparado": "Biblioteca Virtual, publicação 177750, leitor PDF p.217 de 266; obra \"Fundamentals of project management\", Adriana Bastos da Costa",
-      "justificativa": "Texto de 39527 chars começa em p.217, inclui marcador 250 e o fechamento do capítulo; fonte correta, mas não foi feita verificação página a página.",
+      "justificativa": "O texto extraído começa na página impressa 217 e termina na página 248. A verificação local identificou que as ocorrências interpretadas anteriormente como marcador da página 250 eram falsos positivos (título do recurso e sequência \"2502 – NC\"). Não há evidência suficiente de cobertura das páginas 249–250; o recurso permanece PARTIAL por cobertura incompleta, sem validação página a página.",
       "resultado_fase22": "PARTIAL",
       "disponibilidade_fonte": "DISPONIVEL",
       "hash_extraido": null,

@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-22T17:16:13.867Z",
+  "summary": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "UF1",
+      "title": "texto vazio com destino valido = falha honesta, zero arquivo",
+      "status": "PASS"
+    },
+    {
+      "id": "UF2",
+      "title": "classificacao: curso=origem, mod/url e mod/page=intermediaria, externa",
+      "status": "PASS"
+    },
+    {
+      "id": "UF3",
+      "title": "popup externo = usar janela aberta pelo clique",
+      "status": "PASS"
+    },
+    {
+      "id": "UF4",
+      "title": "navegacao externa na mesma janela = usar atual",
+      "status": "PASS"
+    },
+    {
+      "id": "UF5",
+      "title": "pagina intermediaria sem destino = sem-destino",
+      "status": "PASS"
+    },
+    {
+      "id": "UF6",
+      "title": "helper puro nao conhece baseline; filtro e feito na integracao (UF10)",
+      "status": "PASS"
+    },
+    {
+      "id": "UF7",
+      "title": "integracao: popup externo retornado como destino",
+      "status": "PASS"
+    },
+    {
+      "id": "UF8",
+      "title": "integracao: navegacao externa na mesma janela retorna a propria janela",
+      "status": "PASS"
+    },
+    {
+      "id": "UF9",
+      "title": "integracao: intermediaria sem destino retorna null",
+      "status": "PASS"
+    },
+    {
+      "id": "UF10",
+      "title": "integracao: aba antiga externa ignorada (retorna null)",
+      "status": "PASS"
+    },
+    {
+      "id": "UF11",
+      "title": "about:blank rejeitado como destino",
+      "status": "PASS"
+    },
+    {
+      "id": "UF12",
+      "title": "pagina de erro rejeitada (404 / Página não encontrada)",
+      "status": "PASS"
+    },
+    {
+      "id": "UF13",
+      "title": "URL assinada nao aparece em evidencia",
+      "status": "PASS"
+    },
+    {
+      "id": "UF14",
+      "title": "popup about:blank que navega depois e capturado no destino final",
+      "status": "PASS"
+    },
+    {
+      "id": "UF15",
+      "title": "popup que nunca navega falha com motivo identificavel",
+      "status": "PASS"
+    },
+    {
+      "id": "UF16",
+      "title": "popup que termina na intermediaria segue o link ate o destino",
+      "status": "PASS"
+    },
+    {
+      "id": "UF17",
+      "title": "popup em pagina de erro rejeitado com motivo especifico",
+      "status": "PASS"
+    },
+    {
+      "id": "UF18",
+      "title": "URLs malformadas/sem protocolo sao invalidas",
+      "status": "PASS"
+    },
+    {
+      "id": "UF19",
+      "title": "dominio parecido (fakeunivesp.br) nao e institucional",
+      "status": "PASS"
+    },
+    {
+      "id": "UF20",
+      "title": "URL externa http valida continua capturando",
+      "status": "PASS"
+    },
+    {
+      "id": "UF21",
+      "title": "URL externa com caminho /mod/url/view.php nao e intermediaria",
+      "status": "PASS"
+    },
+    {
+      "id": "UF22",
+      "title": "popup externo sem confirmacao de load falha com motivo",
+      "status": "PASS"
+    }
+  ]
+}

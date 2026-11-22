@@ -15,9 +15,12 @@ async function aguardarPopupFinal(app, popup, courseUrl, onMotivo = () => {}, pr
     const atual = urlDe(popup);
     const classe = classificarPagina(atual);
     if (classe === 'externa') {
+      let carregou = true;
       if (typeof popup.waitForLoadState === 'function') {
-        await popup.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {});
+        try { await popup.waitForLoadState('domcontentloaded', { timeout: 3000 }); }
+        catch { carregou = false; }
       }
+      if (!carregou) { onMotivo('popup-carregamento-nao-confirmado'); return null; }
       return popup;
     }
     if (classe === 'intermediaria') {
@@ -27,7 +30,11 @@ async function aguardarPopupFinal(app, popup, courseUrl, onMotivo = () => {}, pr
       await new Promise((r) => setTimeout(r, 200));
       continue;
     }
-    if (classe === 'invalida' || classe === 'sem-url') {
+    if (classe === 'invalida') {
+      onMotivo('popup-pagina-de-erro');
+      return null;
+    }
+    if (classe === 'sem-url') {
       await new Promise((r) => setTimeout(r, 200));
       continue;
     }

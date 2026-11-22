@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-22T14:15:03.640Z",
+  "gerado_em": "2026-11-22T17:09:32.456Z",
   "total": 60,
   "porEstado": {
     "PASS": 30,
@@ -564,7 +564,7 @@
       "evidencia_historica": "CIN200 Metodologias ágeis Turma 002\\QUALITY.md#L29",
       "resultado": "PARTIAL",
       "trecho_comparado": "Biblioteca Virtual, publicação 177750, leitor PDF p.217 de 266; obra \"Fundamentals of project management\", Adriana Bastos da Costa",
-      "justificativa": "Texto de 39527 chars começa em p.217, inclui marcador 250 e o fechamento do capítulo; fonte correta, mas não foi feita verificação página a página."
+      "justificativa": "O texto extraído começa na página impressa 217 e termina na página 248. A verificação local identificou que as ocorrências interpretadas anteriormente como marcador da página 250 eram falsos positivos (título do recurso e sequência \"2502 – NC\"). Não há evidência suficiente de cobertura das páginas 249–250; o recurso permanece PARTIAL por cobertura incompleta, sem validação página a página."
     },
     {
       "resource_id": "D18491-S1-s1---vídeo-base---qual-o-significado-de-ética_-url-90aac5de",

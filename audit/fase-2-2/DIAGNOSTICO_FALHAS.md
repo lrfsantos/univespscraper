@@ -34,7 +34,7 @@ As categorias são hipóteses e PODEM SE SOBREPOR: os 5 casos de navegação tam
 ### cobertura-incompleta — Cobertura incompleta (2 casos)
 - Critério: O arquivo corresponde à fonte, mas não cobre integralmente o escopo solicitado.
 - Casos: 2
-- Evidência: ADM210: só a página de título; CIN200: capítulo 217-250 correto, sem verificação página a página.
+- Evidência: ADM210: só a página de título; CIN200: texto da p.217 impressa até a p.248, com lacunas 249–250 (falsos positivos corrigidos na justificativa do registro).
 - Investigação futura: Investigar paginação/seleção de páginas dos leitores.
 
 ### erro-navegacao — Erro de navegação (5 casos, hipótese)
@@ -63,7 +63,7 @@ Os 30 registros PASS em DIAGNOSTICO_FALHAS.json contêm `hash_fonte` e `hash_ext
 
 - Os 30 PASS são todos `detected_type=unknown` e concentrados na semana 1: provam fidelidade dessas páginas, não dos leitores de livro, PDF, EPUB ou vídeo.
 - Minha Biblioteca / VitalSource renderizam o conteúdo em iframe: confirmei a abertura e o pageid, não o texto integral.
-- CIN200 (PDF, p.217-250): conferido o início/fim e os marcadores 217/250, não todas as páginas individualmente.
+- CIN200 (PDF, p.217–248 impressas): fonte correta, mas sem cobertura das páginas 249–250; os "marcadores 250" anteriores eram falsos positivos, corrigidos na justificativa do registro.
 - ADM290 S6/S7: leitor sem autorização; INCONCLUSIVE, sem converter falha de acesso em falha de conteúdo.
 - 441 testes são resultado local informado, não validação de CI confirmada.
 

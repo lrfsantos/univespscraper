@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-22T17:16:12.379Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "U1",
+      "title": "wrapper mod/url com texto de interface = sem-destino, zero chars",
+      "status": "PASS"
+    },
+    {
+      "id": "U2",
+      "title": "destino YouTube mas texto da interface = nao salvar",
+      "status": "PASS"
+    },
+    {
+      "id": "U3",
+      "title": "destino correto com conteudo = ok e evidencia sanitizada",
+      "status": "PASS"
+    },
+    {
+      "id": "U4",
+      "title": "destino igual a origem (curso) = sem-destino",
+      "status": "PASS"
+    },
+    {
+      "id": "U5",
+      "title": "sem destino capturado = sem-destino",
+      "status": "PASS"
+    },
+    {
+      "id": "U6",
+      "title": "URL assinada nao vaza no detail",
+      "status": "PASS"
+    },
+    {
+      "id": "U7",
+      "title": "sanitizar remove query e fragmento",
+      "status": "PASS"
+    },
+    {
+      "id": "U8",
+      "title": "recurso page nao e afetado pela regra URL",
+      "status": "PASS"
+    }
+  ]
+}

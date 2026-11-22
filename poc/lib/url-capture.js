@@ -13,13 +13,14 @@ function classificarPagina(url) {
   const u = String(url || '');
   if (!u) return 'sem-url';
   if (/^(about:|chrome-error:|chrome:\/\/|data:)/i.test(u)) return 'invalida';
-  if (AVA_URL_VIEW_RE.test(u)) return 'intermediaria';
   let x;
   try { x = new URL(u); } catch { return 'invalida'; }
   const proto = String(x.protocol || '').toLowerCase();
   const host = String(x.hostname || '').toLowerCase();
   if ((proto !== 'http:' && proto !== 'https:') || !host) return 'invalida';
-  if (host === 'univesp.br' || host.endsWith('.univesp.br')) {
+  const institucional = host === 'univesp.br' || host.endsWith('.univesp.br');
+  if (institucional) {
+    if (AVA_URL_VIEW_RE.test(x.pathname) || /\/mod\//i.test(x.pathname)) return 'intermediaria';
     if (/\/course\/view\.php/i.test(x.pathname)) return 'origem';
     return 'intermediaria';
   }
@@ -47,7 +48,7 @@ function avaliarCapturaUrl({ subKind, origemUrl, destinoUrl, texto } = {}) {
   const origem = String(origemUrl || '');
   const destino = String(destinoUrl || '');
   const txt = String(texto || '').trim();
-  const semDestino = !destino || AVA_URL_VIEW_RE.test(destino) || destino === origem || /\/course\/view\.php/i.test(destino) || classificarPagina(destino) === 'invalida';
+  const semDestino = !destino || classificarPagina(destino) === 'intermediaria' || destino === origem || classificarPagina(destino) === 'origem' || classificarPagina(destino) === 'invalida';
   if (semDestino) return { acao: 'sem-destino', status: 'inaccessible', detail: 'destino-nao-detectado', chars: 0 };
   if (/^\s*(404\b|página não encontrada|page not found|internal server error|err_[a-z_]+)/i.test(txt)) return { acao: 'pagina-erro', status: 'inaccessible', detail: 'pagina-de-erro', chars: 0 };
   if (UI_INSTRUCTION_RE.test(txt)) return { acao: 'interface', status: 'inaccessible', detail: 'texto-de-interface-do-ava', chars: 0 };

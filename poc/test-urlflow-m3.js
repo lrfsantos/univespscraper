@@ -111,7 +111,7 @@ function fakeWin(urlAtual, { popup = null, clicou = true } = {}) {
 
   const p4 = popupSequencial(['about:blank', 'chrome-error://chromewebdata/']);
   const motivos4 = [];
-  record({ id: 'UF17', title: 'popup em pagina de erro rejeitado com motivo', status: ok((await aguardarPopupFinal(appPop(p4), p4, CURSO, (m) => motivos4.push(m), 1500)) === null && motivos4.length > 0) });
+  record({ id: 'UF17', title: 'popup em pagina de erro rejeitado com motivo especifico', status: ok((await aguardarPopupFinal(appPop(p4), p4, CURSO, (m) => motivos4.push(m), 1500)) === null && motivos4.includes('popup-pagina-de-erro')) });
 
   record({ id: 'UF18', title: 'URLs malformadas/sem protocolo sao invalidas', status: ok(
     classificarPagina('ftp://x.br/a') === 'invalida' && classificarPagina('www.youtube.com/watch?v=1') === 'invalida' && classificarPagina('/mod/page/view.php?id=1') === 'invalida') });
@@ -121,6 +121,13 @@ function fakeWin(urlAtual, { popup = null, clicou = true } = {}) {
     const r = avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: 'http://example.org/material', texto: 'conteudo' });
     return r.status === 'ok' && r.acao === 'destino';
   })()) });
+  record({ id: 'UF21', title: 'URL externa com caminho /mod/url/view.php nao e intermediaria', status: ok(
+    classificarPagina('https://evil.example/mod/url/view.php?id=1') === 'externa' &&
+    avaliarCapturaUrl({ subKind: 'url', origemUrl: CURSO, destinoUrl: 'https://evil.example/mod/url/view.php?id=1', texto: 'conteudo' }).acao === 'destino') });
+  const p5 = popupSequencial([EXTERNO]);
+  p5.waitForLoadState = async () => { throw new Error('timeout'); };
+  const motivos5 = [];
+  record({ id: 'UF22', title: 'popup externo sem confirmacao de load falha com motivo', status: ok((await aguardarPopupFinal(appPop(p5), p5, CURSO, (m) => motivos5.push(m), 1000)) === null && motivos5.includes('popup-carregamento-nao-confirmado')) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));
