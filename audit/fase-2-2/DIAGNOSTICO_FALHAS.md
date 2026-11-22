@@ -19,7 +19,7 @@ Nesta consolidação esses 21 casos passam a `SOURCE_AVAILABLE` (campo `resultad
 
 As categorias são hipóteses e PODEM SE SOBREPOR: os 5 casos de navegação também aparecem entre os de seleção de leitor. Não some as contagens abaixo como se fossem recursos distintos — há 60 recursos no total. Manual de Oslo está apenas em `fonte-errada`, não em captura de interface.
 
-### captura-interface — Captura de interface (5 casos comprovados)
+### captura-interface — Captura de interface (4 casos comprovados)
 - Critério: O arquivo contém instruções da UI do AVA em vez do material solicitado.
 - Casos: 4
 - Evidência: D18491: "Clique em ... para abrir o recurso." (67-78 chars) enquanto o clique abre YouTube e livros no minhabiblioteca.

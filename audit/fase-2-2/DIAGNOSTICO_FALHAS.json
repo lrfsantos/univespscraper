@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-22T14:31:33.248Z",
+  "gerado_em": "2026-11-22T14:38:03.027Z",
   "total": 60,
   "porEstado": {
     "PASS": 30,
@@ -18,7 +18,7 @@
   },
   "tipos": {
     "captura-interface": {
-      "titulo": "Captura de interface (5 casos comprovados)",
+      "titulo": "Captura de interface (4 casos comprovados)",
       "criterio": "O arquivo contém instruções da UI do AVA em vez do material solicitado.",
       "casos": [
         "D18491-S1-s1---vídeo-base---qual-o-significado-de-ética_-url-90aac5de",

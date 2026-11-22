@@ -10,7 +10,7 @@ const esp = require(path.join(OUT, 'ESPERADOS.json'));
 // sucesso nem erro de classificação da extração histórica.
 const POR_TIPO = {
   'captura-interface': {
-    titulo: 'Captura de interface (5 casos comprovados)',
+    titulo: 'Captura de interface (4 casos comprovados)',
     criterio: 'O arquivo contém instruções da UI do AVA em vez do material solicitado.',
     casos: base.registros.filter(r => r.resultado === 'WRONG_SOURCE' && r.course_id === 'D18491' && r.output_file && r.chars > 0 && r.chars < 100).map(r => r.resource_id),
     evidencia: 'D18491: "Clique em ... para abrir o recurso." (67-78 chars) enquanto o clique abre YouTube e livros no minhabiblioteca.',
