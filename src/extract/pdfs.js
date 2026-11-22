@@ -22,6 +22,17 @@ const ocr = require('./ocr');
 const DEFAULT_MAX_BYTES = 200 * 1024 * 1024; // 200 MB
 const DEFAULT_TIMEOUT_MS = 120000;           // 120 s
 
+// Validação UNIFICADA da resposta antes de tratar bytes como PDF.
+// Nunca grava arquivo nem texto quando status, Content-Type ou assinatura
+// indicam que a resposta não é um PDF (ex.: página HTML 404).
+function validarRespostaPdf({ status, contentType, buffer } = {}) {
+  if (status != null && (status < 200 || status >= 300)) return { ok: false, motivo: 'HTTP ' + status };
+  const ct = String(contentType || '').toLowerCase();
+  if (ct && !/pdf|octet-stream|binary/.test(ct)) return { ok: false, motivo: 'content-type-nao-pdf' };
+  if (!buffer || buffer.length < 4 || buffer.slice(0, 4).toString('ascii') !== '%PDF') return { ok: false, motivo: 'nao-e-pdf' };
+  return { ok: true, motivo: null };
+}
+
 async function downloadViaElectronNet(url, opts = {}) {
   const maxBytes = opts.maxBytes != null ? opts.maxBytes : DEFAULT_MAX_BYTES;
   const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : DEFAULT_TIMEOUT_MS;
@@ -38,7 +49,9 @@ async function downloadViaElectronNet(url, opts = {}) {
       reject(new Error('timeout-download'));
     }, timeoutMs);
     req.on('response', (resp) => {
-      if (resp.statusCode !== 200) { clearTimeout(timer); reject(new Error('HTTP ' + resp.statusCode)); return; }
+      const contentType = String((resp.headers && (resp.headers['content-type'] || resp.headers['Content-Type'])) || '');
+      const status = resp.statusCode;
+      if (status !== 200) { clearTimeout(timer); reject(new Error('HTTP ' + status)); return; }
       resp.on('data', (c) => {
         if (done) return;
         size += c.length;
@@ -48,7 +61,8 @@ async function downloadViaElectronNet(url, opts = {}) {
       resp.on('end', () => {
         if (done) return;
         done = true; clearTimeout(timer);
-        resolve({ ok: true, bytes: Buffer.concat(chunks).length, buffer: Buffer.concat(chunks) });
+        const buffer = Buffer.concat(chunks);
+        resolve({ ok: true, status, contentType, bytes: buffer.length, buffer });
       });
     });
     req.on('error', (e) => { if (!done) { done = true; clearTimeout(timer); } reject(e); });
@@ -63,7 +77,7 @@ async function downloadViaHttpClient(client, url, opts = {}) {
   const r = await client.fetch(url);
   if (r.status !== 200 || !r.body.length) throw new Error('PDF HTTP ' + r.status);
   if (r.body.length > maxBytes) throw new Error('tamanho-maximo-excedido');
-  return { ok: true, bytes: r.body.length, buffer: r.body };
+  return { ok: true, status: r.status, contentType: r.headers && (r.headers['content-type'] || r.headers['Content-Type']) || '', bytes: r.body.length, buffer: r.body };
 }
 
 // P0 2.2: baixa o PDF usando a SESSÃO AUTENTICADA do navegador auxiliar via
@@ -99,7 +113,7 @@ async function downloadViaPageRequest(request, url, opts = {}) {
   if (buffer.length > maxBytes) throw new Error('tamanho-maximo-excedido');
   const isPdf = buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
   if (!isPdf) throw new Error('nao-e-pdf');
-  return { ok: true, bytes: buffer.length, buffer };
+  return { ok: true, status, contentType: ct, bytes: buffer.length, buffer };
 }
 
 // Extrai texto por página e metadados do PDF.
@@ -186,21 +200,38 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
   };
 
   let buffer = null;
+  let httpStatus = null;
+  let contentType = null;
   try {
     if (request) {
       const dl = await downloadViaPageRequest(request, url, { maxBytes, timeoutMs });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
+      httpStatus = dl.status;
+      contentType = dl.contentType;
     } else if (useElectronNet) {
       const dl = await downloadViaElectronNet(url, { maxBytes, timeoutMs });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
+      httpStatus = dl.status;
+      contentType = dl.contentType;
     } else if (client) {
       const dl = await downloadViaHttpClient(client, url, { maxBytes });
       buffer = dl.buffer;
       result.bytes = dl.bytes;
+      httpStatus = dl.status;
+      contentType = dl.contentType;
     } else {
       throw new Error('sem-metodo-download');
+    }
+
+    result.httpStatus = httpStatus;
+    result.contentType = contentType;
+    const validacao = validarRespostaPdf({ status: httpStatus, contentType, buffer });
+    if (!validacao.ok) {
+      result.error = validacao.motivo;
+      result.status = 'inaccessible';
+      return result; // antes do SHA, do arquivo e da análise — nada é gravado
     }
 
     // SHA-256 do PDF baixado (rastreabilidade; calculado só quando o download ocorreu).
@@ -233,4 +264,4 @@ async function extractPdf({ url, filePath, request, client, useElectronNet = tru
   return result;
 }
 
-module.exports = { extractPdf, analyzePdf, detectPrintedPagination, statusFor, downloadViaPageRequest };
+module.exports = { extractPdf, analyzePdf, detectPrintedPagination, statusFor, downloadViaPageRequest, validarRespostaPdf };
