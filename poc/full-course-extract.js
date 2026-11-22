@@ -15,6 +15,7 @@ const books = require('../src/extract/books');
 const markdown = require('../src/extract/markdown');
 const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
+const urlCapture = require('./lib/url-capture');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -109,7 +110,7 @@ async function clickResource(app, win, courseUrl, id, resourceUrl) {
   return null;
 }
 
-async function extractResource({ app, win, r, dir, seq, state, course, week }) {
+async function extractResource({ app, win, r, dir, seq, state, course, week, courseUrl }) {
   const cls = discovery.classifyResource(r);
   const title = cleanTitle(r.text, r.id);
   const base = path.join(dir, String(seq).padStart(2, '0') + '_' + safeName(title));
@@ -122,6 +123,19 @@ async function extractResource({ app, win, r, dir, seq, state, course, week }) {
         return { text: scope ? scope.innerText : '', title: document.title };
       }), 10000, 'page');
       const text = String(res && res.text || '');
+      // Frente 1: recurso URL — a página mod/url do AVA só contém instrução de
+      // clique. Nunca salvar esse texto como conteúdo; exigir aba de destino.
+      if (cls.subKind === 'url') {
+        const cap = urlCapture.avaliarCapturaUrl({
+          subKind: cls.subKind, origemUrl: courseUrl,
+          destinoUrl: typeof win.url === 'function' ? win.url() : '', texto: text,
+        });
+        if (cap.acao === 'sem-destino' || cap.acao === 'interface') {
+          out.status = cap.status; out.detail = cap.detail; out.chars = 0; out.file = null;
+          return out;
+        }
+        if (cap.acao === 'destino') out.detail = cap.detail;
+      }
       out.chars = text.length;
       out.status = text.length >= 100 ? 'integral' : 'partial';
       out.file = path.basename(base) + '.md';
@@ -212,7 +226,7 @@ async function extractCourse({ app, win, course, rootDir, state }) {
         if (await gotoSafe(win, link.url)) target = win;
       }
       if (!target) { results.push({ id, title: cleanTitle(link.text, id), week: sec.id, status: 'inaccessible', detail: 'clique-nao-abriu-recurso', chars: 0 }); continue; }
-      const r = await extractResource({ app, win: target, r: link, dir: weekDir, seq, state, course, week: sec.id });
+      const r = await extractResource({ app, win: target, r: link, dir: weekDir, seq, state, course, week: sec.id, courseUrl: course.url });
       r.week = sec.id;
       results.push(r);
       log(`  ${sec.id}/${r.title.slice(0, 45)} => ${r.status} chars=${r.chars} ${r.detail || ''}`);

@@ -44,6 +44,7 @@ const suites = [
   { name: 'poc/test-ocr-m3.js', out: 'OCR_RESULTS.json' },
   { name: 'poc/test-mute-media-m3.js', out: 'MUTE_MEDIA_RESULTS.json' },
   { name: 'poc/test-reconcile-m3.js', out: 'RECONCILE_RESULTS.json' },
+  { name: 'poc/test-urlcapture-m3.js', out: 'URLCAPTURE_RESULTS.json' },
   { name: 'poc/test-integrity-m3.js', out: 'INTEGRITY_RESULTS.json' },
 ];
 
