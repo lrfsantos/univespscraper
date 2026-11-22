@@ -105,6 +105,7 @@ function reconcileRoot(root) {
         resource_id: recursoId,
         course_id: code,
         course_title: tituloCurso,
+        title: r.title,
         week: r.week,
         detected_type: tipo,
         original_status: r.status,

@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-22T06:22:24.747Z",
+  "date": "2026-11-22T06:49:28.984Z",
   "summary": {
-    "total": 10,
-    "passed": 10,
+    "total": 13,
+    "passed": 13,
     "failed": 0
   },
   "results": [
@@ -41,6 +41,23 @@
       "title": "arquivo vazio = FAIL",
       "status": "PASS",
       "detail": "arquivo-vazio"
+    },
+    {
+      "id": "I6b",
+      "title": "UTF-8 inválido (1 byte só) = FAIL utf8-invalido",
+      "status": "PASS",
+      "detail": "{\"resource_id\":\"u-1\",\"existe\":true,\"vazio\":false,\"ilegivel\":true,\"estruturaOk\":true,\"sha256\":\"ceb350a09dcba7ee5b8b8d716a74879475fa074dd74f50c28be380feb10ad586\",\"bytes\":7,\"tamanhoOk\":null,\"resultado\":\"FAIL\",\"motivo\":\"utf8-invalido\"}"
+    },
+    {
+      "id": "I6c",
+      "title": "corpoExtraido remove cabeçalho e bloco Status",
+      "status": "PASS"
+    },
+    {
+      "id": "I6d",
+      "title": "corpo < chars = FAIL (cabeçalho longo não compensa)",
+      "status": "PASS",
+      "detail": "[[\"FAIL\",\"tamanho-menor-que-declarado\"],[\"FAIL\",\"tamanho-menor-que-declarado\"]]"
     },
     {
       "id": "I7",

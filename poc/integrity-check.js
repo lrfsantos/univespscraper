@@ -70,6 +70,17 @@ function selecionarAmostra(registros) {
   };
 }
 
+// Corpo extraído = Markdown sem a linha de cabeçalho "# titulo" e sem o
+// bloco "Status: ..." — mesmo critério de origem do `chars` do inventário.
+function corpoExtraido(texto) {
+  const lines = String(texto).split('\n');
+  let i = 0;
+  if (lines[i] && lines[i].startsWith('# ')) i++;
+  while (i < lines.length && lines[i].trim() === '') i++;
+  if (lines[i] && /^Status: /.test(lines[i])) { i++; while (i < lines.length && lines[i].trim() === '') i++; }
+  return lines.slice(i).join('\n');
+}
+
 function auditRoot(root) {
   const inventario = JSON.parse(fs.readFileSync(path.join(root, 'INVENTARIO.json'), 'utf8'));
   const registros = inventario.registros;
@@ -125,8 +136,10 @@ function auditRoot(root) {
     if (!hashes.has(audit.sha256)) hashes.set(audit.sha256, []);
     hashes.get(audit.sha256).push(r.resource_id);
     if (!audit.vazio && !audit.ilegivel && texto != null) {
-      // Conteúdo útil deve ser >= chars declarado (o .md inclui cabeçalho).
-      audit.tamanhoOk = texto.length >= (r.chars || 0) ? 'OK' : 'MENOR-QUE-DECLARADO';
+      // Tamanho compara o CORPO extraído (sem cabeçalho "# titulo" nem bloco
+      // "Status:"), mesma origem do chars — cabeçalho longo não compensa corpo curto.
+      const corpo = corpoExtraido(texto);
+      audit.tamanhoOk = corpo.length >= (r.chars || 0) ? 'OK' : 'MENOR-QUE-DECLARADO';
     }
     if (audit.vazio) { problemas.vazio++; audit.resultado = 'FAIL'; audit.motivo = 'arquivo-vazio'; }
     else if (audit.ilegivel) { problemas.ilegivel++; audit.resultado = 'FAIL'; audit.motivo = 'utf8-invalido'; }
@@ -182,4 +195,4 @@ if (require.main === module) {
   console.log('problemas: ' + JSON.stringify(r.problemas));
 }
 
-module.exports = { auditRoot, gerar, selecionarAmostra };
+module.exports = { auditRoot, gerar, selecionarAmostra, corpoExtraido };

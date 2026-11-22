@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { selecionarAmostra, auditRoot } = require('./integrity-check');
+const { selecionarAmostra, auditRoot, corpoExtraido } = require('./integrity-check');
 
 const OUT = path.join(__dirname, '..', 'audit-temp', 'INTEGRITY_RESULTS.json');
 const results = [];
@@ -13,7 +13,7 @@ const ok = (c) => (c ? 'PASS' : 'FAIL');
 // fixture com arquivos reais
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'integrity-fixture-'));
 const inv = { registros: [
-  { resource_id: 'ok-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 5, output_file: 'SEMANA_1/01_a.md' },
+  { resource_id: 'ok-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 3, output_file: 'SEMANA_1/01_a.md' },
   { resource_id: 'fail-1', course_id: 'C1', week: 1, reconciled_status: 'failed', chars: 0, output_file: null, reason: 'reader-auth' },
   { resource_id: 'uncl-1', course_id: 'C1', week: 2, reconciled_status: 'unclassified', chars: 0, output_file: null },
   { resource_id: 'miss-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 5, output_file: 'SEMANA_1/09_inexistente.md' },
@@ -22,7 +22,7 @@ const inv = { registros: [
 ] };
 fs.writeFileSync(path.join(tmp, 'INVENTARIO.json'), JSON.stringify(inv));
 fs.mkdirSync(path.join(tmp, 'C1', 'SEMANA_1'), { recursive: true });
-fs.writeFileSync(path.join(tmp, 'C1', 'SEMANA_1', '01_a.md'), '# ok\n');
+fs.writeFileSync(path.join(tmp, 'C1', 'SEMANA_1', '01_a.md'), '# ok\n\nconteudo\n');
 fs.writeFileSync(path.join(tmp, 'C1', 'SEMANA_1', '01_vazio.md'), '');
 fs.mkdirSync(path.join(tmp, 'C1', 'SEMANA_9'), { recursive: true });
 fs.writeFileSync(path.join(tmp, 'C1', 'SEMANA_9', '09_x.md'), '# semana errada\n');
@@ -36,7 +36,31 @@ record({ id: 'I4', title: 'arquivo esperado ausente = FAIL', status: ok(porId['m
 record({ id: 'I5', title: 'arquivo na semana errada = FAIL (estrutura participa)', status: ok(porId['week-1'].resultado === 'FAIL' && porId['week-1'].motivo === 'semana-disciplina-errada' && audit.problemas.estruturaErrada === 1), detail: porId['week-1'].motivo });
 record({ id: 'I6', title: 'arquivo vazio = FAIL', status: ok(porId['empty-1'].resultado === 'FAIL' && porId['empty-1'].motivo === 'arquivo-vazio'), detail: porId['empty-1'].motivo });
 
-// dois registros apontando para o mesmo arquivo = FAIL (arquivo compartilhado)
+// UTF-8 estrito: bytes inválidos (0xFF sozinho) = FAIL utf8-invalido
+const tmpU = fs.mkdtempSync(path.join(os.tmpdir(), 'integrity-fixture3-'));
+fs.writeFileSync(path.join(tmpU, 'INVENTARIO.json'), JSON.stringify({ registros: [
+  { resource_id: 'u-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 2, output_file: 'SEMANA_1/01_bin.md' },
+] }));
+fs.mkdirSync(path.join(tmpU, 'C1', 'SEMANA_1'), { recursive: true });
+fs.writeFileSync(path.join(tmpU, 'C1', 'SEMANA_1', '01_bin.md'), Buffer.from([0x23, 0x20, 0x74, 0x0a, 0x0a, 0xff, 0xfe]));
+const auditU = auditRoot(tmpU);
+record({ id: 'I6b', title: 'UTF-8 inválido (1 byte só) = FAIL utf8-invalido', status: ok(auditU.resultados[0].resultado === 'FAIL' && auditU.resultados[0].motivo === 'utf8-invalido' && auditU.problemas.ilegivel === 1), detail: JSON.stringify(auditU.resultados[0]) });
+
+// Tamanho: corpo (sem cabeçalho) menor que chars declarado = FAIL;
+// cabeçalho longo NÃO compensa corpo curto.
+record({ id: 'I6c', title: 'corpoExtraido remove cabeçalho e bloco Status', status: ok(corpoExtraido('# Titulo\n\ntexto aqui\n') === 'texto aqui\n' && corpoExtraido('# Titulo\n\nStatus: integral (250 chars)\n\ntexto aqui\n') === 'texto aqui\n') });
+const tmpT = fs.mkdtempSync(path.join(os.tmpdir(), 'integrity-fixture4-'));
+fs.writeFileSync(path.join(tmpT, 'INVENTARIO.json'), JSON.stringify({ registros: [
+  { resource_id: 't-1', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 500, output_file: 'SEMANA_1/01_curto.md' },
+  { resource_id: 't-2', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 500, output_file: 'SEMANA_1/02_header.md' },
+] }));
+fs.mkdirSync(path.join(tmpT, 'C1', 'SEMANA_1'), { recursive: true });
+fs.writeFileSync(path.join(tmpT, 'C1', 'SEMANA_1', '01_curto.md'), '# T\n\ncorpo curto\n');
+fs.writeFileSync(path.join(tmpT, 'C1', 'SEMANA_1', '02_header.md'), '# ' + 'x'.repeat(1000) + '\n\ncorpo curto\n');
+const auditT = auditRoot(tmpT);
+record({ id: 'I6d', title: 'corpo < chars = FAIL (cabeçalho longo não compensa)', status: ok(auditT.resultados[0].resultado === 'FAIL' && auditT.resultados[0].motivo === 'tamanho-menor-que-declarado' && auditT.resultados[1].resultado === 'FAIL' && auditT.resultados[1].motivo === 'tamanho-menor-que-declarado' && auditT.problemas.tamanhoMenorQueDeclarado === 2), detail: JSON.stringify(auditT.resultados.map((r) => [r.resultado, r.motivo])) });
+
+// amostragem: 30 integral (>=3 por disciplina), 7 partial, 12 failed, 11 unclassified
 const inv2 = { registros: [
   { resource_id: 'a', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 5, output_file: 'SEMANA_1/01_a.md' },
   { resource_id: 'b', course_id: 'C1', week: 1, reconciled_status: 'integral', chars: 5, output_file: 'SEMANA_1/01_a.md' },
