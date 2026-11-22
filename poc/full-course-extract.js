@@ -22,6 +22,7 @@ if (!USERNAME || !PASSWORD) throw new Error('variaveis de ambiente ausentes');
 const BASE = 'https://ava.univesp.br';
 const ROOT = process.env.UNIVESP_OUT || path.join(os.homedir(), 'Desktop', 'univesp');
 const IDS = process.argv.slice(2).map(Number).filter(Number.isFinite);
+const RUN_ID = 'run-' + new Date().toISOString().replace(/[:.]/g, '-');
 
 function log(line) { console.log(`[${new Date().toISOString()}] ${line}`); }
 function safeName(s) { return String(s || 'recurso').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 90); }
@@ -222,7 +223,7 @@ async function extractCourse({ app, win, course, rootDir, state }) {
   const total = results.length;
   const groups = reconcile.countGroups(results);
   const quality = { disciplina: code, total, groups, status: groups.integral === total ? 'PASS' : 'REVIEW' };
-  fs.writeFileSync(path.join(dir, 'RECORDS.json'), JSON.stringify({ disciplina: code, titulo: course.title, cursoId: course.id, registros: results }, null, 2));
+  fs.writeFileSync(path.join(dir, 'RECORDS.json'), JSON.stringify({ runId: RUN_ID, disciplina: code, titulo: course.title, cursoId: course.id, registros: results }, null, 2));
   fs.writeFileSync(path.join(dir, 'QUALITY.md'), ['# Qualidade da extração', '', `- Disciplina: ${course.title} (${code})`, `- Recursos: ${total}`, `- Integral: ${groups.integral}`, `- Partial: ${groups.partial}`, `- Sem texto: ${groups.no_text}`, `- Falhas: ${groups.failed}`, `- Sem classificação: ${groups.unclassified}`, `- Resultado: ${quality.status}`, '', '## Detalhes', ...results.map((r) => `- S${r.week} ${r.title}: ${r.status} (${r.chars} chars)${r.detail ? ' — ' + r.detail : ''}`)].join('\n'));
   log(`FIM disciplina=${code} total=${total} ${JSON.stringify(groups)}`);
   return quality;
@@ -249,7 +250,7 @@ async function extractCourse({ app, win, course, rootDir, state }) {
     for (const c of targets) summary.push(await extractCourse({ app, win, course: c, rootDir: ROOT, state }));
     learning.save(learningFile, state);
     fs.writeFileSync(path.join(ROOT, 'ERROS_LEITURA.md'), learning.renderMarkdown(state));
-    fs.writeFileSync(path.join(ROOT, 'RESUMO_GERAL.md'), ['# Resumo das extrações', '', ...summary.map((s) => `- ${s.disciplina}: ${s.integrais}/${s.total} integrais, ${s.semTexto} sem texto — ${s.status}`)].join('\n'));
+    fs.writeFileSync(path.join(ROOT, 'RESUMO_GERAL.md'), ['# Resumo das extrações', '', ...summary.map((s) => { const g = s.groups || {}; return `- ${s.disciplina}: ${g.integral ?? '?'}/${s.total} integrais, ${g.partial ?? '?'} partial, ${g.failed ?? '?'} falhas, ${g.unclassified ?? '?'} sem classificação — ${s.status}`; })].join('\n'));
     log('CONCLUIDO=' + JSON.stringify(summary));
   } finally { await app.close().catch(() => {}); }
 })().catch((e) => { console.error('FATAL', String(e && e.message || e)); process.exit(1); });

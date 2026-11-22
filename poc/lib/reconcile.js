@@ -28,18 +28,19 @@ function countGroups(records) {
 }
 
 // Parser das linhas "## Detalhes" do QUALITY.md (execuções históricas).
-// Formato: `- S7 Titulo: status (N chars) — detalhe`
+// Formato: `- S7 Titulo: status (N chars) — detalhe`. Retorna também o número
+// da linha (1-based) para rastreabilidade da evidência.
 function parseQualityDetails(mdText) {
   const out = [];
   const lines = String(mdText || '').split(/\r?\n/);
   let inDetails = false;
-  for (const line of lines) {
-    if (/^## Detalhes/.test(line)) { inDetails = true; continue; }
-    if (inDetails && /^## /.test(line)) break;
-    if (!inDetails) continue;
+  lines.forEach((line, idx) => {
+    if (/^## Detalhes/.test(line)) { inDetails = true; return; }
+    if (inDetails && /^## /.test(line)) inDetails = false;
+    if (!inDetails) return;
     const m = line.match(/^- S(\d+) (.*): (\w+) \((\d+) chars\)(?:\s+[—-]\s+(.*))?$/);
-    if (m) out.push({ week: Number(m[1]), title: m[2].trim(), status: m[3], chars: Number(m[4]), detail: (m[5] || '').trim() || null });
-  }
+    if (m) out.push({ week: Number(m[1]), title: m[2].trim(), status: m[3], chars: Number(m[4]), detail: (m[5] || '').trim() || null, __line: idx + 1 });
+  });
   return out;
 }
 

@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-22T05:09:24.070Z",
+  "date": "2026-11-22T05:26:39.778Z",
   "summary": {
-    "total": 13,
-    "passed": 13,
+    "total": 21,
+    "passed": 21,
     "failed": 0
   },
   "results": [
@@ -55,7 +55,7 @@
     },
     {
       "id": "R10",
-      "title": "sem duplicação: cada registro em 1 grupo",
+      "title": "sem duplicação: cada registro em exatamente 1 grupo",
       "status": "PASS"
     },
     {
@@ -72,6 +72,52 @@
       "id": "R13",
       "title": "csv escapa separador e aspas",
       "status": "PASS"
+    },
+    {
+      "id": "R14",
+      "title": "integracao: 468 registros a partir das 10 disciplinas",
+      "status": "PASS",
+      "detail": "468"
+    },
+    {
+      "id": "R15",
+      "title": "integracao: soma dos grupos fecha 468",
+      "status": "PASS",
+      "detail": "{\"total\":468,\"integral\":329,\"partial\":7,\"no_text\":0,\"failed\":98,\"unclassified\":34}"
+    },
+    {
+      "id": "R16",
+      "title": "integracao: historico preservado byte a byte",
+      "status": "PASS"
+    },
+    {
+      "id": "R17",
+      "title": "integracao: evidencia aponta linha do QUALITY (formato historico)",
+      "status": "PASS",
+      "detail": "ADM210\\QUALITY.md#L10"
+    },
+    {
+      "id": "R18",
+      "title": "integracao: 3 relatorios gerados",
+      "status": "PASS"
+    },
+    {
+      "id": "R19",
+      "title": "integracao: divergencias/duplicatas=0 no fixture fiel",
+      "status": "PASS",
+      "detail": "{\"duplicatas\":[],\"arquivosAusentes\":[{\"disciplina\":\"ADM210\",\"semana\":2,\"titulo\":\"S2 - Recurso 1 ADM210\",\"declarado\":null"
+    },
+    {
+      "id": "R20",
+      "title": "integracao: header divergente é sinalizado",
+      "status": "PASS",
+      "detail": "[\"DIV\"]"
+    },
+    {
+      "id": "R21",
+      "title": "integracao: duplicata sinalizada sem deduplicar",
+      "status": "PASS",
+      "detail": "[{\"disciplina\":\"DUP\",\"semana\":1,\"titulo\":\"Mesmo titulo\"}]"
     }
   ]
 }
