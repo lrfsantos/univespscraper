@@ -47,6 +47,7 @@ const suites = [
   { name: 'poc/test-urlcapture-m3.js', out: 'URLCAPTURE_RESULTS.json' },
   { name: 'poc/test-urlflow-m3.js', out: 'URLFLOW_RESULTS.json' },
   { name: 'poc/test-pdf-guard-m3.js', out: 'PDFGUARD_RESULTS.json' },
+  { name: 'poc/test-coverage-m3.js', out: 'COVERAGE_RESULTS.json' },
   { name: 'poc/test-integrity-m3.js', out: 'INTEGRITY_RESULTS.json' },
 ];
 

@@ -17,6 +17,7 @@ const learning = require('./lib/reader-learning');
 const reconcile = require('./lib/reconcile');
 const urlCapture = require('./lib/url-capture');
 const { seguirDestinoUrl, aguardarPopupFinal } = require('./lib/url-navigation');
+const cobertura = require('./lib/coverage-check');
 
 const USERNAME = process.env.UNIVESP_USERNAME;
 const PASSWORD = process.env.UNIVESP_PASSWORD;
@@ -159,6 +160,17 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       out.chars = text.length;
       out.status = (res && res.status) || 'partial';
       out.detail = `paginas=${(res && res.pages ? res.pages.length : 0)}/${(res && res.totalPagesArquivo) || '?'}`;
+      // Frente 3: capa sem corpo ou intervalo impresso incompleto => partial
+      // explícito; nunca promover a integral por causa de cabeçalho.
+      if (res && res.status !== 'inaccessible') {
+        const detectadas = ((res.printedPagination && res.printedPagination.detected) || []).filter((n) => Number.isInteger(n));
+        const ultima = detectadas.length ? detectadas[detectadas.length - 1] : null;
+        const aval = cobertura.avaliarCobertura({
+          texto: text, titulo: title, ultimaPaginaImpressa: ultima,
+          fimCalibrado: cobertura.fimCalibradoParaTitulo(title),
+        });
+        if (aval.status) { out.status = aval.status; out.detail += ' ' + aval.detail; }
+      }
       out.file = path.basename(base) + '.md';
       fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
       try { fs.rmSync(tmp, { force: true }); } catch {}
