@@ -12,12 +12,12 @@ function processarResultadoPdf(res, { title, courseId } = {}) {
     const ultimaFisica = detectadas.length ? detectadas[detectadas.length - 1] : null;
     const ultima = Number.isInteger(ultimaFisica) ? ultimaFisica : null;
     const contexto = { courseId };
-    const avaliar = (t) => cobertura.avaliarCobertura({
+    const avaliar = (t, ignorarCapa) => cobertura.avaliarCobertura({
       texto: t, titulo: title, ultimaPaginaImpressa: ultima,
-      textoCapa: paginas.length ? paginas[0].text : t,
+      textoCapa: ignorarCapa ? '' : (paginas.length ? paginas[0].text : t),
       fimCalibrado: cobertura.fimCalibradoParaTitulo(title, contexto),
     });
-    const aval0 = avaliar(texto);
+    const aval0 = avaliar(texto, false);
     if (aval0.acao === 'so-capa' && paginas.length > 1) {
       const avanco = cobertura.avancarAteConteudo(paginas.slice(1));
       if (avanco.indice >= 0) {
@@ -26,10 +26,11 @@ function processarResultadoPdf(res, { title, courseId } = {}) {
         detail += ` avanco-pagina-${avanco.indice + 2}`;
       } else detail += ' avanco-sem-conteudo';
     }
-    const aval = avaliar(texto);
+    const aval = avaliar(texto, true); // capa já tratada: avalia apenas o intervalo
     if (aval.status) { status = aval.status; detail += ' ' + aval.detail; }
   }
-  return { texto, status, detail, chars: texto.length };
+  const gravarArquivo = status !== 'inaccessible';
+  return { texto, status, detail, chars: texto.length, gravarArquivo };
 }
 
 module.exports = { processarResultadoPdf };

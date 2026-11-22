@@ -45,8 +45,17 @@ record({ id: 'PF4', title: 'CIN200 calibrado 248 com ultima fisica 248: sem flag
   !/intervalo-incompleto/.test(r4.detail) && !/avanco/.test(r4.detail)) });
 
 const r5 = processarResultadoPdf({ status: 'inaccessible', pages: [], error: 'HTTP 404' }, { title: 'Manual de Oslo', courseId: 'ADM270' });
-record({ id: 'PF5', title: 'resposta inacessivel nao gera conteudo', status: ok(
-  r5.status === 'inaccessible' && r5.chars === 0 && r5.texto === '') });
+record({ id: 'PF5', title: 'resposta inacessivel nao gera arquivo (gravarArquivo=false)', status: ok(
+  r5.status === 'inaccessible' && r5.chars === 0 && r5.texto === '' && r5.gravarArquivo === false) });
+
+const r6 = processarResultadoPdf({
+  status: 'integral', totalPagesArquivo: 3,
+  pages: [pag(CAPA), pag(CAPITULO), pag(CAPITULO + ' fim 248')],
+  printedPagination: { detected: [null, 217, 248], reliable: 'partial' },
+}, { title: 'CIN200 Fundamentos de Gestão de Projetos p. 217-250', courseId: 'CIN200' });
+record({ id: 'PF6', title: 'capa + intervalo declarado + ultima fisica 248: capa descartada e intervalo avaliado como coberto', status: ok(
+  r6.texto.indexOf(CAPA) < 0 && r6.texto.indexOf(CAPITULO) >= 0 &&
+  /avanco-pagina-2/.test(r6.detail) && !/so-capa/.test(r6.detail) && !/intervalo-incompleto/.test(r6.detail)) });
 
 const fails = results.filter((r) => r.status !== 'PASS').length;
 fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));

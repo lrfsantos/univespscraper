@@ -160,8 +160,8 @@ async function extractResource({ app, win, r, dir, seq, state, course, week, cou
       out.chars = resultadoPdf.chars;
       out.status = resultadoPdf.status;
       out.detail = resultadoPdf.detail;
-      out.file = path.basename(base) + '.md';
-      fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
+      out.file = resultadoPdf.gravarArquivo ? path.basename(base) + '.md' : null;
+      if (resultadoPdf.gravarArquivo) fs.writeFileSync(base + '.md', `# ${title}\n\nStatus: ${out.status} (${out.detail})\n\n${text}\n`);
       try { fs.rmSync(tmp, { force: true }); } catch {}
     } else if (cls.kind === 'video') {
       const res = await withTimeout(videos.extractVideo({ url: r.url, title, fetchFn: globalThis.fetch, timeoutMs: 10000 }), 15000, 'video');

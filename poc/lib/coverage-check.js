@@ -58,21 +58,23 @@ function intervaloDeclarado(titulo) {
 // Quando o título declara intervalo mas a fonte foi calibrada localmente para
 // outro fim (ex.: CIN200 impresso até 248), fimCalibrado tem precedência.
 function avaliarCobertura({ texto, titulo, ultimaPaginaImpressa, fimCalibrado, textoCapa } = {}) {
-  if (ehSomenteCapa(textoCapa != null ? textoCapa : texto)) {
-    return { acao: 'so-capa', status: 'partial', detail: 'somente-folha-de-titulo', requerAvanco: true };
-  }
+  const capa = ehSomenteCapa(textoCapa != null ? textoCapa : texto);
   const faixa = intervaloDeclarado(titulo);
   const fim = Number.isInteger(fimCalibrado) ? fimCalibrado : (faixa ? faixa.fim : null);
+  let intervalo;
   if (fim == null) {
-    return { acao: 'sem-intervalo', status: null, detail: null, requerAvanco: false };
+    intervalo = { acao: 'sem-intervalo', status: null, detail: null, requerAvanco: false };
+  } else if (!Number.isInteger(ultimaPaginaImpressa)) {
+    intervalo = { acao: 'inconclusivo', status: 'partial', detail: 'ultima-pagina-impressa-desconhecida', requerAvanco: false };
+  } else if (ultimaPaginaImpressa >= fim) {
+    intervalo = { acao: 'coberto', status: null, detail: null, requerAvanco: false };
+  } else {
+    intervalo = { acao: 'incompleto', status: 'partial', detail: `intervalo-incompleto:ultima=${ultimaPaginaImpressa}/esperado=${fim}`, requerAvanco: true };
   }
-  if (!Number.isInteger(ultimaPaginaImpressa)) {
-    return { acao: 'inconclusivo', status: 'partial', detail: 'ultima-pagina-impressa-desconhecida', requerAvanco: false };
+  if (capa) {
+    return { acao: 'so-capa', status: 'partial', detail: intervalo.detail || 'somente-folha-de-titulo', requerAvanco: true, intervalo: intervalo.acao };
   }
-  if (ultimaPaginaImpressa >= fim) {
-    return { acao: 'coberto', status: null, detail: null, requerAvanco: false };
-  }
-  return { acao: 'incompleto', status: 'partial', detail: `intervalo-incompleto:ultima=${ultimaPaginaImpressa}/esperado=${fim}`, requerAvanco: true };
+  return Object.assign({ capa: false }, intervalo);
 }
 
 module.exports = { ehSomenteCapa, intervaloDeclarado, avaliarCobertura, fimCalibradoParaTitulo, avancarAteConteudo };
