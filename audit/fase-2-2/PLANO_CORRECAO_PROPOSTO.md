@@ -1,6 +1,6 @@
 # Plano de correção proposto — Fase 3 (PROPOSTA, NÃO IMPLEMENTADA)
 
-Este documento apenas converte os achados aprovados da Fase 2.2 em hipóteses de causa e critérios de aceite. **Nenhuma linha do extrator foi alterada.** A execução depende de: (a) autorização explícita do auditor para a etapa; (b) decisão humana sobre a credencial histórica exposta.
+Este documento apenas converte os achados aprovados da Fase 2.2 em hipóteses de causa e critérios de aceite. **Nenhuma linha do extrator foi alterada.** A implementação depende de: (a) autorização explícita do auditor para a etapa; (b) confirmação humana da rotação da credencial histórica (o auditor não autorizou a frente 1 antes disso).
 
 Referência: `DIAGNOSTICO_FALHAS.json` / `DIAGNOSTICO_FALHAS.md` (commit `8a6084c`).
 
@@ -17,8 +17,9 @@ Referência: `DIAGNOSTICO_FALHAS.json` / `DIAGNOSTICO_FALHAS.md` (commit `8a6084
 ### 1. Captura de interface — 4 casos comprovados (D18491, recursos URL)
 - **Evidência:** arquivos com 67–78 chars, todos `"Clique em <título> para abrir o recurso."`; o clique abre YouTube e livros no minhabiblioteca.
 - **Hipótese:** o extrator leu a página do AVA (`mod/url/view.php`) em vez da aba de destino aberta pelo clique, ou capturou o texto antes da navegação.
-- **Correção candidata:** após o clique, aguardar e selecionar explicitamente a aba/documento de destino; ler o escopo do destino. Se o destino não tiver texto consultável (vídeo/leitor), gravar status honesto de "sem texto consultável" — nunca texto de interface.
-- **Aceite:** os 4 recursos reprocessados não contêm mais "Clique em ..."; cada um resulta em conteúdo do destino ou falha explícita com motivo; teste de regressão com fixture de página AVA + destino.
+- **Correção candidata:** após o clique, aguardar e selecionar explicitamente a aba/documento de destino; ler o escopo do destino. Distinguir três coisas: página de origem (AVA), aba de destino e conteúdo efetivamente consultável. Se o destino não tiver texto consultável, preservar o **motivo real** (vídeo sem transcrição, leitor bloqueado, ausência confirmada de texto) — "sem texto consultável" **não** vira automaticamente `no_text`. Nunca gravar texto de interface.
+- **Aceite:** os 4 recursos não contêm mais "Clique em ..."; os testes provam que o conteúdo veio da aba de destino correta, não de aba aberta anteriormente, da página original do AVA ou de página intermediária; cobertura de: página de origem, nova aba, destino sem texto consultável e navegação que não se completa. Cada caso resulta em conteúdo do destino ou falha explícita com motivo honesto.
+- **Validação em duas etapas:** testes com fixture e registro de navegação são necessários, mas não provam sozinhos o comportamento real do navegador. A implementação e os testes podem ser feitos sem AVA; a validação real dos 4 recursos fica como **etapa separada**, dependente de autorização específica de acesso.
 
 ### 2. Fonte errada — 1 caso comprovado (ADM270, Manual de Oslo)
 - **Evidência:** arquivo com `"404 / Página não encontrada / Ir para Home"` (38 chars); clique abre PDF válido (`HTTP 200`, `application/pdf`, 763338 bytes, `%PDF-1.2`).
@@ -28,14 +29,14 @@ Referência: `DIAGNOSTICO_FALHAS.json` / `DIAGNOSTICO_FALHAS.md` (commit `8a6084
 
 ### 3. Cobertura incompleta — 2 casos
 - **Evidência:** ADM210 só a página de título (121 chars); CIN200 capítulo 217–250 correto, sem verificação página a página.
-- **Hipótese:** seleção de página inicial/paginação do leitor bvirtual não percorre o intervalo solicitado.
-- **Correção candidata:** detectar que o texto capturado é capa/índice e avançar até a primeira página de conteúdo; para intervalos declarados no título, conferir pageid final.
+- **Hipótese:** seleção de página inicial/paginação do leitor bvirtual não percorre o intervalo solicitado. Uma capa ou página de título **não** é erro por si só: a validação precisa considerar o intervalo pedido no título do recurso.
+- **Correção candidata:** quando o intervalo for conhecido, detectar capa/índice e avançar até a primeira página do intervalo; conferir o pageid final; quando não houver intervalo explícito, não presumir erro.
 - **Aceite:** os 2 recursos passam a cobrir o intervalo pedido ou permanecem `partial` com página inicial/final registradas; fixture de capa + capítulo.
 
 ### 4. Erro de navegação — 5 casos (bvirtual, publicação 3789)
 - **Evidência:** clique para na tela "Escolha o formato desejado" com os pageids corretos (22, 134, 199, 217, 107); histórico marcou `failed` / `bvpdf`.
 - **Hipótese:** o adaptador não dá o passo seguinte (escolher PDF/EPUB) após o LTI.
-- **Correção candidata:** detectar a tela de escolha e clicar em "Ler em PDF"; só então extrair; se aparecer prompt beta, escolher o leitor clássico.
+- **Correção candidata:** detectar a tela de escolha e clicar em "Ler em PDF" **somente quando essa tela aparecer**; se houver prompt beta, escolher o leitor clássico de forma condicional — nunca uma sequência fixa aplicada a qualquer livro.
 - **Aceite:** os 5 recursos chegam ao leitor de PDF; teste com HTML da tela de escolha.
 
 ### 5. Seleção de leitor / autorização — 14 casos (hipótese; 2 confirmados sem autorização)
@@ -44,8 +45,8 @@ Referência: `DIAGNOSTICO_FALHAS.json` / `DIAGNOSTICO_FALHAS.md` (commit `8a6084
 - **Correção candidata:** normalizar a detecção de domínio/formatos e registrar motivo distinto para "sem autorização" vs "domínio desconhecido". Não tentar burlar autorização.
 - **Aceite:** 2 casos sem autorização permanecem `failed` com motivo preciso; demais leitores ou extraem texto ou falham com motivo auditável.
 
-### 6. Lacuna de metadados de tipo — sem ação pendente
-O novo `RECORDS.json` já grava `kind`; o histórico não preservou essa informação e não deve ser reconstruído por inferência.
+### Encerramento de diagnóstico (sem frente de implementação) — metadados de tipo
+O novo `RECORDS.json` já grava `kind`; o histórico não preservou essa informação e não deve ser reconstruído por inferência. Não é uma frente de correção.
 
 ## Fora de escopo
 
