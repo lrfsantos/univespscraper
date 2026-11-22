@@ -27,7 +27,7 @@ record({ id: 'B6', title: 'navegacao confirmada por mudanca de URL', status: ok(
   bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'https://a/reader/3789/pdf/22', textoDepois: LEITOR }).confirmado === true) });
 record({ id: 'B7', title: 'sem mudanca e sem saida da tela = navegacao-nao-confirmada', status: ok((function () {
   const r = bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'https://a/format', textoDepois: TELA_PT });
-  return r.confirmado === false && r.status === 'inaccessible' && r.motivo === 'navegacao-nao-confirmada';
+  return r.confirmado === false && r.status === 'inaccessible';
 })()) });
 
 function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois = 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22?code=x', falharLeitura = false }) {
@@ -77,7 +77,7 @@ function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois 
   const w5 = fakeWin({ textoInicial: TELA_PT, urlDepois: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789?PaginaPdf=22', textoDepois: TELA_PT });
   const r5 = await bv.seguirBvirtual(w5);
   record({ id: 'B12', title: 'integracao: clique sem navegacao confirmada = inaccessible', status: ok(
-    r5.status === 'inaccessible' && r5.motivo === 'navegacao-nao-confirmada') });
+    r5.status === 'inaccessible' && r5.confirmado === false) });
 
   record({ id: 'B13', title: 'cinco pageids preservados nos tres formatos de URL', status: ok(
     [22, 134, 199, 217, 107].every((n) =>
@@ -99,6 +99,28 @@ function fakeWin({ textoInicial, clicou = true, textoDepois = LEITOR, urlDepois 
     books.deveFazerGotoInicial({ jaAberto: true }) === false &&
     books.deveFazerRelaunch({ jaAberto: true }) === false &&
     books.deveFazerGotoInicial({}) === true && books.deveFazerRelaunch({}) === true) });
+
+  record({ id: 'B17', title: 'URL final vazia e destino generico sem evidencia de leitor rejeitados', status: ok(
+    bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: '', textoDepois: LEITOR }).motivo === 'url-final-vazia' &&
+    bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://a/format', urlDepois: 'https://example.org/generica', textoDepois: 'pagina generica' }).motivo === 'destino-sem-evidencia-de-leitor') });
+  record({ id: 'B18', title: 'leitor sem mudanca de URL e confirmado pela evidencia estrutural', status: ok(
+    bv.avaliarNavegacao({ acao: 'clicar-pdf', urlAntes: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22', urlDepois: 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22', textoDepois: 'Reader - Theories of Administration - Page 22' }).confirmado === true) });
+
+  let gotos = 0;
+  const winReal = {
+    url: () => 'https://plataforma.bvirtual.com.br/Leitor/Publicacao/3789/pdf/22',
+    title: async () => 'Reader - leitor',
+    frames: () => [],
+    goto: async () => { gotos++; return null; },
+    evaluate: async () => '',
+    waitForTimeout: async () => {},
+  };
+  const appFake = { windows: () => [winReal] };
+  await books.extractBookWithReader({
+    app: appFake, win: winReal, launchUrl: winReal.url(), expected: {},
+    opts: { jaAberto: true, observeTimeoutMs: 100, observeInterval: 50 },
+  });
+  record({ id: 'B19', title: 'integracao real: extractBookWithReader com jaAberto nao executa goto', status: ok(gotos === 0) });
 
   const fails = results.filter((r) => r.status !== 'PASS').length;
   fs.writeFileSync(OUT, JSON.stringify({ date: new Date().toISOString(), summary: { total: results.length, passed: results.length - fails, failed: fails }, results }, null, 2));

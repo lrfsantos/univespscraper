@@ -2510,6 +2510,7 @@ async function tryPearsonAutomation({ app, win, expected = {}, opts = {} }) {
 
 module.exports = {
   extractBook,
+  extractBookWithReader,
   deveFazerGotoInicial,
   deveFazerRelaunch,
   closeWindowsOpenedSince,

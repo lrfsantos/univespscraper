@@ -3,6 +3,8 @@
 // Nunca executa sequência fixa nem transforma tela/prompt em conteúdo.
 const { classificarPagina } = require('./url-capture');
 const ERRO_RE = /404\b|página não encontrada|page not found|acesso negado|forbidden|unauthorized|not authorized|login|erro ao carregar/i;
+// Evidência POSITIVA de que o destino é o leitor, não apenas "alguma URL externa".
+const EVIDENCIA_LEITOR_RE = /leitor\s*-|reader\s*-|biblioteca virtual|minha biblioteca|vitalsource|jigsaw|pageid\/\d+|\/pdf\/\d+|reader\/books\//i;
 const TELA_ESCOLHA_RE = /escolha (o )?formato desejado|choose your desired format|ler em epub|read in epub/i;
 const PROMPT_BETA_RE = /novo leitor pdf\s*beta|reader.*beta|try now.*beta|continue in current reader|continue no leitor atual/i;
 const PAGEID_RE = /(?:[?&](?:PaginaPdf|Pageid)=|\/pageid\/|\/pdf\/)(\d+)/i;
@@ -26,13 +28,16 @@ function decidirAcao({ texto, urlAntes, urlDepois } = {}) {
 function avaliarNavegacao({ acao, urlAntes, urlDepois, textoDepois, leituraOk = true } = {}) {
   if (!acao || acao === 'nenhuma') return { confirmado: false, status: null, motivo: 'nenhuma-acao' };
   if (!leituraOk) return { confirmado: false, status: 'inaccessible', motivo: 'leitura-dom-falhou' };
+  if (!urlDepois) return { confirmado: false, status: 'inaccessible', motivo: 'url-final-vazia' };
   const classe = classificarPagina(urlDepois);
-  if (classe === 'invalida' || ERRO_RE.test(String(textoDepois || ''))) {
+  if (classe === 'invalida' || classe === 'sem-url' || ERRO_RE.test(String(textoDepois || ''))) {
     return { confirmado: false, status: 'inaccessible', motivo: 'pagina-de-erro-ou-autenticacao' };
   }
   if (classe === 'intermediaria' || classe === 'origem') {
     return { confirmado: false, status: 'inaccessible', motivo: 'destino-intermediario' };
   }
+  const evidenciaLeitor = EVIDENCIA_LEITOR_RE.test(String(urlDepois || '')) || EVIDENCIA_LEITOR_RE.test(String(textoDepois || ''));
+  if (!evidenciaLeitor) return { confirmado: false, status: 'inaccessible', motivo: 'destino-sem-evidencia-de-leitor' };
   const mudouUrl = !!urlDepois && urlDepois !== urlAntes;
   const saiuDaTela = !detectarTelaEscolhaFormato(textoDepois) && !detectarPromptBeta(textoDepois);
   if (!mudouUrl && !saiuDaTela) return { confirmado: false, status: 'inaccessible', motivo: 'navegacao-nao-confirmada' };
