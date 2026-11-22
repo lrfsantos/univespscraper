@@ -37,6 +37,7 @@ Histórico preservado: os QUALITY.md originais não foram alterados.
 
 ## Problemas detectados
 
+- IDs de recurso duplicados (colisão de identificador): 0
 - Duplicatas (mesma disciplina+semana+titulo, sem deduplicação automática): 0
 - Arquivos de saída ausentes: 0
 - Divergências de contadores antigos x reconciliados: 0

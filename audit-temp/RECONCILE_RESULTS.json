@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-22T05:26:39.778Z",
+  "date": "2026-11-22T05:46:06.510Z",
   "summary": {
-    "total": 21,
-    "passed": 21,
+    "total": 23,
+    "passed": 23,
     "failed": 0
   },
   "results": [
@@ -105,7 +105,18 @@
       "id": "R19",
       "title": "integracao: divergencias/duplicatas=0 no fixture fiel",
       "status": "PASS",
-      "detail": "{\"duplicatas\":[],\"arquivosAusentes\":[{\"disciplina\":\"ADM210\",\"semana\":2,\"titulo\":\"S2 - Recurso 1 ADM210\",\"declarado\":null"
+      "detail": "{\"duplicatas\":[],\"idsDuplicados\":[],\"arquivosAusentes\":[{\"disciplina\":\"ADM210\",\"semana\":2,\"titulo\":\"S2 - Recurso 1 ADM21"
+    },
+    {
+      "id": "R19b",
+      "title": "integracao: sem colisao de resource_id",
+      "status": "PASS",
+      "detail": "[]"
+    },
+    {
+      "id": "R19c",
+      "title": "integracao: formato novo coberto (RECORDS.json, runId, kind)",
+      "status": "PASS"
     },
     {
       "id": "R20",

@@ -53,7 +53,8 @@ const DISTRIBUICAO = [ // [code, total, integral, partialComConteudo, falhaExpli
   ['ADM230', 45, 29, 0, 8, 8, 'historico'], ['ADM270', 57, 29, 1, 23, 4, 'historico'],
   ['ADM290', 35, 33, 0, 2, 0, 'historico'], ['CIN200', 38, 27, 1, 8, 2, 'historico'],
   ['D18491', 51, 40, 4, 7, 0, 'historico'], ['D18539', 47, 37, 0, 5, 5, 'historico'],
-  ['D18554', 45, 41, 0, 4, 0, 'historico'], ['SOC200', 43, 28, 0, 15, 0, 'historico'],
+  ['D18554', 45, 41, 0, 4, 0, 'historico'],
+  ['SOC200', 43, 28, 0, 15, 0, 'novo'], // formato NOVO: RECORDS.json com runId e kind
 ];
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reconcile-fixture-'));
 for (const [code, total, integral, partialC, failed, unclass, formato] of DISTRIBUICAO) {
@@ -64,20 +65,31 @@ for (const [code, total, integral, partialC, failed, unclass, formato] of DISTRI
   const mk = (week, status, chars, detail) => { n++; const t = `S${week} - Recurso ${n} ${code}`; detalhes.push(`- S${week} ${t}: ${status} (${chars} chars)${detail ? ' — ' + detail : ''}`); return t; };
   const registros = [];
   let week = 1;
+  const kinds = ['page', 'pdf', 'video', 'book'];
   const add = (count, fn) => { for (let i = 0; i < count; i++) { if (n % 7 === 0) week++; fn(week); } };
-  add(integral, (w) => { const t = mk(w, 'integral', 250, null); registros.push({ title: t, week: w, status: 'integral', chars: 250 }); });
-  add(partialC, (w) => { const t = mk(w, 'partial', 121, 'formato=pdf status=partial falha=-'); registros.push({ title: t, week: w, status: 'partial', chars: 121, detail: 'formato=pdf status=partial falha=-' }); });
-  add(failed, (w) => { const t = mk(w, 'inaccessible', 0, 'reader-selection-required'); registros.push({ title: t, week: w, status: 'inaccessible', chars: 0, detail: 'reader-selection-required' }); });
-  add(unclass, (w) => { const t = mk(w, 'partial', 0, null); registros.push({ title: t, week: w, status: 'partial', chars: 0, detail: null }); });
+  add(integral, (w) => { const t = mk(w, 'integral', 250, null); registros.push({ id: 1000 + n, title: t, week: w, kind: kinds[n % 4], status: 'integral', chars: 250, file: `0${(n % 9) + 1}_arquivo-${code}-${n}.md` }); });
+  add(partialC, (w) => { const t = mk(w, 'partial', 121, 'formato=pdf status=partial falha=-'); registros.push({ id: 1000 + n, title: t, week: w, kind: 'book', status: 'partial', chars: 121, detail: 'formato=pdf status=partial falha=-' }); });
+  add(failed, (w) => { const t = mk(w, 'inaccessible', 0, 'reader-selection-required'); registros.push({ id: 1000 + n, title: t, week: w, kind: 'book', status: 'inaccessible', chars: 0, detail: 'reader-selection-required' }); });
+  add(unclass, (w) => { const t = mk(w, 'partial', 0, null); registros.push({ id: 1000 + n, title: t, week: w, kind: 'page', status: 'partial', chars: 0, detail: null }); });
   const header = formato === 'novo'
     ? ['- Recursos: ' + total, `- Integral: ${integral}`, '- Partial: ' + partialC, '- Sem texto: 0', '- Falhas: ' + failed, '- Sem classificação: ' + unclass]
     : ['- Recursos: ' + total, `- Integrais: ${integral}`, `- Sem texto: ${failed + unclass}`];
   fs.writeFileSync(path.join(dir, 'QUALITY.md'), ['# Qualidade da extração', '', `- Disciplina: Titulo ${code} (${code})`, ...header, '- Resultado: REVIEW', '', '## Detalhes', ...detalhes].join('\n'));
-  if (formato === 'novo') fs.writeFileSync(path.join(dir, 'RECORDS.json'), JSON.stringify({ runId: 'run-fixture', disciplina: code, registros }, null, 2));
-  // cria arquivo de saída da primeira semana (integral tem arquivo; unclassified não)
-  const sem1 = path.join(dir, 'SEMANA_1');
-  fs.mkdirSync(sem1, { recursive: true });
-  detalhes.slice(0, 3).forEach((_, i) => fs.writeFileSync(path.join(sem1, `0${i + 1}_arquivo-${code}-${i}.md`), '# x\n'));
+  if (formato === 'novo') {
+    fs.writeFileSync(path.join(dir, 'RECORDS.json'), JSON.stringify({ runId: 'run-fixture-' + code, disciplina: code, registros }, null, 2));
+    // cria os arquivos de saída declarados (alguns em semanas posteriores)
+    for (const rec of registros) {
+      if (!rec.file) continue;
+      const semDir = path.join(dir, 'SEMANA_' + rec.week);
+      fs.mkdirSync(semDir, { recursive: true });
+      fs.writeFileSync(path.join(semDir, rec.file), '# conteudo\n');
+    }
+  } else {
+    // histórico: arquivo da primeira semana (integral tem arquivo; unclassified não)
+    const sem1 = path.join(dir, 'SEMANA_1');
+    fs.mkdirSync(sem1, { recursive: true });
+    detalhes.slice(0, 3).forEach((_, i) => fs.writeFileSync(path.join(sem1, `0${i + 1}_arquivo-${code}-${i}.md`), '# x\n'));
+  }
 }
 
 const antes = fs.readFileSync(path.join(tmpRoot, 'ADM210', 'QUALITY.md'), 'utf8');
@@ -91,6 +103,8 @@ record({ id: 'R16', title: 'integracao: historico preservado byte a byte', statu
 record({ id: 'R17', title: 'integracao: evidencia aponta linha do QUALITY (formato historico)', status: ok(/QUALITY\.md#L\d+/.test(r.registros[0].evidence_reference) && /histórico/.test(r.registros[0].source_kind)), detail: r.registros[0].evidence_reference });
 record({ id: 'R18', title: 'integracao: 3 relatorios gerados', status: ok(fs.existsSync(path.join(tmpRoot, 'INVENTARIO.json')) && fs.existsSync(path.join(tmpRoot, 'INVENTARIO.csv')) && fs.existsSync(path.join(tmpRoot, 'RESUMO_RECONCILIACAO.md'))) });
 record({ id: 'R19', title: 'integracao: divergencias/duplicatas=0 no fixture fiel', status: ok(r.problemas.duplicatas.length === 0 && r.problemas.divergencias.length === 0), detail: JSON.stringify(r.problemas).slice(0, 120) });
+record({ id: 'R19b', title: 'integracao: sem colisao de resource_id', status: ok(r.problemas.idsDuplicados.length === 0), detail: JSON.stringify(r.problemas.idsDuplicados).slice(0, 150) });
+record({ id: 'R19c', title: 'integracao: formato novo coberto (RECORDS.json, runId, kind)', status: ok((function () { const novos = r.registros.filter((x) => x.course_id === 'SOC200'); return novos.length === 43 && novos.every((x) => x.source_execution === 'run-fixture-SOC200') && novos.some((x) => x.detected_type === 'video') && novos.every((x) => x.output_file || x.chars === 0 || x.original_status !== 'integral'); })()) });
 
 // caso negativo: divergência artificial de header
 const dirDiv = path.join(tmpRoot, 'DIV');

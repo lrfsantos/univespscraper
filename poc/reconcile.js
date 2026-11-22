@@ -7,11 +7,20 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const reconcile = require('./lib/reconcile');
 
 const ROOT = process.env.UNIVESP_OUT || path.join(os.homedir(), 'Desktop', 'univesp');
 
 function safeName(s) { return String(s || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 90); }
+
+// ID determinístico a partir do título COMPLETO + hash curto (sem truncar o
+// título, evita colisões); ocorrência entra quando tudo for idêntico.
+function idHistorico(code, week, title, ocorrencia) {
+  const slug = safeName(String(title || '')).replace(/\s+/g, '-').toLowerCase();
+  const h = crypto.createHash('sha1').update([code, week, title].join('|')).digest('hex').slice(0, 8);
+  return `${code}-S${week}-${slug}-${h}` + (ocorrencia > 1 ? `-oc${ocorrencia}` : '');
+}
 
 function localizarArquivo(dir, week, title, declarado) {
   const weekDir = path.join(dir, 'SEMANA_' + week);
@@ -46,7 +55,7 @@ function contadoresAntigos(qualidade) {
 
 function reconcileRoot(root) {
   const registros = [];
-  const problemas = { duplicatas: [], arquivosAusentes: [], divergencias: [] };
+  const problemas = { duplicatas: [], idsDuplicados: [], arquivosAusentes: [], divergencias: [] };
   const dirs = fs.readdirSync(root).map((d) => path.join(root, d)).filter((d) => fs.statSync(d).isDirectory());
   const urls = urlsSanitizadas(root);
 
@@ -77,15 +86,18 @@ function reconcileRoot(root) {
     }
 
     const vistos = new Map();
+    const ocorrencias = new Map();
     for (const r of brutos) {
       const reconc = reconcile.mapStatus(r);
       const tipo = r.kind || ((String(r.detail || '').match(/formato=(\w+)/) || [])[1] || 'unknown');
       const chaveDedup = [code, r.week, r.title].join('|');
       if (vistos.has(chaveDedup)) problemas.duplicatas.push({ disciplina: code, semana: r.week, titulo: r.title });
       vistos.set(chaveDedup, true);
+      const ocorrencia = (ocorrencias.get(chaveDedup) || 0) + 1;
+      ocorrencias.set(chaveDedup, ocorrencia);
       const arquivo = localizarArquivo(dir, r.week, r.title, r.file);
       if ((r.file || (r.chars > 0)) && !arquivo) problemas.arquivosAusentes.push({ disciplina: code, semana: r.week, titulo: r.title, declarado: r.file || null });
-      const recursoId = r.id ? String(r.id) : `${code}-S${r.week}-${safeName(r.title).slice(0, 40)}`;
+      const recursoId = r.id ? String(r.id) : idHistorico(code, r.week, r.title, ocorrencia);
       const linha = r.__line ? `#L${r.__line}` : '';
       registros.push({
         resource_id: recursoId,
@@ -110,7 +122,7 @@ function reconcileRoot(root) {
     const antigo = contadoresAntigos(qualidade);
     const charsZero = grupos.failed + grupos.unclassified + grupos.no_text;
     const diverge = antigo.formato === 'novo'
-      ? antigo.recursos !== grupos.total || antigo.integrais !== grupos.integral || antigo.partial !== grupos.partial || antigo.falhas !== grupos.failed || antigo.semClassificacao !== grupos.unclassified
+      ? antigo.recursos !== grupos.total || antigo.integrais !== grupos.integral || antigo.partial !== grupos.partial || antigo.semTexto !== grupos.no_text || antigo.falhas !== grupos.failed || antigo.semClassificacao !== grupos.unclassified
       : antigo.recursos !== grupos.total || antigo.integrais !== grupos.integral || antigo.semTexto !== charsZero;
     if (diverge) problemas.divergencias.push({ disciplina: code, formato: antigo.formato, contadoresAntigos: antigo, gruposReconciliados: grupos });
   }
@@ -123,6 +135,10 @@ function reconcileRoot(root) {
   }
   const soma = gruposFinais.integral + gruposFinais.partial + gruposFinais.no_text + gruposFinais.failed + gruposFinais.unclassified;
   if (soma !== gruposFinais.total) throw new Error('contagem-divergente ' + soma + ' != ' + gruposFinais.total);
+  // Colisões de resource_id (identificador precisa ser único).
+  const porId = new Map();
+  for (const r of registros) porId.set(r.resource_id, (porId.get(r.resource_id) || 0) + 1);
+  for (const [id, n] of porId) if (n > 1) problemas.idsDuplicados.push({ resource_id: id, ocorrencias: n });
   const semUrl = registros.filter((r) => !r.sanitized_url).length;
   return { registros, problemas, gruposFinais, semUrl };
 }
@@ -158,9 +174,11 @@ function gerarRelatorios(root, resultado) {
     '| Tipo | Total | integral | partial | failed | no_text | unclassified |', '|---|---:|---:|---:|---:|---:|---:|',
     ...Object.keys(porTipo).sort().map((t) => { const g = porTipo[t]; return `| ${t} | ${g.total} | ${g.integral} | ${g.partial} | ${g.failed} | ${g.no_text} | ${g.unclassified} |`; }), '',
     '## Problemas detectados', '',
+    `- IDs de recurso duplicados (colisão de identificador): ${problemas.idsDuplicados.length}`,
     `- Duplicatas (mesma disciplina+semana+titulo, sem deduplicação automática): ${problemas.duplicatas.length}`,
     `- Arquivos de saída ausentes: ${problemas.arquivosAusentes.length}`,
     `- Divergências de contadores antigos x reconciliados: ${problemas.divergencias.length}`,
+    ...(problemas.idsDuplicados.length ? ['', '### IDs duplicados', ...problemas.idsDuplicados.map((d) => `- ${d.resource_id} (${d.ocorrencias}x)`)] : []),
     ...(problemas.duplicatas.length ? ['', '### Duplicatas', ...problemas.duplicatas.map((d) => `- ${d.disciplina} S${d.semana} — ${d.titulo}`)] : []),
     ...(problemas.arquivosAusentes.length ? ['', '### Arquivos ausentes', ...problemas.arquivosAusentes.map((d) => `- ${d.disciplina} S${d.semana} — ${d.titulo} (declarado: ${d.declarado || 'não'})`)] : []),
     ...(problemas.divergencias.length ? ['', '### Divergências de contadores', ...problemas.divergencias.map((d) => `- ${d.disciplina} (${d.formato}): antigo ${JSON.stringify(d.contadoresAntigos)} -> reconciliado ${JSON.stringify(d.gruposReconciliados)}`)] : []),
