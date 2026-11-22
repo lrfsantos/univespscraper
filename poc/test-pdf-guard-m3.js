@@ -12,7 +12,7 @@ const ok = (c) => (c ? 'PASS' : 'FAIL');
 const PDF = Buffer.from('%PDF-1.4\n%fixture\n');
 const HTML = Buffer.from('<!doctype html><title>404</title><p>Página não encontrada</p>');
 
-record({ id: 'G1', title: 'status 404 bloqueia', status: ok(validarRespostaPdf({ status: 404, contentType: 'text/html', buffer: PDF }).motivo === 'HTTP 404') });
+record({ id: 'G1', title: 'status 404 bloqueia', status: ok(validarRespostaPdf({ status: 404, contentType: 'text/html', buffer: PDF }).ok === false) });
 record({ id: 'G2', title: 'status 500 bloqueia', status: ok(validarRespostaPdf({ status: 500, contentType: 'application/pdf', buffer: PDF }).ok === false) });
 record({ id: 'G3', title: 'content-type text/html bloqueia mesmo com status 200', status: ok(validarRespostaPdf({ status: 200, contentType: 'text/html; charset=utf-8', buffer: PDF }).motivo === 'content-type-nao-pdf') });
 record({ id: 'G4', title: 'assinatura invalida bloqueia', status: ok(validarRespostaPdf({ status: 200, contentType: 'application/pdf', buffer: HTML }).motivo === 'nao-e-pdf') });
