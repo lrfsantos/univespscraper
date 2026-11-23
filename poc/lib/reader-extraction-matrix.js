@@ -33,17 +33,21 @@ function classificarExtracao({ tipo, paginas = [], esperado = {}, origemEvidenci
   const permitidas = new Set(['fixture-sintetica', 'captura-real-previa', 'teste-autenticado']);
   if (!permitidas.has(origemEvidencia)) throw new Error('origem-evidencia-invalida');
   const a = analisarPaginas(paginas);
-  const inicioEsperado = Number.isInteger(esperado.inicio) ? esperado.inicio : null;
-  const fimEsperado = Number.isInteger(esperado.fim) ? esperado.fim : null;
+  const inicioValido = Number.isInteger(esperado.inicio);
+  const fimValido = Number.isInteger(esperado.fim);
+  const intervaloInvalido = inicioValido && fimValido && esperado.inicio > esperado.fim;
+  const inicioEsperado = inicioValido ? esperado.inicio : null;
+  const fimEsperado = fimValido ? esperado.fim : null;
   let classe = 'extraível';
   const motivos = [];
+  if (intervaloInvalido) { classe = 'parcialmente extraível'; motivos.push('intervalo-esperado-invalido'); }
   if (a.comTexto === 0) { classe = 'não extraível'; motivos.push('nenhuma-pagina-com-texto'); }
   else {
     if (a.semTexto > 0) { classe = 'parcialmente extraível'; motivos.push('paginas-sem-texto=' + a.semTexto); }
-    if (inicioEsperado == null || fimEsperado == null) {
+    if (!inicioValido || !fimValido) {
       classe = 'parcialmente extraível';
       motivos.push('intervalo-esperado-nao-informado');
-    } else {
+    } else if (!intervaloInvalido) {
       const vistas = new Set(a.impressasUteis);
       const lacunas = [];
       for (let n = inicioEsperado; n <= fimEsperado; n++) if (!vistas.has(n)) lacunas.push(n);

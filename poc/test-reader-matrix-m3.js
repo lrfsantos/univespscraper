@@ -90,6 +90,10 @@ record({ id: 'M17', title: 'origem de evidência fora do vocabulário é rejeita
   try { classificarExtracao({ tipo: 'x', paginas: [], origemEvidencia: 'qualquer' }); return false; }
   catch (e) { return /origem-evidencia-invalida/.test(String(e.message)); }
 })()) });
+record({ id: 'M18', title: 'intervalo invertido (inicio > fim) = parcial com motivo explícito', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, esperado: { inicio: 3, fim: 1 } });
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('intervalo-esperado-invalido');
+})()) });
 
 const matriz = [
   classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, esperado: { inicio: 1, fim: 3 } }),
