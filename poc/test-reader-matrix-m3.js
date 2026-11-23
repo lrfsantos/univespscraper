@@ -67,8 +67,28 @@ record({ id: 'M11', title: 'repetibilidade exige mesma quantidade, paginação e
   compararTentativas(pagesClassic, pagesClassic.map((p, i) => Object.assign({}, p, { texto: i === 1 ? 'outro' : p.texto }))).repetivel === false) });
 record({ id: 'M12', title: 'origem da evidência é explícita: fixture sintética', status: ok((function () {
   const r = classificarExtracao({ tipo: 'fixture', paginas: [pag(81, 1, trecho(0))], origemEvidencia: 'fixture-sintetica' });
-  const real = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, origemEvidencia: 'teste-autenticado' });
+  const real = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, origemEvidencia: 'teste-autenticado', esperado: { inicio: 1, fim: 3 } });
   return r.origemEvidencia === 'fixture-sintetica' && real.origemEvidencia === 'teste-autenticado';
+})()) });
+record({ id: 'M13', title: '3 páginas consecutivas sem intervalo esperado = parcial (não extraível integral)', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'fixture', paginas: [pag(91, 1, trecho(0)), pag(92, 2, trecho(1)), pag(93, 3, trecho(2))] });
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('intervalo-esperado-nao-informado');
+})()) });
+record({ id: 'M14', title: 'uma única página sem intervalo esperado = parcial', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'fixture', paginas: [pag(94, 8, trecho(0))] });
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('intervalo-esperado-nao-informado');
+})()) });
+record({ id: 'M15', title: 'intervalo completo explicitamente informado = extraível', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, esperado: { inicio: 1, fim: 3 } });
+  return r.classe === 'extraível' && !r.motivos.length;
+})()) });
+record({ id: 'M16', title: 'apenas um limite informado = parcial, sem afirmar cobertura completa', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, esperado: { fim: 3 } });
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('intervalo-esperado-nao-informado');
+})()) });
+record({ id: 'M17', title: 'origem de evidência fora do vocabulário é rejeitada', status: ok((function () {
+  try { classificarExtracao({ tipo: 'x', paginas: [], origemEvidencia: 'qualquer' }); return false; }
+  catch (e) { return /origem-evidencia-invalida/.test(String(e.message)); }
 })()) });
 
 const matriz = [

@@ -30,18 +30,25 @@ function analisarPaginas(paginas = []) {
 }
 
 function classificarExtracao({ tipo, paginas = [], esperado = {}, origemEvidencia = 'fixture-sintetica' } = {}) {
+  const permitidas = new Set(['fixture-sintetica', 'captura-real-previa', 'teste-autenticado']);
+  if (!permitidas.has(origemEvidencia)) throw new Error('origem-evidencia-invalida');
   const a = analisarPaginas(paginas);
-  const inicioEsperado = Number.isInteger(esperado.inicio) ? esperado.inicio : a.inicio;
-  const fimEsperado = Number.isInteger(esperado.fim) ? esperado.fim : a.fim;
+  const inicioEsperado = Number.isInteger(esperado.inicio) ? esperado.inicio : null;
+  const fimEsperado = Number.isInteger(esperado.fim) ? esperado.fim : null;
   let classe = 'extraível';
   const motivos = [];
   if (a.comTexto === 0) { classe = 'não extraível'; motivos.push('nenhuma-pagina-com-texto'); }
   else {
     if (a.semTexto > 0) { classe = 'parcialmente extraível'; motivos.push('paginas-sem-texto=' + a.semTexto); }
-    const vistas = new Set(a.impressasUteis);
-    const lacunas = [];
-    for (let n = inicioEsperado; n <= fimEsperado; n++) if (!vistas.has(n)) lacunas.push(n);
-    if (lacunas.length) { classe = 'parcialmente extraível'; motivos.push('lacunas=' + lacunas.join(',')); }
+    if (inicioEsperado == null || fimEsperado == null) {
+      classe = 'parcialmente extraível';
+      motivos.push('intervalo-esperado-nao-informado');
+    } else {
+      const vistas = new Set(a.impressasUteis);
+      const lacunas = [];
+      for (let n = inicioEsperado; n <= fimEsperado; n++) if (!vistas.has(n)) lacunas.push(n);
+      if (lacunas.length) { classe = 'parcialmente extraível'; motivos.push('lacunas=' + lacunas.join(',')); }
+    }
     if (a.repetidasImpressas > 0) { classe = 'parcialmente extraível'; motivos.push('paginas-impressas-repetidas=' + a.repetidasImpressas); }
     if (a.duplicatas > 0) { classe = 'parcialmente extraível'; motivos.push('ids-duplicados=' + a.duplicatas); }
     if (!a.ordemCapturaValida || !a.ordemImpressaValida) { classe = 'parcialmente extraível'; motivos.push('ordem-de-captura-ou-paginacao-invalida'); }
