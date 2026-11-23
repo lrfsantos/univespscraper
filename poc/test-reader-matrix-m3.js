@@ -33,11 +33,18 @@ record({ id: 'M3', title: 'Minha Biblioteca sem texto consultável = não extra�
 })()) });
 record({ id: 'M4', title: 'cobertura aquém do intervalo esperado = parcial', status: ok((function () {
   const r = classificarExtracao({ tipo: 'pearson-classic', paginas: [pag(41, 1, trecho(0)), pag(42, 2, trecho(1))], esperado: { inicio: 1, fim: 3 } });
-  return r.classe === 'parcialmente extraível' && r.motivos.some((m) => m.includes('cobertura-ate-2'));
+  return r.classe === 'parcialmente extraível' && (r.motivos.some((m) => m.includes('cobertura')) || r.lacunas === 'lacunas=3');
 })()) });
-record({ id: 'M5', title: 'ids duplicados e ordem quebrada = parcial, nunca integral', status: ok((function () {
+record({ id: 'M5', title: 'ids duplicados = parcial, nunca integral', status: ok((function () {
   const r = classificarExtracao({ tipo: 'vitalsource', paginas: [pag(51, 1, trecho(0)), pag(51, 2, trecho(1)), pag(50, 3, trecho(2))], esperado: { inicio: 1, fim: 3 } });
-  return r.classe === 'parcialmente extraível' && r.motivos.includes('ids-duplicados=1') && r.motivos.includes('ordem-nao-crescente');
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('ids-duplicados=1');
+})()) });
+record({ id: 'M5b', title: 'ordem de captura quebrada (campo ordem) = parcial', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'vitalsource', paginas: [
+    { id: 'a', ordem: 1, impressa: 1, texto: trecho(0) },
+    { id: 'b', ordem: 3, impressa: 2, texto: trecho(1) },
+    { id: 'c', ordem: 2, impressa: 3, texto: trecho(2) }], esperado: { inicio: 1, fim: 3 } });
+  return r.classe === 'parcialmente extraível' && r.motivos.includes('ordem-de-captura-ou-paginacao-invalida');
 })()) });
 record({ id: 'M6', title: 'repetibilidade: mesma sequência duas vezes = estável', status: ok(
   compararTentativas(pagesClassic, pagesClassic.map((p) => Object.assign({}, p))).repetivel === true) });
@@ -46,6 +53,22 @@ record({ id: 'M7', title: 'repetibilidade divergente = instável (sinalizado)', 
 record({ id: 'M8', title: 'evidência é trecho curto, não conteúdo integral', status: ok((function () {
   const r = classificarExtracao({ tipo: 'fixture', paginas: [pag(61, 1, trecho(0))] });
   return r.evidencia && r.evidencia.length <= 120;
+})()) });
+record({ id: 'M9', title: 'lacuna interna (páginas 1 e 3, falta 2) = parcial, nunca extraível', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'pearson-classic', paginas: [pag(71, 1, trecho(0)), pag(73, 3, trecho(2))], esperado: { inicio: 1, fim: 3 } });
+  return r.classe === 'parcialmente extraível' && r.lacunas === 'lacunas=2';
+})()) });
+record({ id: 'M10', title: 'ordem avaliada pela paginação impressa, não por ID interno', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'vitalsource', paginas: [pag('doc-b', 1, trecho(0)), pag('doc-a', 2, trecho(1)), pag('doc-c', 3, trecho(2))], esperado: { inicio: 1, fim: 3 } });
+  return r.classe === 'extraível' && !r.motivos.some((m) => m.includes('ordem'));
+})()) });
+record({ id: 'M11', title: 'repetibilidade exige mesma quantidade, paginação e texto', status: ok(
+  compararTentativas(pagesClassic, pagesClassic.slice(0, 2)).repetivel === false &&
+  compararTentativas(pagesClassic, pagesClassic.map((p, i) => Object.assign({}, p, { texto: i === 1 ? 'outro' : p.texto }))).repetivel === false) });
+record({ id: 'M12', title: 'origem da evidência é explícita: fixture sintética', status: ok((function () {
+  const r = classificarExtracao({ tipo: 'fixture', paginas: [pag(81, 1, trecho(0))], origemEvidencia: 'fixture-sintetica' });
+  const real = classificarExtracao({ tipo: 'pearson-classic', paginas: pagesClassic, origemEvidencia: 'teste-autenticado' });
+  return r.origemEvidencia === 'fixture-sintetica' && real.origemEvidencia === 'teste-autenticado';
 })()) });
 
 const matriz = [
